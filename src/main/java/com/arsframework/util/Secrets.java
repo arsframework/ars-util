@@ -10,9 +10,10 @@ import org.apache.commons.codec.binary.Base64;
 import com.arsframework.annotation.Assert;
 
 /**
+ * 数据加解密处理工具类
+ *
  * @author yongqiang.wu
- * @description 数据加解密处理工具类
- * @date 2019-03-20 17:19
+ * @version 2019-03-20 17:19
  */
 public abstract class Secrets {
     /**

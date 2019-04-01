@@ -15,9 +15,10 @@ import java.lang.reflect.*;
 import com.arsframework.annotation.Assert;
 
 /**
+ * 对象处理工具类
+ *
  * @author yongqiang.wu
- * @description 对象处理工具类
- * @date 2019-03-22 09:38
+ * @version 2019-03-22 09:38
  */
 public abstract class Objects {
     /**

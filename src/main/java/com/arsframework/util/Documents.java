@@ -43,9 +43,10 @@ import com.itextpdf.text.DocumentException;
 import com.arsframework.annotation.Assert;
 
 /**
+ * 文档处理工具类
+ *
  * @author yongqiang.wu
- * @description 文档处理工具类
- * @date 2019-03-22 16:21
+ * @version 2019-03-22 16:21
  */
 public abstract class Documents {
     /**

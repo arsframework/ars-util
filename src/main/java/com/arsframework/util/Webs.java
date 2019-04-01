@@ -23,9 +23,10 @@ import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.arsframework.annotation.Assert;
 
 /**
+ * Web处理工具类
+ *
  * @author yongqiang.wu
- * @description Web处理工具类
- * @date 2019-03-22 09:38
+ * @version 2019-03-22 09:38
  */
 public abstract class Webs {
     /**

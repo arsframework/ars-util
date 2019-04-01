@@ -12,9 +12,10 @@ import java.text.SimpleDateFormat;
 import com.arsframework.annotation.Assert;
 
 /**
+ * 日期处理工具类
+ *
  * @author yongqiang.wu
- * @description 日期处理工具类
- * @date 2019-03-22 09:38
+ * @version 2019-03-22 09:38
  */
 public abstract class Dates {
     /**

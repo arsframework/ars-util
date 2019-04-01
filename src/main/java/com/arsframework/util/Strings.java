@@ -9,9 +9,10 @@ import java.util.regex.Pattern;
 import com.arsframework.annotation.Assert;
 
 /**
+ * 字符串处理工具类
+ *
  * @author yongqiang.wu
- * @description 字符串处理工具类
- * @date 2019-03-22 09:38
+ * @version 2019-03-22 09:38
  */
 public abstract class Strings {
     /**

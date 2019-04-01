@@ -12,9 +12,10 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import com.arsframework.annotation.Assert;
 
 /**
+ * Excel处理工具类
+ *
  * @author yongqiang.wu
- * @description Excel处理工具类
- * @date 2019-03-22 09:38
+ * @version 2019-03-22 09:38
  */
 public abstract class Excels {
     /**
@@ -659,7 +660,6 @@ public abstract class Excels {
      * @param index  开始数据行下标（从0开始）
      * @param count  当前记录数（从1开始）
      * @param reader Excel对象实体读取接口
-     * @return 读取数量
      */
     @Assert
     public static void iteration(Sheet sheet, int index, int[] count, Reader<?> reader) {

@@ -9,9 +9,10 @@ import java.nio.channels.WritableByteChannel;
 import com.arsframework.annotation.Assert;
 
 /**
+ * 数据流处理工具类
+ *
  * @author yongqiang.wu
- * @description 数据流处理工具类
- * @date 2019-03-22 09:38
+ * @version 2019-03-22 09:38
  */
 public abstract class Streams {
     /**

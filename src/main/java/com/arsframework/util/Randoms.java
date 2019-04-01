@@ -6,9 +6,10 @@ import java.lang.reflect.Field;
 import com.arsframework.annotation.Assert;
 
 /**
+ * 随机数处理工具类
+ *
  * @author yongqiang.wu
- * @description 随机数处理工具类
- * @date 2019-03-22 09:38
+ * @version 2019-03-22 09:38
  */
 public abstract class Randoms {
     /**

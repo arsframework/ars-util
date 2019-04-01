@@ -7,9 +7,10 @@ import java.text.DecimalFormat;
 import com.arsframework.annotation.Assert;
 
 /**
+ * 文件处理工具类
+ *
  * @author yongqiang.wu
- * @description 文件处理工具类
- * @date 2019-03-22 09:38
+ * @version 2019-03-22 09:38
  */
 public abstract class Files {
     /**

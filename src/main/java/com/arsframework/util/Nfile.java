@@ -6,9 +6,10 @@ import java.util.Arrays;
 import com.arsframework.annotation.Assert;
 
 /**
+ * 非完全本地文件对象
+ *
  * @author yongqiang.wu
- * @description 非完全本地文件对象
- * @date 2019-03-22 09:38
+ * @version 2019-03-22 09:38
  */
 public class Nfile implements Serializable {
     private static final long serialVersionUID = 1L;
