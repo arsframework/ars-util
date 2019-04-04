@@ -12,7 +12,9 @@ import java.util.jar.JarFile;
 import java.util.jar.JarEntry;
 import java.lang.reflect.*;
 
-import com.arsframework.annotation.Assert;
+import com.arsframework.annotation.Min;
+import com.arsframework.annotation.Nonnull;
+import com.arsframework.annotation.Nonempty;
 
 /**
  * 对象处理工具类
@@ -42,7 +44,7 @@ public abstract class Objects {
      * @param parameterizedType 泛型参数类型
      * @return 泛型类型数组
      */
-    @Assert
+    @Nonnull
     private static Class<?>[] getGenericTypes(ParameterizedType parameterizedType) {
         Type[] types = parameterizedType.getActualTypeArguments();
         List<Class<?>> classes = new ArrayList<>(types.length);
@@ -60,7 +62,7 @@ public abstract class Objects {
      * @param cls 类对象对象
      * @return 泛型类型数组
      */
-    @Assert
+    @Nonnull
     public static Class<?>[] getGenericTypes(Class<?> cls) {
         Type type = cls.getGenericSuperclass();
         if (type instanceof ParameterizedType) {
@@ -76,7 +78,7 @@ public abstract class Objects {
      * @param field 字段对象
      * @return 泛型类型数组
      */
-    @Assert
+    @Nonnull
     public static Class<?>[] getGenericTypes(Field field) {
         Type type = field.getGenericType();
         return type instanceof ParameterizedType ? getGenericTypes((ParameterizedType) type) : EMPTY_CLASS_ARRAY;
@@ -88,7 +90,7 @@ public abstract class Objects {
      * @param cls 基本数据类型
      * @return 基本数据包装类型
      */
-    @Assert
+    @Nonnull
     public static Class<?> getBasicWrapClass(Class<?> cls) {
         if (cls == byte.class) {
             return Byte.class;
@@ -227,7 +229,7 @@ public abstract class Objects {
      * @param object 对象
      * @return true/false
      */
-    public static <T> boolean isExist(@Assert T[] array, T object) {
+    public static <T> boolean isExist(@Nonnull T[] array, T object) {
         if (array.length > 0 && object != null) {
             for (T t : array) {
                 if (isEqual(t, object)) {
@@ -247,7 +249,7 @@ public abstract class Objects {
      * @param comparator 比较器
      * @return true/false
      */
-    public static <T> boolean isExist(@Assert T[] array, T object, @Assert Comparator<T> comparator) {
+    public static <T> boolean isExist(@Nonnull T[] array, T object, @Nonnull Comparator<T> comparator) {
         if (array.length > 0 && object != null) {
             for (T t : array) {
                 if (comparator.compare(t, object) == 0) {
@@ -266,7 +268,7 @@ public abstract class Objects {
      * @param object     对象
      * @return true/false
      */
-    public static <T> boolean isExist(@Assert Collection<T> collection, T object) {
+    public static <T> boolean isExist(@Nonnull Collection<T> collection, T object) {
         if (!collection.isEmpty() && object != null) {
             for (T t : collection) {
                 if (isEqual(t, object)) {
@@ -286,7 +288,7 @@ public abstract class Objects {
      * @param comparator 对象比较器
      * @return true/false
      */
-    public static <T> boolean isExist(@Assert Collection<T> collection, T object, @Assert Comparator<T> comparator) {
+    public static <T> boolean isExist(@Nonnull Collection<T> collection, T object, @Nonnull Comparator<T> comparator) {
         if (!collection.isEmpty() && object != null) {
             for (T t : collection) {
                 if (comparator.compare(t, object) == 0) {
@@ -317,7 +319,7 @@ public abstract class Objects {
      * @param other 被比较数组
      * @return true/false
      */
-    @Assert
+    @Nonnull
     public static <T> boolean isEqual(T[] array, T[] other) {
         return isEqual(array, other, (T o1, T o2) -> o1.equals(o2) ? 0 : -1);
     }
@@ -331,7 +333,7 @@ public abstract class Objects {
      * @param comparator 比较器
      * @return true/false
      */
-    public static <T> boolean isEqual(T[] array, T[] other, @Assert Comparator<T> comparator) {
+    public static <T> boolean isEqual(T[] array, T[] other, @Nonnull Comparator<T> comparator) {
         return (array == null && other == null)
                 || (array != null && other != null && array.length == 0 && other.length == 0)
                 || isEqual(Arrays.asList(array), Arrays.asList(other), comparator);
@@ -358,7 +360,7 @@ public abstract class Objects {
      * @param comparator 比较器
      * @return true/false
      */
-    public static <T> boolean isEqual(Collection<T> collection, Collection<T> other, @Assert Comparator<T> comparator) {
+    public static <T> boolean isEqual(Collection<T> collection, Collection<T> other, @Nonnull Comparator<T> comparator) {
         if ((collection == null && other == null)
                 || (collection != null && other != null && collection.isEmpty() && other.isEmpty())) {
             return true;
@@ -457,7 +459,7 @@ public abstract class Objects {
      * @param name 字段名称
      * @return 字段对象
      */
-    @Assert
+    @Nonempty
     public static Field getField(Class<?> cls, String name) {
         try {
             return cls.getDeclaredField(name);
@@ -477,7 +479,7 @@ public abstract class Objects {
      * @param names 字段名称数组
      * @return 字段对象数组
      */
-    @Assert
+    @Nonnull
     public static Field[] getFields(Class<?> cls, String... names) {
         if (names == null || names.length == 0) {
             List<Field> fields = new LinkedList<>();
@@ -522,7 +524,7 @@ public abstract class Objects {
      * @param cls 对象类型
      * @return 字段名称数组
      */
-    @Assert
+    @Nonnull
     public static String[] getProperties(Class<?> cls) {
         if (Enum.class.isAssignableFrom(cls)) {
             try {
@@ -558,19 +560,15 @@ public abstract class Objects {
      * @param property 属性名称
      * @return 字段值
      */
-    @Assert
+    @Nonempty
     public static Object getValue(Object object, String property) {
-        if (object == null) {
-            return null;
-        }
         String suffix = null;
         int index = property.indexOf('.');
         if (index > 0) {
             suffix = property.substring(index + 1);
             property = property.substring(0, index);
         }
-        Class<?> meta = object instanceof Class ? (Class<?>) object : object.getClass();
-        Field field = getField(meta, property);
+        Field field = getField(object.getClass(), property);
         field.setAccessible(true);
         try {
             Object value = field.get(object);
@@ -587,11 +585,11 @@ public abstract class Objects {
      * @param properties 属性名称数组（如果为空则获取所有属性值）
      * @return 键/值对象
      */
-    @Assert
+    @Nonnull
     public static Map<String, Object> getValues(Object object, String... properties) {
         if (properties.length == 0) {
             Map<String, Object> values = new HashMap<>();
-            Class<?> meta = object instanceof Class ? (Class<?>) object : object.getClass();
+            Class<?> meta = object.getClass();
             while (meta != Object.class) {
                 for (Field field : meta.getDeclaredFields()) {
                     if (!Modifier.isStatic(field.getModifiers())) {
@@ -621,9 +619,8 @@ public abstract class Objects {
      * @param property 属性名称
      * @param value    字段值
      */
-    public static void setValue(@Assert Object object, @Assert String property, Object value) {
-        Class<?> meta = object instanceof Class ? (Class<?>) object : object.getClass();
-        Field field = getField(meta, property);
+    public static void setValue(@Nonnull Object object, @Nonempty String property, Object value) {
+        Field field = getField(object.getClass(), property);
         field.setAccessible(true);
         try {
             field.set(object, value);
@@ -638,21 +635,23 @@ public abstract class Objects {
      * @param object 对象实例
      * @param values 需要填充的属性/值Map对象
      */
-    @Assert
+    @Nonnull
     public static void setValues(Object object, Map<?, ?> values) {
-        Class<?> meta = object instanceof Class ? (Class<?>) object : object.getClass();
-        while (meta != Object.class) {
-            for (Field field : meta.getDeclaredFields()) {
-                if (values.containsKey(field.getName()) && !Modifier.isStatic(field.getModifiers())) {
-                    field.setAccessible(true);
-                    try {
-                        field.set(object, values.get(field.getName()));
-                    } catch (IllegalAccessException e) {
-                        throw new RuntimeException(e);
+        if (!values.isEmpty()) {
+            Class<?> meta = object.getClass();
+            while (meta != Object.class) {
+                for (Field field : meta.getDeclaredFields()) {
+                    if (values.containsKey(field.getName()) && !Modifier.isStatic(field.getModifiers())) {
+                        field.setAccessible(true);
+                        try {
+                            field.set(object, values.get(field.getName()));
+                        } catch (IllegalAccessException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }
+                meta = meta.getSuperclass();
             }
-            meta = meta.getSuperclass();
         }
     }
 
@@ -663,7 +662,7 @@ public abstract class Objects {
      * @param source 源对象
      * @return 目标对象
      */
-    @Assert
+    @Nonnull
     public static <T> T copy(T source) {
         T target = (T) initialize(source.getClass());
         copy(source, target);
@@ -677,7 +676,7 @@ public abstract class Objects {
      * @param source 源对象
      * @param target 目标对象
      */
-    @Assert
+    @Nonnull
     public static <T> void copy(T source, T target) {
         Class<?> type = source.getClass();
         while (type != Object.class) {
@@ -704,7 +703,7 @@ public abstract class Objects {
      * @param type 对象类型
      * @return 对象实例
      */
-    @Assert
+    @Nonnull
     public static <T> T initialize(Class<T> type) {
         try {
             return type.newInstance();
@@ -721,7 +720,7 @@ public abstract class Objects {
      * @param values 初始化参数
      * @return 对象实例
      */
-    @Assert
+    @Nonnull
     public static <T> T initialize(Class<T> type, Map<?, ?> values) {
         Class<?> cls = type;
         T instance = initialize(type);
@@ -753,11 +752,8 @@ public abstract class Objects {
      * @param length 数组长度
      * @return 数组对象
      */
-    @Assert
-    public static <T> T[] buildArray(Class<T> type, int length) {
-        if (length < 0) {
-            throw new IllegalArgumentException("Argument length must not be less than 0, got: " + length);
-        }
+    @Nonnull
+    public static <T> T[] buildArray(Class<T> type, @Min(0) int length) {
         Class<?> _type = isBasicClass(type) ? getBasicWrapClass(type) : type;
         return (T[]) Array.newInstance(_type, length);
     }
@@ -769,7 +765,7 @@ public abstract class Objects {
      * @param source 源对象
      * @return 对象实例副本
      */
-    @Assert
+    @Nonnull
     public static <T extends Serializable> T clone(T source) {
         try {
             return (T) Streams.deserialize(Streams.serialize(source));
@@ -785,7 +781,7 @@ public abstract class Objects {
      * @param objects 对象数组
      * @return hash值
      */
-    @Assert(nonempty = true)
+    @Nonempty
     public static int hash(Object... objects) {
         int code = 1;
         for (Object object : objects) {
@@ -862,7 +858,7 @@ public abstract class Objects {
      * @param properties 属性名称数组
      * @return 排序后对象集合
      */
-    @Assert
+    @Nonnull
     public static <M> List<M> sort(Collection<M> collection, String... properties) {
         List<M> list = collection instanceof List ? (List<M>) collection : new ArrayList<M>(collection);
         Collections.sort(list, (o1, o2) -> {
@@ -893,7 +889,7 @@ public abstract class Objects {
      * @param other  对象实例
      * @return 不同属性值
      */
-    @Assert
+    @Nonnull
     public static <M> Map<String, Object[]> difference(M object, M other) {
         Map<String, Object[]> different = new LinkedHashMap<>();
         for (Field field : getFields(object.getClass())) {
@@ -917,7 +913,7 @@ public abstract class Objects {
      * @param throwable 异常对象
      * @return 信息内容
      */
-    @Assert
+    @Nonnull
     public static String getThrowableMessage(Throwable throwable) {
         Throwable cause;
         while ((cause = throwable.getCause()) != null) {
@@ -932,7 +928,7 @@ public abstract class Objects {
      * @param pack 包路径名
      * @return Java类集合
      */
-    @Assert
+    @Nonempty
     public static List<Class<?>> getClasses(String pack) {
         List<Class<?>> classes = new ArrayList<>();
         // 获取包的名字 并进行替换
@@ -996,7 +992,7 @@ public abstract class Objects {
      * @param path 包路径
      * @return 对象列表
      */
-    @Assert
+    @Nonempty
     private static List<Class<?>> getClasses(String pack, String path) {
         File dir = new File(path);
         if (!dir.exists() || !dir.isDirectory()) {
@@ -1028,7 +1024,7 @@ public abstract class Objects {
      * @param map 树型键/值对象
      * @return 比较器对象
      */
-    @Assert
+    @Nonnull
     private static <K, V> Comparator<K> getTreeMapComparator(TreeMap<K, V> map) {
         try {
             Field field = map.getClass().getDeclaredField("comparator");
@@ -1046,7 +1042,7 @@ public abstract class Objects {
      * @param object 被转换对象
      * @return 转换后对象
      */
-    public static Object toObject(@Assert Class<?> type, Object object) {
+    public static Object toObject(@Nonnull Class<?> type, Object object) {
         if (type == Object.class) {
             return object;
         } else if (type.isArray()) {
@@ -1117,7 +1113,7 @@ public abstract class Objects {
      * @param object 被转换对象
      * @return 键/值对象
      */
-    public static <K, V, T> Map<K, T> toMap(@Assert Class<T> type, Map<K, V> object) {
+    public static <K, V, T> Map<K, T> toMap(@Nonnull Class<T> type, Map<K, V> object) {
         if (object == null) {
             return new HashMap<K, T>(0);
         }
@@ -1138,7 +1134,7 @@ public abstract class Objects {
      * @param object 被转换对象
      * @return Set
      */
-    public static <T> Set<T> toSet(@Assert Class<T> type, Object object) {
+    public static <T> Set<T> toSet(@Nonnull Class<T> type, Object object) {
         if (object == null) {
             return new HashSet<T>(0);
         }
@@ -1158,7 +1154,7 @@ public abstract class Objects {
      * @param object 被转换对象
      * @return List
      */
-    public static <T> List<T> toList(@Assert Class<T> type, Object object) {
+    public static <T> List<T> toList(@Nonnull Class<T> type, Object object) {
         if (object == null) {
             return new ArrayList<T>(0);
         }
@@ -1178,7 +1174,7 @@ public abstract class Objects {
      * @param object 被转换对象
      * @return 数组对象
      */
-    public static <T> T[] toArray(@Assert Class<T> type, Object object) {
+    public static <T> T[] toArray(@Nonnull Class<T> type, Object object) {
         if (object == null) {
             return buildArray(type, 0);
         } else if (object instanceof List) {
@@ -1256,7 +1252,7 @@ public abstract class Objects {
      * @param object 被转换对象
      * @return 字节对象
      */
-    private static Byte toByte(@Assert Class<Byte> type, Object object) {
+    private static Byte toByte(@Nonnull Class<Byte> type, Object object) {
         if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)) {
             return type == byte.class ? (byte) 0 : null;
         }
@@ -1281,7 +1277,7 @@ public abstract class Objects {
      * @param object 被转换对象
      * @return 字符对象
      */
-    private static Character toCharacter(@Assert Class<Character> type, Object object) {
+    private static Character toCharacter(@Nonnull Class<Character> type, Object object) {
         if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)) {
             return type == char.class ? (char) 0 : null;
         }
@@ -1306,7 +1302,7 @@ public abstract class Objects {
      * @param object 被转换对象
      * @return 真假对象
      */
-    private static Boolean toBoolean(@Assert Class<Boolean> type, Object object) {
+    private static Boolean toBoolean(@Nonnull Class<Boolean> type, Object object) {
         if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)) {
             return type == boolean.class ? false : null;
         }
@@ -1330,7 +1326,7 @@ public abstract class Objects {
      * @param object 被转换对象
      * @return 整形对象
      */
-    private static Integer toInteger(@Assert Class<Integer> type, Object object) {
+    private static Integer toInteger(@Nonnull Class<Integer> type, Object object) {
         if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)) {
             return type == int.class ? 0 : null;
         }
@@ -1355,7 +1351,7 @@ public abstract class Objects {
      * @param object 被转换对象
      * @return 短整形对象
      */
-    private static Short toShort(@Assert Class<Short> type, Object object) {
+    private static Short toShort(@Nonnull Class<Short> type, Object object) {
         if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)) {
             return type == short.class ? (short) 0 : null;
         }
@@ -1380,7 +1376,7 @@ public abstract class Objects {
      * @param object 被转换对象
      * @return 单精度浮点对象
      */
-    private static Float toFloat(@Assert Class<Float> type, Object object) {
+    private static Float toFloat(@Nonnull Class<Float> type, Object object) {
         if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)) {
             return type == float.class ? (float) 0 : null;
         }
@@ -1405,7 +1401,7 @@ public abstract class Objects {
      * @param object 被转换对象
      * @return 双精度浮点对象
      */
-    private static Double toDouble(@Assert Class<Double> type, Object object) {
+    private static Double toDouble(@Nonnull Class<Double> type, Object object) {
         if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)) {
             return type == double.class ? (double) 0 : null;
         }
@@ -1430,7 +1426,7 @@ public abstract class Objects {
      * @param object 被转换对象
      * @return 长整形对象
      */
-    private static Long toLong(@Assert Class<Long> type, Object object) {
+    private static Long toLong(@Nonnull Class<Long> type, Object object) {
         if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)) {
             return type == long.class ? (long) 0 : null;
         }
@@ -1446,7 +1442,7 @@ public abstract class Objects {
      * @param object 被转换对象
      * @return 枚举实例
      */
-    public static <T extends Enum<T>> T toEnum(@Assert Class<T> type, Object object) {
+    public static <T extends Enum<T>> T toEnum(@Nonnull Class<T> type, Object object) {
         return object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0) ? null
                 : object instanceof Enum ? (T) object : Enum.valueOf(type, object.toString());
     }

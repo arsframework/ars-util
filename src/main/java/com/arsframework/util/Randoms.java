@@ -3,7 +3,10 @@ package com.arsframework.util;
 import java.util.*;
 import java.lang.reflect.Field;
 
-import com.arsframework.annotation.Assert;
+import com.arsframework.annotation.Lt;
+import com.arsframework.annotation.Min;
+import com.arsframework.annotation.Nonnull;
+import com.arsframework.annotation.Nonempty;
 
 /**
  * 随机数处理工具类
@@ -80,7 +83,7 @@ public abstract class Randoms {
         private RandomGeneratorFactory randomGeneratorFactory;
         private final LinkedList<Class<?>> executed = new LinkedList<>(); // 已执行对象类型
 
-        @Assert
+        @Nonnull
         public RandomBeanFactory(Class<T> type) {
             this.type = type;
         }
@@ -92,7 +95,7 @@ public abstract class Randoms {
          * @param type 对象类型
          * @return 对象实例
          */
-        @Assert
+        @Nonnull
         protected <M> M execute(Class<M> type) {
             if (this.excludeStrategy != null && this.excludeStrategy.exclude(type, null)) {
                 return null;
@@ -180,6 +183,7 @@ public abstract class Randoms {
          * @param excludeStrategy 随机生成属性排除策略
          * @return 随机对象实例生成工厂
          */
+        @Nonnull
         public RandomBeanFactory<T> register(ExcludeStrategy excludeStrategy) {
             this.excludeStrategy = excludeStrategy;
             return this;
@@ -191,6 +195,7 @@ public abstract class Randoms {
          * @param randomGeneratorFactory 随机数生成接口工厂
          * @return 随机对象实例生成工厂
          */
+        @Nonnull
         public RandomBeanFactory<T> register(RandomGeneratorFactory randomGeneratorFactory) {
             this.randomGeneratorFactory = randomGeneratorFactory;
             return this;
@@ -225,7 +230,7 @@ public abstract class Randoms {
      * @param type 枚举类型
      * @return 枚举项
      */
-    @Assert
+    @Nonnull
     public static <T extends Enum<?>> T randomEnum(Class<T> type) {
         try {
             Object[] values = (Object[]) type.getMethod("values").invoke(type);
@@ -247,15 +252,12 @@ public abstract class Randoms {
     /**
      * 随机生成日期
      *
-     * @param min 最小日
+     * @param min 最小日期
      * @param max 最大日期
      * @return 日期
      */
-    @Assert
-    public static Date randomDate(Date min, Date max) {
-        if (max.before(min)) {
-            throw new IllegalArgumentException("Argument max must not be less than min, min: " + min + ", max: " + max);
-        }
+    @Nonnull
+    public static Date randomDate(@Lt("max") Date min, Date max) {
         long start = min.getTime();
         long time = max.getTime() - start; // 相差毫秒数
         if (time <= 1000) { // 相差1秒内
@@ -280,10 +282,7 @@ public abstract class Randoms {
      * @param max 最大值
      * @return 数字
      */
-    public static int randomInteger(int min, int max) {
-        if (max < min) {
-            throw new IllegalArgumentException("Argument max must not be less than min, min: " + min + ", max: " + max);
-        }
+    public static int randomInteger(@Lt("max") int min, int max) {
         return min + random.get().nextInt(max - min);
     }
 
@@ -323,11 +322,8 @@ public abstract class Randoms {
      * @param length 字符串长度
      * @return 字符串
      */
-    @Assert(nonempty = true)
-    public static String randomString(Character[] chars, int length) {
-        if (length < 1) {
-            throw new IllegalArgumentException("Argument length must not be less than 1, got: " + length);
-        }
+    @Nonempty
+    public static String randomString(Character[] chars, @Min(1) int length) {
         StringBuilder buffer = new StringBuilder();
         for (int i = 0; i < length; i++) {
             buffer.append(chars[random.get().nextInt(chars.length)]);
@@ -350,7 +346,7 @@ public abstract class Randoms {
      * @param chars 随机字符数组
      * @return 字符
      */
-    @Assert(nonempty = true)
+    @Nonempty
     public static Character randomCharacter(Character[] chars) {
         return chars[random.get().nextInt(chars.length)];
     }

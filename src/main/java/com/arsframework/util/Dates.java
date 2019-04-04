@@ -9,7 +9,9 @@ import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-import com.arsframework.annotation.Assert;
+import com.arsframework.annotation.Min;
+import com.arsframework.annotation.Nonnull;
+import com.arsframework.annotation.Nonempty;
 
 /**
  * 日期处理工具类
@@ -49,7 +51,6 @@ public abstract class Dates {
      * @param pattern 日期格式转换模式字符串
      * @return 日期格式化处理对象
      */
-    @Assert(nonempty = true)
     public static DateFormat getDateFormat(String pattern) {
         Map<String, DateFormat> formats = dateFormats.get();
         DateFormat format = formats.get(pattern);
@@ -77,8 +78,10 @@ public abstract class Dates {
      * @param patterns 格式模式数组
      * @return 日期时间对象
      */
-    @Assert(nonempty = true)
-    public static Date parse(String source, String... patterns) {
+    public static Date parse(String source, @Nonempty String... patterns) {
+        if (source == null || source.isEmpty()) {
+            return null;
+        }
         for (String pattern : patterns) {
             try {
                 return getDateFormat(pattern).parse(source);
@@ -105,9 +108,8 @@ public abstract class Dates {
      * @param pattern 格式模式
      * @return 日期时间字符串形式
      */
-    @Assert(nonempty = true)
-    public static String format(Date date, String pattern) {
-        return getDateFormat(pattern).format(date);
+    public static String format(Date date, @Nonempty String pattern) {
+        return date == null ? null : getDateFormat(pattern).format(date);
     }
 
     /**
@@ -118,7 +120,7 @@ public abstract class Dates {
      * @param amount 相差时间量
      * @return 结果日期时间
      */
-    @Assert
+    @Nonnull
     public static Date differ(Date date, int type, int amount) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
@@ -132,7 +134,7 @@ public abstract class Dates {
      * @param birthday 生日
      * @return 年龄
      */
-    @Assert
+    @Nonnull
     public static int getAge(Date birthday) {
         Calendar calendar = Calendar.getInstance();
         int currentYear = calendar.get(Calendar.YEAR);
@@ -165,7 +167,7 @@ public abstract class Dates {
      * @param date 日期
      * @return 年份
      */
-    @Assert
+    @Nonnull
     public static int getYear(Date date) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
@@ -187,7 +189,7 @@ public abstract class Dates {
      * @param date 日期
      * @return 月份
      */
-    @Assert
+    @Nonnull
     public static int getMonth(Date date) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
@@ -209,7 +211,7 @@ public abstract class Dates {
      * @param date 日期
      * @return 日
      */
-    @Assert
+    @Nonnull
     public static int getDay(Date date) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
@@ -231,7 +233,7 @@ public abstract class Dates {
      * @param date 日期
      * @return 小时
      */
-    @Assert
+    @Nonnull
     public static int getHour(Date date) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
@@ -253,7 +255,7 @@ public abstract class Dates {
      * @param date 日期
      * @return 分钟
      */
-    @Assert
+    @Nonnull
     public static int getMinute(Date date) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
@@ -275,7 +277,7 @@ public abstract class Dates {
      * @param date 日期
      * @return 秒
      */
-    @Assert
+    @Nonnull
     public static int getSecond(Date date) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
@@ -297,7 +299,7 @@ public abstract class Dates {
      * @param date 日期
      * @return 毫秒
      */
-    @Assert
+    @Nonnull
     public static int getMillisecond(Date date) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
@@ -319,10 +321,7 @@ public abstract class Dates {
      * @param year 年份
      * @return 日期
      */
-    public static Date getFirstDate(int year) {
-        if (year < 1970) {
-            throw new IllegalArgumentException("Argument year must not be less than 1970, got: " + year);
-        }
+    public static Date getFirstDate(@Min(1970) int year) {
         return parse(new StringBuilder().append(year).append("-01-").append("01").toString());
     }
 
@@ -332,10 +331,7 @@ public abstract class Dates {
      * @param time 时间长度毫秒数
      * @return 带单位的时间表示
      */
-    public static String toUnitTime(long time) {
-        if (time < 0) {
-            throw new IllegalArgumentException("Argument time must not be less than 0, got: " + time);
-        }
+    public static String toUnitTime(@Min(0) long time) {
         StringBuilder buffer = new StringBuilder();
         if (time >= 86400000) {
             buffer.append(decimalFormat.get().format(time / 86400000d)).append('d');

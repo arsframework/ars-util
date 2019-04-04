@@ -4,7 +4,9 @@ import java.io.*;
 import java.util.*;
 import java.text.DecimalFormat;
 
-import com.arsframework.annotation.Assert;
+import com.arsframework.annotation.Min;
+import com.arsframework.annotation.Nonnull;
+import com.arsframework.annotation.Nonempty;
 
 /**
  * 文件处理工具类
@@ -24,6 +26,7 @@ public abstract class Files {
      * @param file 文件对象
      * @return 文件目录对象
      */
+    @Nonnull
     public static File mkdirs(File file) {
         File path = file.getParentFile();
         if (path != null && !path.exists()) {
@@ -37,7 +40,7 @@ public abstract class Files {
      *
      * @param file 源文件/文件目录
      */
-    @Assert
+    @Nonnull
     public static void delete(File file) {
         if (file.exists()) {
             if (file.isDirectory()) {
@@ -56,7 +59,7 @@ public abstract class Files {
      * @param target 目标文件目录
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void copy(File source, File target) throws IOException {
         if (source.exists()) {
             if (source.isDirectory()) {
@@ -79,7 +82,7 @@ public abstract class Files {
      * @param source 源文件/文件目录
      * @param target 目标文件目录
      */
-    @Assert
+    @Nonnull
     public static void move(File source, File target) {
         if (source.exists()) {
             if (source.isDirectory()) {
@@ -103,7 +106,7 @@ public abstract class Files {
      * @param path 文件路径
      * @return 文件名称
      */
-    @Assert
+    @Nonnull
     public static String getName(String path) {
         for (int i = path.length() - 1; i > -1; i--) {
             if (path.charAt(i) == '\\' || path.charAt(i) == '/') {
@@ -119,7 +122,7 @@ public abstract class Files {
      * @param path 文件路径
      * @return 后缀名
      */
-    @Assert
+    @Nonnull
     public static String getSuffix(String path) {
         int index = path.lastIndexOf('.');
         return index > 0 && index < path.length() - 1 ? path.substring(index + 1) : null;
@@ -132,7 +135,7 @@ public abstract class Files {
      * @return 文件内容
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static String getString(File file) throws IOException {
         try (OutputStream os = new ByteArrayOutputStream()) {
             Streams.write(file, os);
@@ -147,7 +150,7 @@ public abstract class Files {
      * @return 文件内容
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static String getString(Nfile file) throws IOException {
         try (OutputStream os = new ByteArrayOutputStream()) {
             Streams.write(file, os);
@@ -162,7 +165,7 @@ public abstract class Files {
      * @return 行列表
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static List<String> getLines(File file) throws IOException {
         try (InputStream is = new FileInputStream(file)) {
             return getLines(is);
@@ -176,7 +179,7 @@ public abstract class Files {
      * @return 行列表
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static List<String> getLines(Nfile file) throws IOException {
         try (InputStream is = file.getInputStream()) {
             return getLines(is);
@@ -190,7 +193,7 @@ public abstract class Files {
      * @return 行列表
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static List<String> getLines(Reader reader) throws IOException {
         List<String> lines = new LinkedList<>();
         try (BufferedReader buffer = new BufferedReader(reader)) {
@@ -209,7 +212,7 @@ public abstract class Files {
      * @return 行列表
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static List<String> getLines(InputStream stream) throws IOException {
         return getLines(new InputStreamReader(stream));
     }
@@ -220,10 +223,7 @@ public abstract class Files {
      * @param size 文件大小
      * @return 带单位的文件大小表示
      */
-    public static String toUnitSize(long size) {
-        if (size < 0) {
-            throw new IllegalArgumentException("Argument size must not be less than 0, got: " + size);
-        }
+    public static String toUnitSize(@Min(0) long size) {
         StringBuilder buffer = new StringBuilder();
         if (size >= 1073741824) {
             buffer.append(decimalFormat.get().format(size / 1073741824d)).append("GB");
@@ -304,7 +304,8 @@ public abstract class Files {
             this(file.getPath().replace("\\", "/"), file.getName(), file.length(), new Date(file.lastModified()), file.isDirectory());
         }
 
-        public Describe(String path, String name, long size, Date modified, boolean directory) {
+        @Nonnull
+        public Describe(String path, String name, @Min(0) long size, Date modified, boolean directory) {
             this.path = path;
             this.name = name;
             this.size = size;
@@ -314,7 +315,7 @@ public abstract class Files {
 
         @Override
         public String toString() {
-            return this.path == null ? super.toString() : this.path;
+            return this.path;
         }
     }
 
@@ -325,7 +326,7 @@ public abstract class Files {
         public final Property property; // 比较属性
         public final Object value; // 比较值
 
-        @Assert
+        @Nonnull
         public Equal(Property property, Object value) {
             this.property = property;
             this.value = value;
@@ -340,7 +341,7 @@ public abstract class Files {
         public final Property property; // 比较属性
         public final Object value; // 比较值
 
-        @Assert
+        @Nonnull
         public NotEqual(Property property, Object value) {
             this.property = property;
             this.value = value;
@@ -355,7 +356,7 @@ public abstract class Files {
         public final Property property; // 比较属性
         public final Object value; // 比较值
 
-        @Assert
+        @Nonnull
         public Large(Property property, Object value) {
             this.property = property;
             this.value = value;
@@ -370,7 +371,7 @@ public abstract class Files {
         public final Property property; // 比较属性
         public final Object value; // 比较值
 
-        @Assert
+        @Nonnull
         public LargeEqual(Property property, Object value) {
             this.property = property;
             this.value = value;
@@ -385,7 +386,7 @@ public abstract class Files {
         public final Property property; // 比较属性
         public final Object value; // 比较值
 
-        @Assert
+        @Nonnull
         public Less(Property property, Object value) {
             this.property = property;
             this.value = value;
@@ -400,7 +401,7 @@ public abstract class Files {
         public final Property property; // 比较属性
         public final Object value; // 比较值
 
-        @Assert
+        @Nonnull
         public LessEqual(Property property, Object value) {
             this.property = property;
             this.value = value;
@@ -416,7 +417,7 @@ public abstract class Files {
         public final Object low; // 低值
         public final Object high; // 高值
 
-        @Assert
+        @Nonnull
         public Between(Property property, Object low, Object high) {
             this.property = property;
             this.low = low;
@@ -437,7 +438,7 @@ public abstract class Files {
             this(property, value, Position.ANY);
         }
 
-        @Assert
+        @Nonnull
         public Like(Property property, String value, Position position) {
             this.property = property;
             this.value = value;
@@ -473,7 +474,7 @@ public abstract class Files {
     public static class Order implements Condition {
         public final Property property; // 排序属性
 
-        @Assert
+        @Nonnull
         public Order(Property property) {
             this.property = property;
         }
@@ -619,7 +620,7 @@ public abstract class Files {
      * @param value    值
      * @return 转换后的值
      */
-    public static Object valueAdapter(@Assert Property property, Object value) {
+    public static Object valueAdapter(@Nonnull Property property, Object value) {
         boolean array = value != null && value.getClass().isArray();
         if (property == Property.NAME) {
             return array ? Objects.toArray(String.class, value) : Objects.toObject(String.class, value);
@@ -638,7 +639,7 @@ public abstract class Files {
      * @param less     小于条件
      * @return true/false
      */
-    @Assert
+    @Nonnull
     public static boolean isSatisfy(Describe describe, Less less) {
         if (less.property == Property.NAME && describe.name.compareToIgnoreCase((String) less.value) > -1) {
             return false;
@@ -657,7 +658,7 @@ public abstract class Files {
      * @param like     模糊匹配条件
      * @return true/false
      */
-    @Assert
+    @Nonnull
     public static boolean isSatisfy(Describe describe, Like like) {
         String value = like.value.toUpperCase();
         String source;
@@ -687,7 +688,7 @@ public abstract class Files {
      * @param equal    等于条件
      * @return true/false
      */
-    @Assert
+    @Nonnull
     public static boolean isSatisfy(Describe describe, Equal equal) {
         int matched = 0;
         if (equal.property == Property.NAME) {
@@ -745,7 +746,7 @@ public abstract class Files {
      * @param large    大于条件
      * @return true/false
      */
-    @Assert
+    @Nonnull
     public static boolean isSatisfy(Describe describe, Large large) {
         if (large.property == Property.NAME && describe.name.compareToIgnoreCase((String) large.value) < 0) {
             return false;
@@ -764,7 +765,7 @@ public abstract class Files {
      * @param between  大于小于条件
      * @return true/false
      */
-    @Assert
+    @Nonnull
     public static boolean isSatisfy(Describe describe, Between between) {
         if (between.property == Property.NAME && (describe.name.compareToIgnoreCase((String) between.low) < 0
                 || describe.name.compareToIgnoreCase((String) between.high) > 0)) {
@@ -786,7 +787,7 @@ public abstract class Files {
      * @param notEqual 不等于条件
      * @return true/false
      */
-    @Assert
+    @Nonnull
     public static boolean isSatisfy(Describe describe, NotEqual notEqual) {
         if (notEqual.property == Property.NAME) {
             if (notEqual.value instanceof String[]) {
@@ -839,7 +840,7 @@ public abstract class Files {
      * @param lessEqual 小于或等于条件
      * @return true/false
      */
-    @Assert
+    @Nonnull
     public static boolean isSatisfy(Describe describe, LessEqual lessEqual) {
         if (lessEqual.property == Property.NAME && describe.name.compareToIgnoreCase((String) lessEqual.value) > 0) {
             return false;
@@ -858,7 +859,7 @@ public abstract class Files {
      * @param largeEqual 大于或等于条件
      * @return true/false
      */
-    @Assert
+    @Nonnull
     public static boolean isSatisfy(Describe describe, LargeEqual largeEqual) {
         if (largeEqual.property == Property.NAME && describe.name.compareToIgnoreCase((String) largeEqual.value) < 0) {
             return false;
@@ -877,7 +878,7 @@ public abstract class Files {
      * @param conditions 查询条件数组
      * @return true/false
      */
-    @Assert
+    @Nonempty
     public static boolean isSatisfy(Describe describe, Condition... conditions) {
         for (Condition condition : conditions) {
             if (condition instanceof Less && !isSatisfy(describe, (Less) condition)) {
@@ -909,7 +910,7 @@ public abstract class Files {
      * @param orders 排序对象
      * @return 比较结果
      */
-    @Assert
+    @Nonempty
     public static int compare(File file, File other, Order... orders) {
         for (Order order : orders) {
             int compare = 0;
@@ -943,7 +944,7 @@ public abstract class Files {
      * @param orders   排序对象
      * @return 比较结果
      */
-    @Assert
+    @Nonempty
     public static int compare(Describe describe, Describe other, Order... orders) {
         for (Order order : orders) {
             int compare = 0;
@@ -969,7 +970,7 @@ public abstract class Files {
      * @param files  文件对象数组
      * @param orders 排序对象数组
      */
-    @Assert
+    @Nonempty
     public static void sort(File[] files, Order... orders) {
         Arrays.sort(files, (File o1, File o2) -> Files.compare(o1, o2, orders));
     }
@@ -980,7 +981,7 @@ public abstract class Files {
      * @param describes 文件描述对象数组
      * @param orders    排序对象数组
      */
-    @Assert
+    @Nonempty
     public static void sort(Describe[] describes, Order... orders) {
         Arrays.sort(describes, (Describe o1, Describe o2) -> Files.compare(o1, o2, orders));
     }
@@ -991,7 +992,7 @@ public abstract class Files {
      * @param describes 文件描述对象列表
      * @param orders    排序对象数组
      */
-    @Assert
+    @Nonempty
     public static void sort(List<Describe> describes, Order... orders) {
         Collections.sort(describes, (Describe o1, Describe o2) -> Files.compare(o1, o2, orders));
     }

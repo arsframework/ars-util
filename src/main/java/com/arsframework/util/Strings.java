@@ -6,7 +6,9 @@ import java.net.URL;
 import java.math.BigDecimal;
 import java.util.regex.Pattern;
 
-import com.arsframework.annotation.Assert;
+import com.arsframework.annotation.Min;
+import com.arsframework.annotation.Nonnull;
+import com.arsframework.annotation.Nonempty;
 
 /**
  * 字符串处理工具类
@@ -73,7 +75,7 @@ public abstract class Strings {
      * @param hex 16进制字符串
      * @return 字节数组
      */
-    @Assert
+    @Nonnull
     public static byte[] hex2byte(String hex) {
         int length = hex.length() / 2;
         byte[] bytes = new byte[length];
@@ -89,7 +91,7 @@ public abstract class Strings {
      * @param bytes 字节数组
      * @return 16进制字符串
      */
-    @Assert
+    @Nonnull
     public static String byte2hex(byte[] bytes) {
         StringBuilder buffer = new StringBuilder();
         for (int i = 0; i < bytes.length; i++) {
@@ -109,11 +111,8 @@ public abstract class Strings {
      * @param radix 单元长度
      * @return 16进制字符串
      */
-    @Assert
-    public static String char2hex(char[] chars, int radix) {
-        if (radix < 1) {
-            throw new IllegalArgumentException("Argument radix must not be less than 1, got: " + radix);
-        }
+    @Nonnull
+    public static String char2hex(char[] chars, @Min(1) int radix) {
         StringBuilder buffer = new StringBuilder();
         for (char c : chars) {
             String s = Integer.toHexString(c);
@@ -133,11 +132,8 @@ public abstract class Strings {
      * @param radix 单元长度
      * @return 10进制字符数组
      */
-    @Assert
-    public static char[] hex2char(String hex, int radix) {
-        if (radix < 1) {
-            throw new IllegalArgumentException("Argument radix must not be less than 1, got: " + radix);
-        }
+    @Nonnull
+    public static char[] hex2char(String hex, @Min(1) int radix) {
         int len = hex.length() / radix;
         char[] chars = new char[len];
         for (int i = 0; i < len; i++) {
@@ -152,7 +148,7 @@ public abstract class Strings {
      * @param unicode unicode字符串
      * @return 字符数组
      */
-    @Assert
+    @Nonnull
     public static char[] unicode2char(String unicode) {
         int index = -1, _index = -1;
         StringBuilder buffer = new StringBuilder();
@@ -223,7 +219,7 @@ public abstract class Strings {
      * @param sign   目标字符串
      * @return 次数
      */
-    @Assert
+    @Nonnull
     public static int count(CharSequence source, char sign) {
         int count = 0;
         if (!isEmpty(source)) {
@@ -243,7 +239,7 @@ public abstract class Strings {
      * @param sign   目标字符串
      * @return 次数
      */
-    @Assert
+    @Nonnull
     public static int count(CharSequence source, CharSequence sign) {
         int count = 0;
         if (!isEmpty(source) && !isEmpty(sign)) {
@@ -267,7 +263,7 @@ public abstract class Strings {
      * @param source 源字符串
      * @return 清理后字符串
      */
-    @Assert
+    @Nonnull
     public static String clean(CharSequence source) {
         if (source.length() == 0) {
             return source.toString();
@@ -299,7 +295,7 @@ public abstract class Strings {
      * @param sign  链接标记
      * @return 连接后的字符串
      */
-    @Assert
+    @Nonnull
     public static String join(Object[] array, CharSequence sign) {
         return array.length == 0 ? EMPTY_STRING : join(Arrays.asList(array), sign);
     }
@@ -321,7 +317,7 @@ public abstract class Strings {
      * @param sign       链接标记
      * @return 连接后的字符串
      */
-    @Assert
+    @Nonnull
     public static String join(Collection<?> collection, CharSequence sign) {
         if (collection.isEmpty()) {
             return EMPTY_STRING;
@@ -343,7 +339,7 @@ public abstract class Strings {
      * @param pattern 匹配模式
      * @return true/false
      */
-    @Assert
+    @Nonnull
     public static boolean matches(String source, String pattern) {
         if ((source.isEmpty() && pattern.isEmpty()) || (pattern.length() == 1 && pattern.charAt(0) == '*')) {
             return true;
@@ -389,7 +385,7 @@ public abstract class Strings {
      * @param source 源字符串
      * @return 转义后字符串
      */
-    @Assert
+    @Nonnull
     public static String escape(CharSequence source) {
         if (source.length() == 0) {
             return source.toString();
@@ -438,9 +434,9 @@ public abstract class Strings {
      * @param path 路径
      * @return 实际路径
      */
-    @Assert
+    @Nonnull
     public static String toRealPath(String path) {
-        if (isEmpty(path)) {
+        if (path.isEmpty()) {
             return CURRENT_PATH;
         } else if (path.startsWith("./")) {
             return new File(CURRENT_PATH, path.substring(1)).getPath();
@@ -499,7 +495,7 @@ public abstract class Strings {
      * @param source 源字符串
      * @return 对象列表
      */
-    @Assert
+    @Nonnull
     public static List<?> toList(CharSequence source) {
         if (isBlank(source)) {
             return new ArrayList<>(0);
@@ -585,19 +581,19 @@ public abstract class Strings {
     public static abstract class AbstractConditionWrapper implements Condition {
         private final List<Condition> conditions = new LinkedList<>(); // 条件集合
 
-        @Assert(nonempty = true)
+        @Nonempty
         public AbstractConditionWrapper(Condition... conditions) {
             for (Condition condition : conditions) {
                 this.conditions.add(condition);
             }
         }
 
-        @Assert(nonempty = true)
+        @Nonempty
         public AbstractConditionWrapper(Collection<Condition> conditions) {
             this.conditions.addAll(conditions);
         }
 
-        @Assert(nonempty = true)
+        @Nonempty
         public AbstractConditionWrapper(Map<String, Object> conditions) {
             for (Map.Entry<String, Object> entry : conditions.entrySet()) {
                 this.conditions.add(new Match(entry.getKey(), entry.getValue()));
@@ -611,7 +607,7 @@ public abstract class Strings {
          */
         protected abstract String getSeparator();
 
-        @Assert
+        @Nonnull
         public void addCondition(Condition condition) {
             this.conditions.add(condition);
         }
@@ -702,7 +698,7 @@ public abstract class Strings {
         public final String key;
         public final Object value;
 
-        public Match(@Assert(nonempty = true) String key, Object value) {
+        public Match(@Nonempty String key, Object value) {
             this.key = key;
             this.value = value;
         }
@@ -721,7 +717,7 @@ public abstract class Strings {
      * @param expression 条件表达式
      * @return 条件逻辑对象
      */
-    @Assert(nonempty = true)
+    @Nonempty
     public static Condition condition(String expression) {
         boolean continued = false;
         int offset = 0, start = 0, end = 0;

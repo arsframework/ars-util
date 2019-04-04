@@ -15,7 +15,8 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
-import com.arsframework.annotation.Assert;
+import com.arsframework.annotation.Min;
+import com.arsframework.annotation.Nonnull;
 
 /**
  * JSON处理工具类
@@ -47,7 +48,7 @@ public abstract class Jsons {
          * @param level  当前层级
          * @throws IOException IO操作异常
          */
-        protected void write(@Assert JsonWriter writer, Object object, int level) throws IOException {
+        protected void write(@Nonnull JsonWriter writer, Object object, @Min(1) int level) throws IOException {
             if (object == null || (this.depth > 0 && level > this.depth)) {
                 writer.nullValue();
             } else if (object instanceof CharSequence) {

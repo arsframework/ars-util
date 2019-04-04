@@ -6,7 +6,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 
-import com.arsframework.annotation.Assert;
+import com.arsframework.annotation.Nonnull;
 
 /**
  * 数据流处理工具类
@@ -38,7 +38,7 @@ public abstract class Streams {
      * @return 字节数组
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static byte[] serialize(Serializable object) throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try (ObjectOutputStream os = new ObjectOutputStream(bos)) {
@@ -55,7 +55,7 @@ public abstract class Streams {
      * @throws IOException            IO操作异常
      * @throws ClassNotFoundException 类不存在异常
      */
-    @Assert
+    @Nonnull
     public static Serializable deserialize(byte[] bytes) throws IOException, ClassNotFoundException {
         return bytes.length == 0 ? null : (Serializable) new ObjectInputStream(new ByteArrayInputStream(bytes)).readObject();
     }
@@ -68,7 +68,7 @@ public abstract class Streams {
      * @throws IOException            IO操作异常
      * @throws ClassNotFoundException 类不存在异常
      */
-    @Assert
+    @Nonnull
     public static Serializable deserialize(InputStream input) throws IOException, ClassNotFoundException {
         return (Serializable) new ObjectInputStream(input).readObject();
     }
@@ -81,7 +81,7 @@ public abstract class Streams {
      * @throws IOException            IO操作异常
      * @throws ClassNotFoundException 类不存在异常
      */
-    @Assert
+    @Nonnull
     public static Serializable deserialize(ReadableByteChannel channel) throws IOException, ClassNotFoundException {
         int n;
         ByteBuffer buffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
@@ -100,7 +100,7 @@ public abstract class Streams {
      * @return 字节数组
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static byte[] getBytes(InputStream input) throws IOException {
         int n;
         byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
@@ -119,7 +119,7 @@ public abstract class Streams {
      * @return 字节数组
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static byte[] getBytes(File file) throws IOException {
         try (InputStream is = new FileInputStream(file)) {
             return getBytes(is);
@@ -133,7 +133,7 @@ public abstract class Streams {
      * @return 字节数组
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static byte[] getBytes(Nfile file) throws IOException {
         try (InputStream is = file.getInputStream()) {
             return getBytes(is);
@@ -147,7 +147,7 @@ public abstract class Streams {
      * @return 字节数组
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static byte[] getBytes(ReadableByteChannel channel) throws IOException {
         int n;
         ByteBuffer buffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
@@ -178,7 +178,7 @@ public abstract class Streams {
      * @param append 是否追加
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(byte[] source, File target, boolean append) throws IOException {
         Files.mkdirs(target);
         try (FileOutputStream os = new FileOutputStream(target, append)) {
@@ -205,7 +205,7 @@ public abstract class Streams {
      * @param append 是否追加
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(File source, File target, boolean append) throws IOException {
         if (source.exists()) {
             Files.mkdirs(target);
@@ -235,7 +235,7 @@ public abstract class Streams {
      * @param append 是否追加
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(File source, OutputStream target, boolean append) throws IOException {
         try (InputStream is = new FileInputStream(source);) {
             write(is, target);
@@ -249,7 +249,7 @@ public abstract class Streams {
      * @param target 目标输出流
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(File source, WritableByteChannel target) throws IOException {
         try (InputStream is = new FileInputStream(source)) {
             write(is, target);
@@ -275,7 +275,7 @@ public abstract class Streams {
      * @param append 是否追加
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(Nfile source, File target, boolean append) throws IOException {
         if (source.isLocal()) {
             write(source.getLocal(), target, append);
@@ -293,7 +293,7 @@ public abstract class Streams {
      * @param target 目标输出流
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(Nfile source, OutputStream target) throws IOException {
         try (InputStream is = source.getInputStream()) {
             write(is, target);
@@ -307,7 +307,7 @@ public abstract class Streams {
      * @param target 目标输出流
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(Nfile source, WritableByteChannel target) throws IOException {
         try (InputStream is = source.getInputStream()) {
             write(is, target);
@@ -333,7 +333,7 @@ public abstract class Streams {
      * @param append 是否追加
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(InputStream source, File target, boolean append) throws IOException {
         Files.mkdirs(target);
         try (OutputStream os = new FileOutputStream(target, append)) {
@@ -348,7 +348,7 @@ public abstract class Streams {
      * @param target 目标输出流
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(InputStream source, OutputStream target) throws IOException {
         int n;
         byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
@@ -364,7 +364,7 @@ public abstract class Streams {
      * @param target 目标输出流
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(InputStream source, WritableByteChannel target) throws IOException {
         byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
         while (source.read(buffer) > 0) {
@@ -391,7 +391,7 @@ public abstract class Streams {
      * @param append 是否追加
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(ReadableByteChannel source, File target, boolean append) throws IOException {
         Files.mkdirs(target);
         try (OutputStream os = new FileOutputStream(target, append)) {
@@ -406,7 +406,7 @@ public abstract class Streams {
      * @param target 目标输出流
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(ReadableByteChannel source, OutputStream target) throws IOException {
         int n;
         ByteBuffer buffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
@@ -422,7 +422,7 @@ public abstract class Streams {
      * @param target 目标套接字写通道
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(ReadableByteChannel source, WritableByteChannel target) throws IOException {
         int n;
         ByteBuffer buffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);

@@ -5,9 +5,8 @@ import javax.crypto.*;
 import javax.crypto.spec.DESKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import com.arsframework.annotation.Nonnull;
 import org.apache.commons.codec.binary.Base64;
-
-import com.arsframework.annotation.Assert;
 
 /**
  * 数据加解密处理工具类
@@ -24,7 +23,7 @@ public abstract class Secrets {
      * @return 密码处理器
      * @throws GeneralSecurityException 密码处理异常
      */
-    @Assert
+    @Nonnull
     public static Cipher buildDESCipher(String key, int mode) throws GeneralSecurityException {
         DESKeySpec spec = new DESKeySpec(key.getBytes());
         SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("DES");
@@ -42,7 +41,7 @@ public abstract class Secrets {
      * @return 密码处理器
      * @throws GeneralSecurityException 密码处理异常
      */
-    @Assert
+    @Nonnull
     public static Cipher buildAESCipher(String key, int mode) throws GeneralSecurityException {
         KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
         keyGenerator.init(128, new SecureRandom(key.getBytes()));
@@ -59,7 +58,7 @@ public abstract class Secrets {
      * @return 密文
      * @throws GeneralSecurityException 加密异常
      */
-    @Assert
+    @Nonnull
     public static String md5(String source) throws GeneralSecurityException {
         MessageDigest digest = MessageDigest.getInstance("MD5");
         digest.update(source.getBytes());
@@ -73,7 +72,7 @@ public abstract class Secrets {
      * @return 密文
      * @throws GeneralSecurityException 加密异常
      */
-    @Assert
+    @Nonnull
     public static String sha1(String source) throws GeneralSecurityException {
         MessageDigest digest = MessageDigest.getInstance("SHA-1");
         digest.update(source.getBytes());
@@ -88,7 +87,7 @@ public abstract class Secrets {
      * @return 密文
      * @throws GeneralSecurityException 加密异常
      */
-    @Assert
+    @Nonnull
     public static String des(String source, String key) throws GeneralSecurityException {
         Cipher cipher = buildDESCipher(key, Cipher.ENCRYPT_MODE);
         return Base64.encodeBase64String(cipher.doFinal(source.getBytes()));
@@ -102,7 +101,7 @@ public abstract class Secrets {
      * @return 明文
      * @throws GeneralSecurityException 解密异常
      */
-    @Assert
+    @Nonnull
     public static String undes(String source, String key) throws GeneralSecurityException {
         Cipher cipher = buildDESCipher(key, Cipher.DECRYPT_MODE);
         return new String(cipher.doFinal(Base64.decodeBase64(source)));
@@ -116,7 +115,7 @@ public abstract class Secrets {
      * @return 密文（base64）
      * @throws GeneralSecurityException 加密异常
      */
-    @Assert
+    @Nonnull
     public static String aes(String source, String key) throws GeneralSecurityException {
         Cipher cipher = buildAESCipher(key, Cipher.ENCRYPT_MODE);
         return Base64.encodeBase64String(cipher.doFinal(source.getBytes()));
@@ -130,7 +129,7 @@ public abstract class Secrets {
      * @return 明文
      * @throws GeneralSecurityException 解密异常
      */
-    @Assert
+    @Nonnull
     public static String unaes(String source, String key) throws GeneralSecurityException {
         Cipher cipher = buildAESCipher(key, Cipher.DECRYPT_MODE);
         return new String(cipher.doFinal(Base64.decodeBase64(source)));

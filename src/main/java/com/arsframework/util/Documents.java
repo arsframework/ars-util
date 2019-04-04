@@ -39,8 +39,7 @@ import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfTemplate;
 import com.itextpdf.text.pdf.PdfContentByte;
 import com.itextpdf.text.DocumentException;
-
-import com.arsframework.annotation.Assert;
+import com.arsframework.annotation.Nonnull;
 
 /**
  * 文档处理工具类
@@ -151,7 +150,6 @@ public abstract class Documents {
 
         @Override
         public void detach(LayoutContext c) {
-
         }
 
         @Override
@@ -228,7 +226,7 @@ public abstract class Documents {
      * @param output PDF文件输出流
      * @throws TranscoderException 转换异常
      */
-    @Assert
+    @Nonnull
     public static void svg2pdf(String svg, OutputStream output) throws TranscoderException {
         svg2pdf(new StringReader(svg), new OutputStreamWriter(output));
     }
@@ -240,7 +238,7 @@ public abstract class Documents {
      * @param writer PDF输出流
      * @throws TranscoderException 转换异常
      */
-    @Assert
+    @Nonnull
     public static void svg2pdf(Reader reader, Writer writer) throws TranscoderException {
         Transcoder transcoder = new PDFTranscoder();
         transcoder.transcode(new TranscoderInput(reader), new TranscoderOutput(writer));
@@ -253,7 +251,7 @@ public abstract class Documents {
      * @param output PNG文件输出流
      * @throws TranscoderException 转换异常
      */
-    @Assert
+    @Nonnull
     public static void svg2png(String svg, OutputStream output) throws TranscoderException {
         svg2png(new StringReader(svg), new OutputStreamWriter(output));
     }
@@ -265,7 +263,7 @@ public abstract class Documents {
      * @param writer PNG输出流
      * @throws TranscoderException 转换异常
      */
-    @Assert
+    @Nonnull
     public static void svg2png(Reader reader, Writer writer) throws TranscoderException {
         Transcoder transcoder = new PNGTranscoder();
         transcoder.transcode(new TranscoderInput(reader), new TranscoderOutput(writer));
@@ -278,7 +276,7 @@ public abstract class Documents {
      * @param output JPEG文件输出流
      * @throws TranscoderException 转换异常
      */
-    @Assert
+    @Nonnull
     public static void svg2jpeg(String svg, OutputStream output) throws TranscoderException {
         svg2jpeg(new StringReader(svg), new OutputStreamWriter(output));
     }
@@ -290,7 +288,7 @@ public abstract class Documents {
      * @param writer JPEG输出流
      * @throws TranscoderException 转换异常
      */
-    @Assert
+    @Nonnull
     public static void svg2jpeg(Reader reader, Writer writer) throws TranscoderException {
         Transcoder transcoder = new JPEGTranscoder();
         transcoder.transcode(new TranscoderInput(reader), new TranscoderOutput(writer));
@@ -305,7 +303,7 @@ public abstract class Documents {
      * @throws DocumentException 文档操作异常
      * @throws IOException       IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void html2pdf(String html, OutputStream output, String... fonts) throws DocumentException, IOException {
         ITextRenderer renderer = new ITextRenderer();
         ChainingReplacedElementFactory chainingReplacedElementFactory = new ChainingReplacedElementFactory();

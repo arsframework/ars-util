@@ -3,7 +3,7 @@ package com.arsframework.util;
 import java.io.*;
 import java.util.Arrays;
 
-import com.arsframework.annotation.Assert;
+import com.arsframework.annotation.Nonempty;
 
 /**
  * 非完全本地文件对象
@@ -29,7 +29,7 @@ public class Nfile implements Serializable {
         this(file == null ? null : file.getName(), file);
     }
 
-    @Assert
+    @Nonempty
     public Nfile(String name, File file) {
         this.file = file;
         this.name = name;
@@ -37,7 +37,7 @@ public class Nfile implements Serializable {
         this.modified = file.lastModified();
     }
 
-    @Assert
+    @Nonempty
     public Nfile(String name, byte[] bytes) {
         this.name = name;
         this.bytes = bytes;
@@ -45,7 +45,7 @@ public class Nfile implements Serializable {
         this.modified = System.currentTimeMillis();
     }
 
-    @Assert
+    @Nonempty
     public Nfile(String name, InputStream input) throws IOException {
         this.name = name;
         this.input = input;

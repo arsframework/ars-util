@@ -20,7 +20,8 @@ import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
-import com.arsframework.annotation.Assert;
+import com.arsframework.annotation.Min;
+import com.arsframework.annotation.Nonnull;
 
 /**
  * Web处理工具类
@@ -51,7 +52,7 @@ public abstract class Webs {
      * @param name    Cookie名称
      * @return Cookie值
      */
-    @Assert
+    @Nonnull
     public static String getCookie(HttpServletRequest request, String name) {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
@@ -77,11 +78,7 @@ public abstract class Webs {
      * @param value    Cookie值
      * @param timeout  过期时间（秒）
      */
-    @Assert
-    public static void setCookie(HttpServletResponse response, String name, String value, int timeout) {
-        if (timeout < 0) {
-            throw new IllegalArgumentException("Argument timeout must not be less than 0, got: " + timeout);
-        }
+    public static void setCookie(@Nonnull HttpServletResponse response, @Nonnull String name, String value, @Min(0) int timeout) {
         try {
             Cookie cookie = new Cookie(name, value == null ? Strings.EMPTY_STRING : URLEncoder.encode(value, Strings.CHARSET_UTF8));
             cookie.setPath("/");
@@ -100,7 +97,7 @@ public abstract class Webs {
      * @param name     Cookie名称
      * @return Cookie值
      */
-    @Assert
+    @Nonnull
     public static String removeCookie(HttpServletRequest request, HttpServletResponse response, String name) {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
@@ -126,7 +123,7 @@ public abstract class Webs {
      * @param request HTTP请求对象
      * @return 资源地址
      */
-    @Assert
+    @Nonnull
     public static String getUri(HttpServletRequest request) {
         String uri = request.getRequestURI();
         String context = request.getContextPath();
@@ -139,7 +136,7 @@ public abstract class Webs {
      * @param request HTTP请求对象
      * @return URL地址
      */
-    @Assert
+    @Nonnull
     public static String getUrl(HttpServletRequest request) {
         StringBuilder url = new StringBuilder(request.getScheme()).append("://").append(request.getServerName())
                 .append(':').append(request.getServerPort());
@@ -154,7 +151,7 @@ public abstract class Webs {
      * @param key   拼接参数名称
      * @param value 拼接参数值
      */
-    private static void concatParam(@Assert StringBuilder param, @Assert String key, Object value) {
+    private static void concatParam(@Nonnull StringBuilder param, @Nonnull String key, Object value) {
         if (param.length() > 0) {
             param.append("&");
         }
@@ -170,7 +167,7 @@ public abstract class Webs {
      * @param map 键/值映射表
      * @return 参数字符串形式
      */
-    @Assert
+    @Nonnull
     public static String map2param(Map<?, ?> map) {
         if (map.isEmpty()) {
             return Strings.EMPTY_STRING;
@@ -199,6 +196,7 @@ public abstract class Webs {
      * @param param 参数字符串形式
      * @return 键/值映射
      */
+    @Nonnull
     public static Map<String, Object> param2map(String param) {
         if (param.isEmpty()) {
             return new HashMap<>(0);
@@ -239,7 +237,7 @@ public abstract class Webs {
      * @return 字节数组
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static byte[] getBytes(HttpServletRequest request) throws IOException {
         try (InputStream is = request.getInputStream()) {
             return Streams.getBytes(is);
@@ -252,8 +250,9 @@ public abstract class Webs {
      * @param url 资源地址
      * @return 参数键/值映射
      */
+    @Nonnull
     public static Map<String, Object> getUrlParameters(String url) {
-        int index = url == null ? -1 : url.indexOf('?');
+        int index = url.indexOf('?');
         return index < 0 ? new HashMap<>(0) : param2map(url.substring(index + 1));
     }
 
@@ -263,7 +262,7 @@ public abstract class Webs {
      * @param request HTTP请求对象
      * @return 参数键/值表
      */
-    @Assert
+    @Nonnull
     public static Map<String, Object> getFormParameters(HttpServletRequest request) {
         Map<String, Object> parameters = new HashMap<>();
         Enumeration<String> names = request.getParameterNames();
@@ -303,7 +302,7 @@ public abstract class Webs {
      * @return 参数键/值表
      * @throws FileUploadException 文件上传异常
      */
-    @Assert
+    @Nonnull
     public static Map<String, Object> getUploadParameters(HttpServletRequest request, ServletFileUpload uploader)
             throws FileUploadException {
         List<?> items = uploader.parseRequest(request);
@@ -372,7 +371,7 @@ public abstract class Webs {
      * @return 参数键/值表
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static Map<String, Object> getJsonParameters(HttpServletRequest request) throws IOException {
         String json = new String(getBytes(request));
         return json.isEmpty() ? Collections.emptyMap() : (Map<String, Object>) Jsons.parse(json);
@@ -402,7 +401,7 @@ public abstract class Webs {
      * @throws IOException      IO操作异常
      * @throws ServletException Servlet操作异常
      */
-    @Assert
+    @Nonnull
     public static void render(HttpServletRequest request, HttpServletResponse response, String template,
                               Map<String, Object> context) throws IOException, ServletException {
         try (OutputStream os = response.getOutputStream()) {
@@ -438,7 +437,7 @@ public abstract class Webs {
      * @throws IOException      IO操作异常
      * @throws ServletException Servlet操作异常
      */
-    @Assert
+    @Nonnull
     public static void render(HttpServletRequest request, HttpServletResponse response, String template, Map<String, Object> context,
                               OutputStream output) throws IOException, ServletException {
         template = template.replace("\\", "/").replace("//", "/");
@@ -505,7 +504,6 @@ public abstract class Webs {
      * @param file     文件对象
      * @throws IOException IO操作异常
      */
-    @Assert
     public static void write(HttpServletResponse response, File file) throws IOException {
         write(response, new Nfile(file));
     }
@@ -517,7 +515,7 @@ public abstract class Webs {
      * @param file     文件对象
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(HttpServletResponse response, Nfile file) throws IOException {
         String name = new String(file.getName().getBytes(), "ISO-8859-1");
         response.setContentType("application/octet-stream");
@@ -535,7 +533,7 @@ public abstract class Webs {
      * @param bytes    数据字节数组
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(HttpServletResponse response, byte[] bytes) throws IOException {
         try (OutputStream os = response.getOutputStream()) {
             os.write(bytes);
@@ -549,7 +547,7 @@ public abstract class Webs {
      * @param object   数据对象
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(HttpServletResponse response, Object object) throws IOException {
         try (OutputStream os = response.getOutputStream()) {
             os.write(Strings.toString(object).getBytes());
@@ -563,7 +561,7 @@ public abstract class Webs {
      * @param input    数据输入流
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(HttpServletResponse response, InputStream input) throws IOException {
         try (OutputStream os = response.getOutputStream()) {
             Streams.write(input, os);
@@ -577,7 +575,7 @@ public abstract class Webs {
      * @param input    数据输入通道
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(HttpServletResponse response, ReadableByteChannel input) throws IOException {
         try (OutputStream os = response.getOutputStream()) {
             Streams.write(input, os);
@@ -590,7 +588,7 @@ public abstract class Webs {
      * @param html Html内容
      * @return Html内容
      */
-    @Assert
+    @Nonnull
     public static String getSafeHtml(String html) {
         return html.isEmpty() ? html : SCRIPT_PATTERN.matcher(html).replaceAll(Strings.EMPTY_STRING);
     }
@@ -601,10 +599,21 @@ public abstract class Webs {
      * @param html html文本
      * @return 纯文本
      */
-    @Assert
+    @Deprecated
     public static String getText(String html) {
+        return getHtmlText(html);
+    }
+
+    /**
+     * 获取html中纯文本
+     *
+     * @param html html文本
+     * @return 纯文本
+     */
+    @Nonnull
+    public static String getHtmlText(String html) {
         try {
-            return html.isEmpty() ? html : getText(new StringReader(html));
+            return html.isEmpty() ? html : getHtmlText(new StringReader(html));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -617,8 +626,20 @@ public abstract class Webs {
      * @return 纯文本
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Deprecated
     public static String getText(Reader reader) throws IOException {
+        return getHtmlText(reader);
+    }
+
+    /**
+     * 获取html中纯文本
+     *
+     * @param reader html数据流
+     * @return 纯文本
+     * @throws IOException IO操作异常
+     */
+    @Nonnull
+    public static String getHtmlText(Reader reader) throws IOException {
         StringBuilder text = new StringBuilder();
         parserDelegator.parse(reader, new HTMLEditorKit.ParserCallback() {
 

@@ -6,7 +6,7 @@
 
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
 
     <name>ars-util</name>
@@ -22,7 +22,7 @@
         <dependency>
             <groupId>com.arsframework</groupId>
             <artifactId>ars-annotation</artifactId>
-            <version>1.0.0</version>
+            <version>1.2.0</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml -->

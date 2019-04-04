@@ -9,7 +9,9 @@ import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import com.arsframework.annotation.Assert;
+import com.arsframework.annotation.Min;
+import com.arsframework.annotation.Nonnull;
+import com.arsframework.annotation.Nonempty;
 
 /**
  * Excel处理工具类
@@ -57,7 +59,7 @@ public abstract class Excels {
      * @return Excel文件工作薄
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static Workbook getWorkbook(File file) throws IOException {
         try (InputStream is = new FileInputStream(file)) {
             return file.getName().endsWith(".xls") ? new HSSFWorkbook(is) : new XSSFWorkbook(is);
@@ -71,7 +73,7 @@ public abstract class Excels {
      * @return Excel文件工作薄
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static Workbook getWorkbook(Nfile file) throws IOException {
         try (InputStream is = file.getInputStream()) {
             return file.getName().endsWith(".xls") ? new HSSFWorkbook(is) : new XSSFWorkbook(is);
@@ -85,7 +87,7 @@ public abstract class Excels {
      * @param file     文件对象
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(Workbook workbook, File file) throws IOException {
         try (OutputStream output = new FileOutputStream(file)) {
             workbook.write(output);
@@ -101,7 +103,7 @@ public abstract class Excels {
      * @param file     文件对象
      * @throws IOException IO操作异常
      */
-    @Assert
+    @Nonnull
     public static void write(Workbook workbook, Nfile file) throws IOException {
         try (OutputStream output = file.getOutputStream()) {
             workbook.write(output);
@@ -116,7 +118,7 @@ public abstract class Excels {
      * @param source 原始单元格对象
      * @param target 目标单元格对象
      */
-    @Assert
+    @Nonnull
     public static void copy(Cell source, Cell target) {
         int type = source.getCellType();
         if (type == Cell.CELL_TYPE_BOOLEAN) {
@@ -138,7 +140,7 @@ public abstract class Excels {
      * @param source 原始行对象
      * @param target 目标行对象
      */
-    @Assert
+    @Nonnull
     public static void copy(Row source, Row target) {
         for (int i = 0; i < source.getLastCellNum(); i++) {
             copy(source.getCell(i), target.createCell(i));
@@ -168,7 +170,7 @@ public abstract class Excels {
      * @param cell Excel单元格对象
      * @return 值
      */
-    @Assert
+    @Nonnull
     public static Object getValue(Cell cell) {
         int type = cell.getCellType();
         if (type == Cell.CELL_TYPE_BOOLEAN) {
@@ -210,7 +212,7 @@ public abstract class Excels {
      * @param type 数据类型
      * @return 值数组
      */
-    @Assert
+    @Nonnull
     public static <T> T[] getValues(Row row, Class<T> type) {
         boolean empty = true;
         int columns = row.getLastCellNum(); // 从1开始
@@ -250,7 +252,7 @@ public abstract class Excels {
      * @param patterns 日期格式数组
      * @return 日期对象
      */
-    @Assert
+    @Nonnull
     public static Date getDate(Cell cell, String... patterns) {
         if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
             return cell.getDateCellValue();
@@ -265,7 +267,7 @@ public abstract class Excels {
      * @param cell 单元格对象
      * @return 数据文本
      */
-    @Assert
+    @Nonnull
     public static String getString(Cell cell) {
         Object value = getValue(cell);
         if (value != null && cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
@@ -281,7 +283,7 @@ public abstract class Excels {
      * @param cell 单元格对象
      * @return 数值
      */
-    @Assert
+    @Nonnull
     public static Double getNumber(Cell cell) {
         if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
             return cell.getNumericCellValue();
@@ -296,7 +298,7 @@ public abstract class Excels {
      * @param cell 单元格对象
      * @return true/false
      */
-    @Assert
+    @Nonnull
     public static Boolean getBoolean(Cell cell) {
         if (cell.getCellType() == Cell.CELL_TYPE_BOOLEAN) {
             return cell.getBooleanCellValue();
@@ -311,7 +313,7 @@ public abstract class Excels {
      * @param cell  Excel单元格对象
      * @param value 值
      */
-    public static void setValue(@Assert Cell cell, Object value) {
+    public static void setValue(@Nonnull Cell cell, Object value) {
         if (!Objects.isEmpty(value)) {
             if (value instanceof Object[]) {
                 value = Strings.join((Object[]) value, ",");
@@ -328,7 +330,7 @@ public abstract class Excels {
      * @param row    Excel行对象
      * @param values 单元格值数组
      */
-    @Assert
+    @Nonnull
     public static void setValues(Row row, Object... values) {
         for (int i = 0; i < values.length; i++) {
             setValue(row.createCell(i), values[i]);
@@ -341,7 +343,7 @@ public abstract class Excels {
      * @param row    Excel数据行对象
      * @param titles 标题数组
      */
-    @Assert
+    @Nonnull
     public static void setTitles(Row row, String... titles) {
         if (titles.length > 0) {
             Workbook workbook = row.getSheet().getWorkbook();
@@ -361,7 +363,7 @@ public abstract class Excels {
      * @param style  单元格样式
      * @param titles 标题数组
      */
-    @Assert
+    @Nonnull
     public static void setTitles(Row row, CellStyle style, String... titles) {
         if (titles.length > 0) {
             for (int c = 0; c < titles.length; c++) {
@@ -393,27 +395,14 @@ public abstract class Excels {
     }
 
     /**
-     * 验证下标开始行是否有效
-     *
-     * @param index 下标开始行
-     * @throws IllegalArgumentException 参数异常
-     */
-    public static void validateIndexValue(int index) throws IllegalArgumentException {
-        if (index < 0) {
-            throw new IllegalArgumentException("Argument index must not be less than 0, got: " + index);
-        }
-    }
-
-    /**
      * 获取Excel数据总行数
      *
      * @param sheet Excel sheet
      * @param index 开始数据行下标（从0开始）
      * @return 总行数
      */
-    @Assert
-    public static int getCount(Sheet sheet, int index) {
-        validateIndexValue(index);
+    @Nonnull
+    public static int getCount(Sheet sheet, @Min(0) int index) {
         return sheet.getPhysicalNumberOfRows() - index;
     }
 
@@ -424,9 +413,8 @@ public abstract class Excels {
      * @param index    开始数据行下标（从0开始）
      * @return 总行数
      */
-    @Assert
-    public static int getCount(Workbook workbook, int index) {
-        validateIndexValue(index);
+    @Nonnull
+    public static int getCount(Workbook workbook, @Min(0) int index) {
         int count = 0;
         for (int i = 0, sheets = workbook.getNumberOfSheets(); i < sheets; i++) {
             count += getCount(workbook.getSheetAt(i), index);
@@ -467,9 +455,8 @@ public abstract class Excels {
      * @param reader Excel对象实体读取接口
      * @return 对象实体列表
      */
-    @Assert
-    public static <M> List<M> getObjects(Sheet sheet, int index, Reader<M> reader) {
-        validateIndexValue(index);
+    @Nonnull
+    public static <M> List<M> getObjects(Sheet sheet, @Min(0) int index, Reader<M> reader) {
         return getObjects(sheet, index, new int[]{0}, reader);
     }
 
@@ -482,9 +469,8 @@ public abstract class Excels {
      * @param reader   Excel对象实体读取接口
      * @return 对象实体列表
      */
-    @Assert
-    public static <M> List<M> getObjects(Workbook workbook, int index, Reader<M> reader) {
-        validateIndexValue(index);
+    @Nonnull
+    public static <M> List<M> getObjects(Workbook workbook, @Min(0) int index, Reader<M> reader) {
         int[] count = {0};
         List<M> objects = new LinkedList<M>();
         for (int i = 0, sheets = workbook.getNumberOfSheets(); i < sheets; i++) {
@@ -503,9 +489,8 @@ public abstract class Excels {
      * @param reader Excel对象实体读取接口
      * @return 对象实体列表
      */
-    @Assert(nonempty = true)
-    private static <M> List<M> getObjects(Sheet sheet, int index, int[] count, Reader<M> reader) {
-        validateIndexValue(index);
+    @Nonempty
+    private static <M> List<M> getObjects(Sheet sheet, @Min(0) int index, int[] count, Reader<M> reader) {
         List<M> objects = new LinkedList<M>();
         for (int r = index, rows = sheet.getLastRowNum(); r <= rows; r++) {
             Row row = sheet.getRow(r);
@@ -555,9 +540,8 @@ public abstract class Excels {
      * @param writer  Excel对象实体写入接口
      * @return 设置数量
      */
-    @Assert
-    public static <M> int setObjects(Sheet sheet, int index, List<M> objects, Writer<M> writer) {
-        validateIndexValue(index);
+    @Nonnull
+    public static <M> int setObjects(Sheet sheet, @Min(0) int index, List<M> objects, Writer<M> writer) {
         int count = 0;
         for (int i = 0; i < objects.size(); i++) {
             M object = objects.get(i);
@@ -578,9 +562,8 @@ public abstract class Excels {
      * @param writer   Excel对象实体写入接口
      * @return 设置数量
      */
-    @Assert
-    public static <M> int setObjects(Workbook workbook, int index, List<M> objects, Writer<M> writer) {
-        validateIndexValue(index);
+    @Nonnull
+    public static <M> int setObjects(Workbook workbook, @Min(0) int index, List<M> objects, Writer<M> writer) {
         int count = 0;
         int r = index;
         Sheet sheet = null;
@@ -627,9 +610,8 @@ public abstract class Excels {
      * @param reader Excel对象实体读取接口
      * @return 读取数量
      */
-    @Assert
-    public static int iteration(Sheet sheet, int index, Reader<?> reader) {
-        validateIndexValue(index);
+    @Nonnull
+    public static int iteration(Sheet sheet, @Min(0) int index, Reader<?> reader) {
         int[] count = {0};
         iteration(sheet, index, count, reader);
         return count[0];
@@ -643,9 +625,8 @@ public abstract class Excels {
      * @param reader   Excel对象实体读取接口
      * @return 读取数量
      */
-    @Assert
-    public static int iteration(Workbook workbook, int index, Reader<?> reader) {
-        validateIndexValue(index);
+    @Nonnull
+    public static int iteration(Workbook workbook, @Min(0) int index, Reader<?> reader) {
         int[] count = {0};
         for (int i = 0, sheets = workbook.getNumberOfSheets(); i < sheets; i++) {
             iteration(workbook.getSheetAt(i), index, count, reader);
@@ -661,9 +642,8 @@ public abstract class Excels {
      * @param count  当前记录数（从1开始）
      * @param reader Excel对象实体读取接口
      */
-    @Assert
-    public static void iteration(Sheet sheet, int index, int[] count, Reader<?> reader) {
-        validateIndexValue(index);
+    @Nonnull
+    public static void iteration(Sheet sheet, @Min(0) int index, int[] count, Reader<?> reader) {
         for (int r = index, rows = sheet.getLastRowNum(); r <= rows; r++) {
             Row row = sheet.getRow(r);
             if (!isEmpty(row)) {
