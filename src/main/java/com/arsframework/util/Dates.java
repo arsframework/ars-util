@@ -51,6 +51,7 @@ public abstract class Dates {
      * @param pattern 日期格式转换模式字符串
      * @return 日期格式化处理对象
      */
+    @Nonempty
     public static DateFormat getDateFormat(String pattern) {
         Map<String, DateFormat> formats = dateFormats.get();
         DateFormat format = formats.get(pattern);
@@ -332,6 +333,9 @@ public abstract class Dates {
      * @return 带单位的时间表示
      */
     public static String toUnitTime(@Min(0) long time) {
+        if (time == 0) {
+            return "0ms";
+        }
         StringBuilder buffer = new StringBuilder();
         if (time >= 86400000) {
             buffer.append(decimalFormat.get().format(time / 86400000d)).append('d');

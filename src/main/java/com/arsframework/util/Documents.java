@@ -51,7 +51,7 @@ public abstract class Documents {
     /**
      * 连接替换元素工厂对象
      */
-    public static class ChainingReplacedElementFactory implements ReplacedElementFactory {
+    private static class ChainingReplacedElementFactory implements ReplacedElementFactory {
         private List<ReplacedElementFactory> replacedElementFactories = new ArrayList<>();
 
         public void addReplacedElementFactory(ReplacedElementFactory replacedElementFactory) {
@@ -95,7 +95,7 @@ public abstract class Documents {
     /**
      * SVG元素工厂对象
      */
-    public static class SVGReplacedElementFactory implements ReplacedElementFactory {
+    private static class SVGReplacedElementFactory implements ReplacedElementFactory {
 
         @Override
         public ReplacedElement createReplacedElement(LayoutContext c, BlockBox box, UserAgentCallback uac, int cssWidth, int cssHeight) {
@@ -136,7 +136,7 @@ public abstract class Documents {
     /**
      * SVG元素对象
      */
-    public static class SVGReplacedElement implements ITextReplacedElement {
+    private static class SVGReplacedElement implements ITextReplacedElement {
         private Point location = new Point(0, 0);
         private Document svg;
         private int cssWidth;

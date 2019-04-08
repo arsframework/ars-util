@@ -21,6 +21,11 @@ import com.arsframework.annotation.Nonempty;
  */
 public abstract class Excels {
     /**
+     * Excel日期格式数组
+     */
+    public static final String[] DATE_FORMATS = {"yyyy-MM-dd", "yyyy/MM/dd", "yyyyMMdd"};
+
+    /**
      * Excel读对象接口
      *
      * @param <T> 数据模型
@@ -50,6 +55,24 @@ public abstract class Excels {
          * @param count  当前记录数（从1开始）
          */
         void write(T entity, Row row, int count);
+    }
+
+    /**
+     * 获取Excel文件工作薄文件形式
+     *
+     * @param workbook Excel文件工作薄
+     * @param name     文件名称
+     * @return Excel文件对象
+     */
+    @Nonempty
+    public static Nfile getNfile(Workbook workbook, String name) {
+        return new Nfile(name) {
+
+            @Override
+            public void write(OutputStream output) throws IOException {
+                workbook.write(output);
+            }
+        };
     }
 
     /**
@@ -170,8 +193,10 @@ public abstract class Excels {
      * @param cell Excel单元格对象
      * @return 值
      */
-    @Nonnull
     public static Object getValue(Cell cell) {
+        if (cell == null) {
+            return null;
+        }
         int type = cell.getCellType();
         if (type == Cell.CELL_TYPE_BOOLEAN) {
             return cell.getBooleanCellValue();
@@ -212,8 +237,10 @@ public abstract class Excels {
      * @param type 数据类型
      * @return 值数组
      */
-    @Nonnull
-    public static <T> T[] getValues(Row row, Class<T> type) {
+    public static <T> T[] getValues(Row row, @Nonnull Class<T> type) {
+        if (row == null) {
+            return null;
+        }
         boolean empty = true;
         int columns = row.getLastCellNum(); // 从1开始
         T[] values = Objects.buildArray(type, columns);
@@ -242,7 +269,7 @@ public abstract class Excels {
      * @return 日期对象
      */
     public static Date getDate(Cell cell) {
-        return getDate(cell, Dates.DATE_PATTERN);
+        return getDate(cell, DATE_FORMATS);
     }
 
     /**
@@ -252,9 +279,10 @@ public abstract class Excels {
      * @param patterns 日期格式数组
      * @return 日期对象
      */
-    @Nonnull
-    public static Date getDate(Cell cell, String... patterns) {
-        if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+    public static Date getDate(Cell cell, @Nonempty String... patterns) {
+        if (cell == null) {
+            return null;
+        } else if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
             return cell.getDateCellValue();
         }
         String value = getString(cell);
@@ -267,7 +295,6 @@ public abstract class Excels {
      * @param cell 单元格对象
      * @return 数据文本
      */
-    @Nonnull
     public static String getString(Cell cell) {
         Object value = getValue(cell);
         if (value != null && cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
@@ -283,9 +310,10 @@ public abstract class Excels {
      * @param cell 单元格对象
      * @return 数值
      */
-    @Nonnull
     public static Double getNumber(Cell cell) {
-        if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+        if (cell == null) {
+            return null;
+        } else if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
             return cell.getNumericCellValue();
         }
         String value = getString(cell);
@@ -298,9 +326,10 @@ public abstract class Excels {
      * @param cell 单元格对象
      * @return true/false
      */
-    @Nonnull
     public static Boolean getBoolean(Cell cell) {
-        if (cell.getCellType() == Cell.CELL_TYPE_BOOLEAN) {
+        if (cell == null) {
+            return null;
+        } else if (cell.getCellType() == Cell.CELL_TYPE_BOOLEAN) {
             return cell.getBooleanCellValue();
         }
         String value = getString(cell);
@@ -643,7 +672,7 @@ public abstract class Excels {
      * @param reader Excel对象实体读取接口
      */
     @Nonnull
-    public static void iteration(Sheet sheet, @Min(0) int index, int[] count, Reader<?> reader) {
+    private static void iteration(Sheet sheet, @Min(0) int index, int[] count, Reader<?> reader) {
         for (int r = index, rows = sheet.getLastRowNum(); r <= rows; r++) {
             Row row = sheet.getRow(r);
             if (!isEmpty(row)) {

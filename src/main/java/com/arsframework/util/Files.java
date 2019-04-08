@@ -26,9 +26,8 @@ public abstract class Files {
      * @param file 文件对象
      * @return 文件目录对象
      */
-    @Nonnull
     public static File mkdirs(File file) {
-        File path = file.getParentFile();
+        File path = file == null ? null : file.getParentFile();
         if (path != null && !path.exists()) {
             path.mkdirs();
         }
@@ -40,9 +39,8 @@ public abstract class Files {
      *
      * @param file 源文件/文件目录
      */
-    @Nonnull
     public static void delete(File file) {
-        if (file.exists()) {
+        if (file != null && file.exists()) {
             if (file.isDirectory()) {
                 for (File child : file.listFiles()) {
                     delete(child);
@@ -61,18 +59,16 @@ public abstract class Files {
      */
     @Nonnull
     public static void copy(File source, File target) throws IOException {
-        if (source.exists()) {
-            if (source.isDirectory()) {
-                File path = new File(target, source.getName());
-                if (!path.exists()) {
-                    path.mkdirs();
-                }
-                for (File child : source.listFiles()) {
-                    copy(child, path);
-                }
-            } else {
-                Streams.write(source, new File(target, source.getName()));
+        if (source.isDirectory()) {
+            File path = new File(target, source.getName());
+            if (!path.exists()) {
+                path.mkdirs();
             }
+            for (File child : source.listFiles()) {
+                copy(child, path);
+            }
+        } else {
+            Streams.write(source, new File(target, source.getName()));
         }
     }
 
@@ -84,19 +80,17 @@ public abstract class Files {
      */
     @Nonnull
     public static void move(File source, File target) {
-        if (source.exists()) {
-            if (source.isDirectory()) {
-                File path = new File(target, source.getName());
-                if (!path.exists()) {
-                    path.mkdirs();
-                }
-                for (File child : source.listFiles()) {
-                    move(child, path);
-                }
-                source.delete();
-            } else {
-                source.renameTo(new File(target, source.getName()));
+        if (source.isDirectory()) {
+            File path = new File(target, source.getName());
+            if (!path.exists()) {
+                path.mkdirs();
             }
+            for (File child : source.listFiles()) {
+                move(child, path);
+            }
+            source.delete();
+        } else {
+            source.renameTo(new File(target, source.getName()));
         }
     }
 
@@ -106,11 +100,12 @@ public abstract class Files {
      * @param path 文件路径
      * @return 文件名称
      */
-    @Nonnull
     public static String getName(String path) {
-        for (int i = path.length() - 1; i > -1; i--) {
-            if (path.charAt(i) == '\\' || path.charAt(i) == '/') {
-                return path.substring(i + 1);
+        if (!Strings.isEmpty(path)) {
+            for (int i = path.length() - 1; i > -1; i--) {
+                if (path.charAt(i) == '\\' || path.charAt(i) == '/') {
+                    return path.substring(i + 1);
+                }
             }
         }
         return path;
@@ -122,9 +117,8 @@ public abstract class Files {
      * @param path 文件路径
      * @return 后缀名
      */
-    @Nonnull
     public static String getSuffix(String path) {
-        int index = path.lastIndexOf('.');
+        int index = path == null ? -1 : path.lastIndexOf('.');
         return index > 0 && index < path.length() - 1 ? path.substring(index + 1) : null;
     }
 
@@ -224,6 +218,9 @@ public abstract class Files {
      * @return 带单位的文件大小表示
      */
     public static String toUnitSize(@Min(0) long size) {
+        if (size == 0) {
+            return "0Byte";
+        }
         StringBuilder buffer = new StringBuilder();
         if (size >= 1073741824) {
             buffer.append(decimalFormat.get().format(size / 1073741824d)).append("GB");

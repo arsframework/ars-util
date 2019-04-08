@@ -222,7 +222,7 @@ public abstract class Strings {
     @Nonnull
     public static int count(CharSequence source, char sign) {
         int count = 0;
-        if (!isEmpty(source)) {
+        if (source.length() > 0) {
             for (int i = 0, slen = source.length(); i < slen; i++) {
                 if (source.charAt(i) == sign) {
                     count++;
@@ -242,7 +242,7 @@ public abstract class Strings {
     @Nonnull
     public static int count(CharSequence source, CharSequence sign) {
         int count = 0;
-        if (!isEmpty(source) && !isEmpty(sign)) {
+        if (source.length() > 0 && sign.length() > 0) {
             source:
             for (int i = 0, slen = source.length(), tlen = sign.length(); i < slen; i++) {
                 for (int j = 0, k = i + 0; j < tlen; j++, k = i + j) {
@@ -263,10 +263,9 @@ public abstract class Strings {
      * @param source 源字符串
      * @return 清理后字符串
      */
-    @Nonnull
     public static String clean(CharSequence source) {
-        if (source.length() == 0) {
-            return source.toString();
+        if (isEmpty(source)) {
+            return source == null ? null : EMPTY_STRING;
         }
         StringBuilder buffer = new StringBuilder();
         for (int i = 0, len = source.length(); i < len; i++) {
@@ -339,9 +338,10 @@ public abstract class Strings {
      * @param pattern 匹配模式
      * @return true/false
      */
-    @Nonnull
     public static boolean matches(String source, String pattern) {
-        if ((source.isEmpty() && pattern.isEmpty()) || (pattern.length() == 1 && pattern.charAt(0) == '*')) {
+        if (source == null || pattern == null) {
+            return false;
+        } else if ((source.isEmpty() && pattern.isEmpty()) || (pattern.length() == 1 && pattern.charAt(0) == '*')) {
             return true;
         }
         int matches = 0;
@@ -385,10 +385,9 @@ public abstract class Strings {
      * @param source 源字符串
      * @return 转义后字符串
      */
-    @Nonnull
     public static String escape(CharSequence source) {
-        if (source.length() == 0) {
-            return source.toString();
+        if (isEmpty(source)) {
+            return source == null ? null : EMPTY_STRING;
         }
         StringBuilder buffer = new StringBuilder();
         for (int i = 0; i < source.length(); i++) {
@@ -434,9 +433,8 @@ public abstract class Strings {
      * @param path 路径
      * @return 实际路径
      */
-    @Nonnull
     public static String toRealPath(String path) {
-        if (path.isEmpty()) {
+        if (isEmpty(path)) {
             return CURRENT_PATH;
         } else if (path.startsWith("./")) {
             return new File(CURRENT_PATH, path.substring(1)).getPath();
@@ -461,74 +459,6 @@ public abstract class Strings {
             return url.getFile();
         }
         return path;
-    }
-
-    /**
-     * 构建字符串列表正则表达式匹配模式
-     *
-     * @return 正则表达式匹配模式对象
-     */
-    private static Pattern buildListPattern() {
-        if (listPattern == null) {
-            synchronized (Strings.class) {
-                if (listPattern == null) {
-                    listPattern = Pattern.compile(" *\\[.*\\] *");
-                }
-            }
-        }
-        return listPattern;
-    }
-
-    /**
-     * 判断字符串是否为列表形式
-     *
-     * @param source 字符串对象
-     * @return true/false
-     */
-    public static boolean isList(CharSequence source) {
-        return isBlank(source) ? false : buildListPattern().matcher(source).matches();
-    }
-
-    /**
-     * 将字符串转换成列表对象
-     *
-     * @param source 源字符串
-     * @return 对象列表
-     */
-    @Nonnull
-    public static List<?> toList(CharSequence source) {
-        if (isBlank(source)) {
-            return new ArrayList<>(0);
-        }
-        int skip = 0;
-        StringBuilder buffer = new StringBuilder();
-        List<StringBuilder> buffers = new LinkedList<>();
-        for (int i = 1; i < source.length() - 1; i++) {
-            char c = source.charAt(i);
-            if (Character.isWhitespace(c)) {
-                continue;
-            } else if (c == ',' && skip == 0) {
-                buffers.add(buffer);
-                buffer = new StringBuilder();
-            } else {
-                buffer.append(c);
-                if (c == '[') {
-                    skip++;
-                } else if (c == ']') {
-                    skip--;
-                }
-            }
-        }
-        buffers.add(buffer);
-        List<Object> list = new ArrayList<>(buffers.size());
-        for (StringBuilder b : buffers) {
-            if (b.length() == 0) {
-                list.add(null);
-            } else {
-                list.add(isList(b) ? toList(b) : b.toString());
-            }
-        }
-        return list;
     }
 
     /**
@@ -712,13 +642,80 @@ public abstract class Strings {
     }
 
     /**
+     * 构建字符串列表正则表达式匹配模式
+     *
+     * @return 正则表达式匹配模式对象
+     */
+    private static Pattern buildListPattern() {
+        if (listPattern == null) {
+            synchronized (Strings.class) {
+                if (listPattern == null) {
+                    listPattern = Pattern.compile(" *\\[.*\\] *");
+                }
+            }
+        }
+        return listPattern;
+    }
+
+    /**
+     * 判断字符串是否为列表形式
+     *
+     * @param source 字符串对象
+     * @return true/false
+     */
+    public static boolean isList(CharSequence source) {
+        return isBlank(source) ? false : buildListPattern().matcher(source).matches();
+    }
+
+    /**
+     * 将字符串转换成列表对象
+     *
+     * @param source 源字符串
+     * @return 对象列表
+     */
+    @Nonempty
+    public static List<?> toList(CharSequence source) {
+        int skip = 0;
+        StringBuilder buffer = new StringBuilder();
+        List<StringBuilder> buffers = new LinkedList<>();
+        for (int i = 1; i < source.length() - 1; i++) {
+            char c = source.charAt(i);
+            if (Character.isWhitespace(c)) {
+                continue;
+            } else if (c == ',' && skip == 0) {
+                buffers.add(buffer);
+                buffer = new StringBuilder();
+            } else {
+                buffer.append(c);
+                if (c == '[') {
+                    skip++;
+                } else if (c == ']') {
+                    skip--;
+                }
+            }
+        }
+        buffers.add(buffer);
+        List<Object> list = new ArrayList<>(buffers.size());
+        for (StringBuilder b : buffers) {
+            if (b.length() == 0) {
+                list.add(null);
+            } else {
+                list.add(isList(b) ? toList(b) : b.toString());
+            }
+        }
+        return list;
+    }
+
+    /**
      * 条件表达式逻辑对象转换
      *
      * @param expression 条件表达式
      * @return 条件逻辑对象
      */
-    @Nonempty
     public static Condition condition(String expression) {
+        if (isEmpty(expression)) {
+            return null;
+        }
         boolean continued = false;
         int offset = 0, start = 0, end = 0;
         List<String> sections = new LinkedList<>();

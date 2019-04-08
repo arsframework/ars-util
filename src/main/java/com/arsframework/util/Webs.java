@@ -520,9 +520,11 @@ public abstract class Webs {
         String name = new String(file.getName().getBytes(), "ISO-8859-1");
         response.setContentType("application/octet-stream");
         response.setHeader("Content-Disposition", "attachment; filename=" + name);
-        response.setHeader("Content-Length", String.valueOf(file.getSize()));
-        try (InputStream is = file.getInputStream(); OutputStream os = response.getOutputStream()) {
-            Streams.write(is, os);
+        if (file.getSize() > 0) {
+            response.setHeader("Content-Length", String.valueOf(file.getSize()));
+        }
+        try (OutputStream os = response.getOutputStream()) {
+            file.write(os);
         }
     }
 

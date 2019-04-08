@@ -3,6 +3,7 @@ package com.arsframework.util;
 import java.io.*;
 import java.util.Arrays;
 
+import com.arsframework.annotation.Nonnull;
 import com.arsframework.annotation.Nonempty;
 
 /**
@@ -96,6 +97,19 @@ public class Nfile implements Serializable {
      */
     public File getLocal() {
         return this.file;
+    }
+
+    /**
+     * 将文件写入到输出流
+     *
+     * @param output 输出流对象
+     * @throws IOException IO操作异常
+     */
+    @Nonnull
+    public void write(OutputStream output) throws IOException {
+        try (InputStream is = this.getInputStream()) {
+            Streams.write(is, output);
+        }
     }
 
     /**
