@@ -1,9 +1,6 @@
 package com.arsframework.util;
 
-import java.util.Map;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Calendar;
+import java.util.*;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -23,17 +20,57 @@ public abstract class Dates {
     /**
      * 日期格式模式
      */
+    @Deprecated
     public static final String DATE_PATTERN = "yyyy-MM-dd";
 
     /**
      * 日期时间格式模式
      */
+    @Deprecated
     public static final String DATETIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
     /**
-     * 日期时间毫秒格式
+     * 默认日期格式
      */
-    public static final String DATETIME_NANO_PATTERN = "yyyy-MM-dd HH:mm:ss.SSS";
+    public static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
+
+    /**
+     * 默认时间格式
+     */
+    public static final String DEFAULT_TIME_FORMAT = "HH:mm:ss";
+
+    /**
+     * 默认日期时间格式
+     */
+    public static final String DEFAULT_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
+    /**
+     * 日期格式数组
+     */
+    public static final String[] DATE_FORMATS = {DEFAULT_DATE_FORMAT, "yyyy/MM/dd", "yyyyMMdd"};
+
+    /**
+     * 时间格式数组
+     */
+    public static final String[] TIME_FORMATS = {DEFAULT_TIME_FORMAT, "HHmmss"};
+
+    /**
+     * 日期时间格式数组
+     */
+    public static final String[] DATETIME_FORMATS = {DEFAULT_DATETIME_FORMAT, "yyyy/MM/dd HH:mm:ss", "yyyyMMddHHmmss", "yyyyMMdd-HHmmss"};
+
+    /**
+     * 所有日期格式数组
+     */
+    public static final String[] ALL_DATE_FORMATS = new String[DATE_FORMATS.length + DATETIME_FORMATS.length + TIME_FORMATS.length];
+
+    static {
+        // 拷贝日期格式
+        System.arraycopy(DATETIME_FORMATS, 0, ALL_DATE_FORMATS, 0, DATETIME_FORMATS.length);
+        System.arraycopy(DATE_FORMATS, 0, ALL_DATE_FORMATS, DATETIME_FORMATS.length, DATE_FORMATS.length);
+        System.arraycopy(TIME_FORMATS, 0, ALL_DATE_FORMATS, DATETIME_FORMATS.length + DATE_FORMATS.length,
+                TIME_FORMATS.length);
+    }
 
     /**
      * 当前线程格式模式/日期格式化对象映射表
@@ -69,7 +106,7 @@ public abstract class Dates {
      * @return 日期时间对象
      */
     public static Date parse(String source) {
-        return parse(source, DATE_PATTERN);
+        return parse(source, ALL_DATE_FORMATS);
     }
 
     /**
@@ -99,7 +136,7 @@ public abstract class Dates {
      * @return 日期时间字符串形式
      */
     public static String format(Date date) {
-        return format(date, DATE_PATTERN);
+        return format(date, DEFAULT_DATETIME_FORMAT);
     }
 
     /**

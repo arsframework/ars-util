@@ -23,6 +23,7 @@ public abstract class Excels {
     /**
      * Excel日期格式数组
      */
+    @Deprecated
     public static final String[] DATE_FORMATS = {"yyyy-MM-dd", "yyyy/MM/dd", "yyyyMMdd"};
 
     /**
@@ -269,7 +270,7 @@ public abstract class Excels {
      * @return 日期对象
      */
     public static Date getDate(Cell cell) {
-        return getDate(cell, DATE_FORMATS);
+        return getDate(cell, Dates.ALL_DATE_FORMATS);
     }
 
     /**
