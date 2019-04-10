@@ -10,7 +10,7 @@ JDK1.8+
 <dependency>
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
 </dependency>
 ```
 
@@ -53,8 +53,15 @@ JDK1.8+
 ### 3.12 com.arsframework.util.Webs
 该抽象类提供了针对Web应用处理的工具方法，如```Cookie```操作、参数获取、参数转换、视图渲染等。
 
+### 3.13 com.arsframework.util.Asserts
+该抽象类提供了断言处理的工具方法，如非Null、非空、大小、长度验证等。
 
 ## 4 版本更新日志
 ### v1.0.4
 1. 内部优化
 2. 更新```ars-annotation```依赖版本号为```1.3.2```
+
+### v1.0.5
+1. 新增```com.arsframework.util.Asserts```断言处理工具类
+2. 优化```com.arsframework.util.Excels```处理逻辑
+3. 更新```ars-annotation```依赖版本号为```1.4.0```

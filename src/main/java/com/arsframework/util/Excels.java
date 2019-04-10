@@ -5,6 +5,8 @@ import java.util.*;
 import java.math.BigDecimal;
 
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.SpreadsheetVersion;
+import org.apache.poi.ss.formula.udf.UDFFinder;
 import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -25,6 +27,21 @@ public abstract class Excels {
      */
     @Deprecated
     public static final String[] DATE_FORMATS = {"yyyy-MM-dd", "yyyy/MM/dd", "yyyyMMdd"};
+
+    /**
+     * Excel文件格式枚举
+     */
+    public enum Type {
+        /**
+         * xls格式
+         */
+        XLS,
+
+        /**
+         * xlsx格式
+         */
+        XLSX;
+    }
 
     /**
      * Excel读对象接口
@@ -59,21 +76,312 @@ public abstract class Excels {
     }
 
     /**
+     * Excel工作薄文件包装类
+     */
+    public static class WorkbookFileWrapper extends Nfile implements Workbook {
+        protected final Workbook workbook;
+
+        public WorkbookFileWrapper(String name, @Nonnull Workbook workbook) {
+            super(name);
+            this.workbook = workbook;
+        }
+
+        @Override
+        public void write(OutputStream output) throws IOException {
+            this.workbook.write(output);
+        }
+
+        @Override
+        public int getActiveSheetIndex() {
+            return this.workbook.getActiveSheetIndex();
+        }
+
+        @Override
+        public void setActiveSheet(int i) {
+            this.workbook.setActiveSheet(i);
+        }
+
+        @Override
+        public int getFirstVisibleTab() {
+            return this.workbook.getFirstVisibleTab();
+        }
+
+        @Override
+        public void setFirstVisibleTab(int i) {
+            this.workbook.setFirstVisibleTab(i);
+        }
+
+        @Override
+        public void setSheetOrder(String s, int i) {
+            this.workbook.setSheetOrder(s, i);
+        }
+
+        @Override
+        public void setSelectedTab(int i) {
+            this.workbook.setSelectedTab(i);
+        }
+
+        @Override
+        public void setSheetName(int i, String s) {
+            this.workbook.setSheetName(i, s);
+        }
+
+        @Override
+        public String getSheetName(int i) {
+            return this.workbook.getSheetName(i);
+        }
+
+        @Override
+        public int getSheetIndex(String s) {
+            return this.workbook.getSheetIndex(s);
+        }
+
+        @Override
+        public int getSheetIndex(Sheet sheet) {
+            return this.workbook.getSheetIndex(sheet);
+        }
+
+        @Override
+        public Sheet createSheet() {
+            return this.workbook.createSheet();
+        }
+
+        @Override
+        public Sheet createSheet(String s) {
+            return this.workbook.createSheet(s);
+        }
+
+        @Override
+        public Sheet cloneSheet(int i) {
+            return this.workbook.cloneSheet(i);
+        }
+
+        @Override
+        public Iterator<Sheet> sheetIterator() {
+            return this.workbook.sheetIterator();
+        }
+
+        @Override
+        public int getNumberOfSheets() {
+            return this.workbook.getNumberOfSheets();
+        }
+
+        @Override
+        public Sheet getSheetAt(int i) {
+            return this.workbook.getSheetAt(i);
+        }
+
+        @Override
+        public Sheet getSheet(String s) {
+            return this.workbook.getSheet(s);
+        }
+
+        @Override
+        public void removeSheetAt(int i) {
+            this.workbook.removeSheetAt(i);
+        }
+
+        @Override
+        public void setRepeatingRowsAndColumns(int i, int i1, int i2, int i3, int i4) {
+            this.workbook.setRepeatingRowsAndColumns(i, i1, i2, i3, i4);
+        }
+
+        @Override
+        public Font createFont() {
+            return this.workbook.createFont();
+        }
+
+        @Override
+        public Font findFont(short i, short i1, short i2, String s, boolean b, boolean b1, short i3, byte b2) {
+            return this.workbook.findFont(i, i1, i2, s, b, b1, i3, b2);
+        }
+
+        @Override
+        public short getNumberOfFonts() {
+            return this.workbook.getNumberOfFonts();
+        }
+
+        @Override
+        public Font getFontAt(short i) {
+            return this.workbook.getFontAt(i);
+        }
+
+        @Override
+        public CellStyle createCellStyle() {
+            return this.workbook.createCellStyle();
+        }
+
+        @Override
+        public int getNumCellStyles() {
+            return this.workbook.getNumCellStyles();
+        }
+
+        @Override
+        public CellStyle getCellStyleAt(int i) {
+            return this.workbook.getCellStyleAt(i);
+        }
+
+        @Override
+        public void close() throws IOException {
+            this.workbook.close();
+        }
+
+        @Override
+        public int getNumberOfNames() {
+            return this.workbook.getNumberOfNames();
+        }
+
+        @Override
+        public Name getName(String s) {
+            return this.workbook.getName(s);
+        }
+
+        @Override
+        public Name getNameAt(int i) {
+            return this.workbook.getNameAt(i);
+        }
+
+        @Override
+        public Name createName() {
+            return this.workbook.createName();
+        }
+
+        @Override
+        public int getNameIndex(String s) {
+            return this.workbook.getNameIndex(s);
+        }
+
+        @Override
+        public void removeName(int i) {
+            this.workbook.removeName(i);
+        }
+
+        @Override
+        public void removeName(String s) {
+            this.workbook.removeName(s);
+        }
+
+        @Override
+        public int linkExternalWorkbook(String s, Workbook workbook) {
+            return this.workbook.linkExternalWorkbook(s, workbook);
+        }
+
+        @Override
+        public void setPrintArea(int i, String s) {
+            this.workbook.setPrintArea(i, s);
+        }
+
+        @Override
+        public void setPrintArea(int i, int i1, int i2, int i3, int i4) {
+            this.workbook.setPrintArea(i, i1, i2, i3, i4);
+        }
+
+        @Override
+        public String getPrintArea(int i) {
+            return this.workbook.getPrintArea(i);
+        }
+
+        @Override
+        public void removePrintArea(int i) {
+            this.workbook.removePrintArea(i);
+        }
+
+        @Override
+        public Row.MissingCellPolicy getMissingCellPolicy() {
+            return this.workbook.getMissingCellPolicy();
+        }
+
+        @Override
+        public void setMissingCellPolicy(Row.MissingCellPolicy missingCellPolicy) {
+            this.workbook.setMissingCellPolicy(missingCellPolicy);
+        }
+
+        @Override
+        public DataFormat createDataFormat() {
+            return this.workbook.createDataFormat();
+        }
+
+        @Override
+        public int addPicture(byte[] bytes, int i) {
+            return this.workbook.addPicture(bytes, i);
+        }
+
+        @Override
+        public List<? extends PictureData> getAllPictures() {
+            return this.workbook.getAllPictures();
+        }
+
+        @Override
+        public CreationHelper getCreationHelper() {
+            return this.workbook.getCreationHelper();
+        }
+
+        @Override
+        public boolean isHidden() {
+            return this.workbook.isHidden();
+        }
+
+        @Override
+        public void setHidden(boolean b) {
+            this.workbook.setHidden(b);
+        }
+
+        @Override
+        public boolean isSheetHidden(int i) {
+            return this.workbook.isSheetHidden(i);
+        }
+
+        @Override
+        public boolean isSheetVeryHidden(int i) {
+            return this.workbook.isSheetVeryHidden(i);
+        }
+
+        @Override
+        public void setSheetHidden(int i, boolean b) {
+            this.workbook.setSheetHidden(i, b);
+        }
+
+        @Override
+        public void setSheetHidden(int i, int i1) {
+            this.workbook.setSheetHidden(i, i1);
+        }
+
+        @Override
+        public void addToolPack(UDFFinder udfFinder) {
+            this.workbook.addToolPack(udfFinder);
+        }
+
+        @Override
+        public void setForceFormulaRecalculation(boolean b) {
+            this.workbook.setForceFormulaRecalculation(b);
+        }
+
+        @Override
+        public boolean getForceFormulaRecalculation() {
+            return this.workbook.getForceFormulaRecalculation();
+        }
+
+        @Override
+        public SpreadsheetVersion getSpreadsheetVersion() {
+            return this.workbook.getSpreadsheetVersion();
+        }
+
+        @Override
+        public Iterator<Sheet> iterator() {
+            return this.workbook.iterator();
+        }
+    }
+
+    /**
      * 获取Excel文件工作薄文件形式
      *
      * @param workbook Excel文件工作薄
      * @param name     文件名称
      * @return Excel文件对象
      */
-    @Nonempty
+    @Deprecated
     public static Nfile getNfile(Workbook workbook, String name) {
-        return new Nfile(name) {
-
-            @Override
-            public void write(OutputStream output) throws IOException {
-                workbook.write(output);
-            }
-        };
+        return workbook2file(workbook, name);
     }
 
     /**
@@ -83,11 +391,9 @@ public abstract class Excels {
      * @return Excel文件工作薄
      * @throws IOException IO操作异常
      */
-    @Nonnull
+    @Deprecated
     public static Workbook getWorkbook(File file) throws IOException {
-        try (InputStream is = new FileInputStream(file)) {
-            return file.getName().endsWith(".xls") ? new HSSFWorkbook(is) : new XSSFWorkbook(is);
-        }
+        return file2workbook(file);
     }
 
     /**
@@ -97,11 +403,102 @@ public abstract class Excels {
      * @return Excel文件工作薄
      * @throws IOException IO操作异常
      */
-    @Nonnull
+    @Deprecated
     public static Workbook getWorkbook(Nfile file) throws IOException {
-        try (InputStream is = file.getInputStream()) {
-            return file.getName().endsWith(".xls") ? new HSSFWorkbook(is) : new XSSFWorkbook(is);
+        return file2workbook(file);
+    }
+
+    /**
+     * 构建Excel工作薄
+     *
+     * @return Excel工作薄
+     */
+    public static Workbook buildWorkbook() {
+        return buildWorkbook(Type.XLS);
+    }
+
+    /**
+     * 构建Excel工作薄
+     *
+     * @param type Excel类型
+     * @return Excel工作薄
+     */
+    @Nonnull
+    public static Workbook buildWorkbook(Type type) {
+        if (type == Type.XLS) {
+            return new HSSFWorkbook();
+        } else if (type == Type.XLSX) {
+            return new XSSFWorkbook();
         }
+        throw new IllegalArgumentException("Not support excel type: " + type);
+    }
+
+    /**
+     * 构建Excel工作薄
+     *
+     * @param name Excel文件名称
+     * @return Excel工作薄
+     */
+    @Nonempty
+    public static WorkbookFileWrapper buildWorkbook(String name) {
+        return workbook2file(buildWorkbook(Objects.toEnum(Type.class, Files.getSuffix(name))), name);
+    }
+
+    /**
+     * 将文件转换成Excel工作薄
+     *
+     * @param file 文件对象
+     * @return Excel工作薄
+     * @throws IOException IO操作异常
+     */
+    @Nonnull
+    public static Workbook file2workbook(File file) throws IOException {
+        try (InputStream is = new FileInputStream(file)) {
+            return stream2workbook(is, Objects.toEnum(Type.class, Files.getSuffix(file.getName())));
+        }
+    }
+
+    /**
+     * 将文件转换成Excel工作薄
+     *
+     * @param file 文件对象
+     * @return Excel工作薄
+     * @throws IOException IO操作异常
+     */
+    @Nonnull
+    public static Workbook file2workbook(Nfile file) throws IOException {
+        try (InputStream is = file.getInputStream()) {
+            return stream2workbook(is, Objects.toEnum(Type.class, Files.getSuffix(file.getName())));
+        }
+    }
+
+    /**
+     * 将数据流转换成Excel工作薄
+     *
+     * @param input 数据输入流
+     * @param type  文件类型
+     * @return Excel工作薄
+     * @throws IOException IO操作异常
+     */
+    @Nonnull
+    public static Workbook stream2workbook(InputStream input, Type type) throws IOException {
+        if (type == Type.XLS) {
+            return new HSSFWorkbook(input);
+        } else if (type == Type.XLSX) {
+            return new XSSFWorkbook(input);
+        }
+        throw new IllegalArgumentException("Not support excel type: " + type);
+    }
+
+    /**
+     * 将Excel工作薄转换成文件
+     *
+     * @param workbook Excel工作薄
+     * @param name     文件名称
+     * @return Excel工作薄文件包装对象
+     */
+    public static WorkbookFileWrapper workbook2file(Workbook workbook, String name) {
+        return new WorkbookFileWrapper(name, workbook);
     }
 
     /**
