@@ -27,8 +27,7 @@ public abstract class Streams {
      * @return true/false
      */
     public static boolean isStream(Object object) {
-        return object instanceof byte[] || object instanceof File || object instanceof Nfile
-                || object instanceof InputStream || object instanceof ReadableByteChannel;
+        return object instanceof byte[] || object instanceof File || object instanceof InputStream || object instanceof ReadableByteChannel;
     }
 
     /**
@@ -122,20 +121,6 @@ public abstract class Streams {
     @Nonnull
     public static byte[] getBytes(File file) throws IOException {
         try (InputStream is = new FileInputStream(file)) {
-            return getBytes(is);
-        }
-    }
-
-    /**
-     * 从文件中获取字节
-     *
-     * @param file 文件对象
-     * @return 字节数组
-     * @throws IOException IO操作异常
-     */
-    @Nonnull
-    public static byte[] getBytes(Nfile file) throws IOException {
-        try (InputStream is = file.getInputStream()) {
             return getBytes(is);
         }
     }
@@ -252,64 +237,6 @@ public abstract class Streams {
     @Nonnull
     public static void write(File source, WritableByteChannel target) throws IOException {
         try (InputStream is = new FileInputStream(source)) {
-            write(is, target);
-        }
-    }
-
-    /**
-     * 将文件数据写入到文件
-     *
-     * @param source 源文件
-     * @param target 目标文件
-     * @throws IOException IO操作异常
-     */
-    public static void write(Nfile source, File target) throws IOException {
-        write(source, target, false);
-    }
-
-    /**
-     * 将文件数据写入到文件
-     *
-     * @param source 源文件
-     * @param target 目标文件
-     * @param append 是否追加
-     * @throws IOException IO操作异常
-     */
-    @Nonnull
-    public static void write(Nfile source, File target, boolean append) throws IOException {
-        if (source.isLocal()) {
-            write(source.getLocal(), target, append);
-        } else {
-            try (InputStream is = source.getInputStream()) {
-                write(is, target, append);
-            }
-        }
-    }
-
-    /**
-     * 将文件数据写入到输出流
-     *
-     * @param source 源文件对象
-     * @param target 目标输出流
-     * @throws IOException IO操作异常
-     */
-    @Nonnull
-    public static void write(Nfile source, OutputStream target) throws IOException {
-        try (InputStream is = source.getInputStream()) {
-            write(is, target);
-        }
-    }
-
-    /**
-     * 将文件数据写入到套接字写通道中
-     *
-     * @param source 源文件对象
-     * @param target 目标输出流
-     * @throws IOException IO操作异常
-     */
-    @Nonnull
-    public static void write(Nfile source, WritableByteChannel target) throws IOException {
-        try (InputStream is = source.getInputStream()) {
             write(is, target);
         }
     }

@@ -3,12 +3,12 @@ package com.arsframework.util;
 import java.io.*;
 import java.util.*;
 import java.math.BigDecimal;
+import java.lang.reflect.Field;
 
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.ss.SpreadsheetVersion;
-import org.apache.poi.ss.formula.udf.UDFFinder;
 import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import com.arsframework.annotation.Min;
@@ -23,12 +23,6 @@ import com.arsframework.annotation.Nonempty;
  */
 public abstract class Excels {
     /**
-     * Excel日期格式数组
-     */
-    @Deprecated
-    public static final String[] DATE_FORMATS = {"yyyy-MM-dd", "yyyy/MM/dd", "yyyyMMdd"};
-
-    /**
      * Excel文件格式枚举
      */
     public enum Type {
@@ -41,6 +35,16 @@ public abstract class Excels {
          * xlsx格式
          */
         XLSX;
+
+        /**
+         * 根据类型名称转换类型枚举
+         *
+         * @param name 类型名称
+         * @return 类型枚举
+         */
+        public static Type parse(String name) {
+            return name == null || name.isEmpty() ? null : Type.valueOf(name.toUpperCase());
+        }
     }
 
     /**
@@ -50,11 +54,11 @@ public abstract class Excels {
      */
     public interface Reader<T> {
         /**
-         * 读取Excel数据行并转换成对象实体
+         * 读取Excel数据行并转换成对象实例
          *
          * @param row   数据行对象
          * @param count 当前记录数（从1开始）
-         * @return 对象实体
+         * @return 对象实例
          */
         T read(Row row, int count);
     }
@@ -66,346 +70,13 @@ public abstract class Excels {
      */
     public interface Writer<T> {
         /**
-         * 将对象实体写入到Excel数据行
+         * 将对象实例写入到Excel数据行
          *
-         * @param entity 对象实体
+         * @param entity 对象实例
          * @param row    数据行对象
          * @param count  当前记录数（从1开始）
          */
         void write(T entity, Row row, int count);
-    }
-
-    /**
-     * Excel工作薄文件包装类
-     */
-    public static class WorkbookFileWrapper extends Nfile implements Workbook {
-        protected final Workbook workbook;
-
-        public WorkbookFileWrapper(String name, @Nonnull Workbook workbook) {
-            super(name);
-            this.workbook = workbook;
-        }
-
-        @Override
-        public void write(OutputStream output) throws IOException {
-            this.workbook.write(output);
-        }
-
-        @Override
-        public int getActiveSheetIndex() {
-            return this.workbook.getActiveSheetIndex();
-        }
-
-        @Override
-        public void setActiveSheet(int i) {
-            this.workbook.setActiveSheet(i);
-        }
-
-        @Override
-        public int getFirstVisibleTab() {
-            return this.workbook.getFirstVisibleTab();
-        }
-
-        @Override
-        public void setFirstVisibleTab(int i) {
-            this.workbook.setFirstVisibleTab(i);
-        }
-
-        @Override
-        public void setSheetOrder(String s, int i) {
-            this.workbook.setSheetOrder(s, i);
-        }
-
-        @Override
-        public void setSelectedTab(int i) {
-            this.workbook.setSelectedTab(i);
-        }
-
-        @Override
-        public void setSheetName(int i, String s) {
-            this.workbook.setSheetName(i, s);
-        }
-
-        @Override
-        public String getSheetName(int i) {
-            return this.workbook.getSheetName(i);
-        }
-
-        @Override
-        public int getSheetIndex(String s) {
-            return this.workbook.getSheetIndex(s);
-        }
-
-        @Override
-        public int getSheetIndex(Sheet sheet) {
-            return this.workbook.getSheetIndex(sheet);
-        }
-
-        @Override
-        public Sheet createSheet() {
-            return this.workbook.createSheet();
-        }
-
-        @Override
-        public Sheet createSheet(String s) {
-            return this.workbook.createSheet(s);
-        }
-
-        @Override
-        public Sheet cloneSheet(int i) {
-            return this.workbook.cloneSheet(i);
-        }
-
-        @Override
-        public Iterator<Sheet> sheetIterator() {
-            return this.workbook.sheetIterator();
-        }
-
-        @Override
-        public int getNumberOfSheets() {
-            return this.workbook.getNumberOfSheets();
-        }
-
-        @Override
-        public Sheet getSheetAt(int i) {
-            return this.workbook.getSheetAt(i);
-        }
-
-        @Override
-        public Sheet getSheet(String s) {
-            return this.workbook.getSheet(s);
-        }
-
-        @Override
-        public void removeSheetAt(int i) {
-            this.workbook.removeSheetAt(i);
-        }
-
-        @Override
-        public void setRepeatingRowsAndColumns(int i, int i1, int i2, int i3, int i4) {
-            this.workbook.setRepeatingRowsAndColumns(i, i1, i2, i3, i4);
-        }
-
-        @Override
-        public Font createFont() {
-            return this.workbook.createFont();
-        }
-
-        @Override
-        public Font findFont(short i, short i1, short i2, String s, boolean b, boolean b1, short i3, byte b2) {
-            return this.workbook.findFont(i, i1, i2, s, b, b1, i3, b2);
-        }
-
-        @Override
-        public short getNumberOfFonts() {
-            return this.workbook.getNumberOfFonts();
-        }
-
-        @Override
-        public Font getFontAt(short i) {
-            return this.workbook.getFontAt(i);
-        }
-
-        @Override
-        public CellStyle createCellStyle() {
-            return this.workbook.createCellStyle();
-        }
-
-        @Override
-        public int getNumCellStyles() {
-            return this.workbook.getNumCellStyles();
-        }
-
-        @Override
-        public CellStyle getCellStyleAt(int i) {
-            return this.workbook.getCellStyleAt(i);
-        }
-
-        @Override
-        public void close() throws IOException {
-            this.workbook.close();
-        }
-
-        @Override
-        public int getNumberOfNames() {
-            return this.workbook.getNumberOfNames();
-        }
-
-        @Override
-        public Name getName(String s) {
-            return this.workbook.getName(s);
-        }
-
-        @Override
-        public Name getNameAt(int i) {
-            return this.workbook.getNameAt(i);
-        }
-
-        @Override
-        public Name createName() {
-            return this.workbook.createName();
-        }
-
-        @Override
-        public int getNameIndex(String s) {
-            return this.workbook.getNameIndex(s);
-        }
-
-        @Override
-        public void removeName(int i) {
-            this.workbook.removeName(i);
-        }
-
-        @Override
-        public void removeName(String s) {
-            this.workbook.removeName(s);
-        }
-
-        @Override
-        public int linkExternalWorkbook(String s, Workbook workbook) {
-            return this.workbook.linkExternalWorkbook(s, workbook);
-        }
-
-        @Override
-        public void setPrintArea(int i, String s) {
-            this.workbook.setPrintArea(i, s);
-        }
-
-        @Override
-        public void setPrintArea(int i, int i1, int i2, int i3, int i4) {
-            this.workbook.setPrintArea(i, i1, i2, i3, i4);
-        }
-
-        @Override
-        public String getPrintArea(int i) {
-            return this.workbook.getPrintArea(i);
-        }
-
-        @Override
-        public void removePrintArea(int i) {
-            this.workbook.removePrintArea(i);
-        }
-
-        @Override
-        public Row.MissingCellPolicy getMissingCellPolicy() {
-            return this.workbook.getMissingCellPolicy();
-        }
-
-        @Override
-        public void setMissingCellPolicy(Row.MissingCellPolicy missingCellPolicy) {
-            this.workbook.setMissingCellPolicy(missingCellPolicy);
-        }
-
-        @Override
-        public DataFormat createDataFormat() {
-            return this.workbook.createDataFormat();
-        }
-
-        @Override
-        public int addPicture(byte[] bytes, int i) {
-            return this.workbook.addPicture(bytes, i);
-        }
-
-        @Override
-        public List<? extends PictureData> getAllPictures() {
-            return this.workbook.getAllPictures();
-        }
-
-        @Override
-        public CreationHelper getCreationHelper() {
-            return this.workbook.getCreationHelper();
-        }
-
-        @Override
-        public boolean isHidden() {
-            return this.workbook.isHidden();
-        }
-
-        @Override
-        public void setHidden(boolean b) {
-            this.workbook.setHidden(b);
-        }
-
-        @Override
-        public boolean isSheetHidden(int i) {
-            return this.workbook.isSheetHidden(i);
-        }
-
-        @Override
-        public boolean isSheetVeryHidden(int i) {
-            return this.workbook.isSheetVeryHidden(i);
-        }
-
-        @Override
-        public void setSheetHidden(int i, boolean b) {
-            this.workbook.setSheetHidden(i, b);
-        }
-
-        @Override
-        public void setSheetHidden(int i, int i1) {
-            this.workbook.setSheetHidden(i, i1);
-        }
-
-        @Override
-        public void addToolPack(UDFFinder udfFinder) {
-            this.workbook.addToolPack(udfFinder);
-        }
-
-        @Override
-        public void setForceFormulaRecalculation(boolean b) {
-            this.workbook.setForceFormulaRecalculation(b);
-        }
-
-        @Override
-        public boolean getForceFormulaRecalculation() {
-            return this.workbook.getForceFormulaRecalculation();
-        }
-
-        @Override
-        public SpreadsheetVersion getSpreadsheetVersion() {
-            return this.workbook.getSpreadsheetVersion();
-        }
-
-        @Override
-        public Iterator<Sheet> iterator() {
-            return this.workbook.iterator();
-        }
-    }
-
-    /**
-     * 获取Excel文件工作薄文件形式
-     *
-     * @param workbook Excel文件工作薄
-     * @param name     文件名称
-     * @return Excel文件对象
-     */
-    @Deprecated
-    public static Nfile getNfile(Workbook workbook, String name) {
-        return workbook2file(workbook, name);
-    }
-
-    /**
-     * 获取Excel文件工作薄
-     *
-     * @param file Excel文件对象
-     * @return Excel文件工作薄
-     * @throws IOException IO操作异常
-     */
-    @Deprecated
-    public static Workbook getWorkbook(File file) throws IOException {
-        return file2workbook(file);
-    }
-
-    /**
-     * 获取Excel文件工作薄
-     *
-     * @param file Excel文件对象
-     * @return Excel文件工作薄
-     * @throws IOException IO操作异常
-     */
-    @Deprecated
-    public static Workbook getWorkbook(Nfile file) throws IOException {
-        return file2workbook(file);
     }
 
     /**
@@ -414,7 +85,7 @@ public abstract class Excels {
      * @return Excel工作薄
      */
     public static Workbook buildWorkbook() {
-        return buildWorkbook(Type.XLS);
+        return buildWorkbook(Type.XLSX);
     }
 
     /**
@@ -428,7 +99,7 @@ public abstract class Excels {
         if (type == Type.XLS) {
             return new HSSFWorkbook();
         } else if (type == Type.XLSX) {
-            return new XSSFWorkbook();
+            return new SXSSFWorkbook();
         }
         throw new IllegalArgumentException("Not support excel type: " + type);
     }
@@ -436,44 +107,31 @@ public abstract class Excels {
     /**
      * 构建Excel工作薄
      *
-     * @param name Excel文件名称
-     * @return Excel工作薄
-     */
-    @Nonempty
-    public static WorkbookFileWrapper buildWorkbook(String name) {
-        return workbook2file(buildWorkbook(Objects.toEnum(Type.class, Files.getSuffix(name))), name);
-    }
-
-    /**
-     * 将文件转换成Excel工作薄
-     *
      * @param file 文件对象
      * @return Excel工作薄
      * @throws IOException IO操作异常
      */
     @Nonnull
-    public static Workbook file2workbook(File file) throws IOException {
+    public static Workbook buildWorkbook(File file) throws IOException {
         try (InputStream is = new FileInputStream(file)) {
-            return stream2workbook(is, Objects.toEnum(Type.class, Files.getSuffix(file.getName())));
+            return buildWorkbook(is, Type.parse(Files.getSuffix(file.getName())));
         }
     }
 
     /**
-     * 将文件转换成Excel工作薄
+     * 构建Excel工作薄
      *
-     * @param file 文件对象
+     * @param input 数据输入流
      * @return Excel工作薄
      * @throws IOException IO操作异常
      */
     @Nonnull
-    public static Workbook file2workbook(Nfile file) throws IOException {
-        try (InputStream is = file.getInputStream()) {
-            return stream2workbook(is, Objects.toEnum(Type.class, Files.getSuffix(file.getName())));
-        }
+    public static Workbook buildWorkbook(InputStream input) throws IOException {
+        return buildWorkbook(input, Type.XLSX);
     }
 
     /**
-     * 将数据流转换成Excel工作薄
+     * 构建Excel工作薄
      *
      * @param input 数据输入流
      * @param type  文件类型
@@ -481,24 +139,13 @@ public abstract class Excels {
      * @throws IOException IO操作异常
      */
     @Nonnull
-    public static Workbook stream2workbook(InputStream input, Type type) throws IOException {
+    public static Workbook buildWorkbook(InputStream input, Type type) throws IOException {
         if (type == Type.XLS) {
             return new HSSFWorkbook(input);
         } else if (type == Type.XLSX) {
             return new XSSFWorkbook(input);
         }
         throw new IllegalArgumentException("Not support excel type: " + type);
-    }
-
-    /**
-     * 将Excel工作薄转换成文件
-     *
-     * @param workbook Excel工作薄
-     * @param name     文件名称
-     * @return Excel工作薄文件包装对象
-     */
-    public static WorkbookFileWrapper workbook2file(Workbook workbook, String name) {
-        return new WorkbookFileWrapper(name, workbook);
     }
 
     /**
@@ -518,22 +165,6 @@ public abstract class Excels {
     }
 
     /**
-     * 将Excel数据写入文件
-     *
-     * @param workbook Excel文件工作薄
-     * @param file     文件对象
-     * @throws IOException IO操作异常
-     */
-    @Nonnull
-    public static void write(Workbook workbook, Nfile file) throws IOException {
-        try (OutputStream output = file.getOutputStream()) {
-            workbook.write(output);
-        } finally {
-            workbook.close();
-        }
-    }
-
-    /**
      * 拷贝单元格对象数据
      *
      * @param source 原始单元格对象
@@ -541,6 +172,7 @@ public abstract class Excels {
      */
     @Nonnull
     public static void copy(Cell source, Cell target) {
+        target.setCellStyle(source.getCellStyle());
         int type = source.getCellType();
         if (type == Cell.CELL_TYPE_BOOLEAN) {
             target.setCellValue(source.getBooleanCellValue());
@@ -741,11 +373,25 @@ public abstract class Excels {
      * @param value 值
      */
     public static void setValue(@Nonnull Cell cell, Object value) {
+        setValue(cell, null, value);
+    }
+
+    /**
+     * 设置Excel单元格值
+     *
+     * @param cell  Excel单元格对象
+     * @param style 单元格样式
+     * @param value 值
+     */
+    public static void setValue(@Nonnull Cell cell, CellStyle style, Object value) {
         if (!Objects.isEmpty(value)) {
             if (value instanceof Object[]) {
                 value = Strings.join((Object[]) value, ",");
             } else if (value instanceof Collection) {
                 value = Strings.join((Collection<?>) value, ",");
+            }
+            if (style != null) {
+                cell.setCellStyle(style);
             }
             cell.setCellValue(Strings.toString(value));
         }
@@ -759,45 +405,20 @@ public abstract class Excels {
      */
     @Nonnull
     public static void setValues(Row row, Object... values) {
-        for (int i = 0; i < values.length; i++) {
-            setValue(row.createCell(i), values[i]);
-        }
+        setValues(row, null, values);
     }
 
     /**
-     * 设置Excel文件标题
+     * 设置Excel单元格值
      *
-     * @param row    Excel数据行对象
-     * @param titles 标题数组
-     */
-    @Nonnull
-    public static void setTitles(Row row, String... titles) {
-        if (titles.length > 0) {
-            Workbook workbook = row.getSheet().getWorkbook();
-            Font font = workbook.createFont();
-            font.setBoldweight(Font.BOLDWEIGHT_BOLD);
-            CellStyle style = workbook.createCellStyle();
-            style.setFont(font);
-            style.setAlignment(CellStyle.ALIGN_CENTER);
-            setTitles(row, style, titles);
-        }
-    }
-
-    /**
-     * 设置Excel文件标题
-     *
-     * @param row    Excel数据行对象
+     * @param row    Excel行对象
      * @param style  单元格样式
-     * @param titles 标题数组
+     * @param values 单元格值数组
      */
     @Nonnull
-    public static void setTitles(Row row, CellStyle style, String... titles) {
-        if (titles.length > 0) {
-            for (int c = 0; c < titles.length; c++) {
-                Cell cell = row.createCell(c);
-                cell.setCellStyle(style);
-                cell.setCellValue(titles[c]);
-            }
+    public static void setValues(Row row, CellStyle style, Object... values) {
+        for (int i = 0; i < values.length; i++) {
+            setValue(row.createCell(i), style, values[i]);
         }
     }
 
@@ -850,37 +471,63 @@ public abstract class Excels {
     }
 
     /**
-     * 从Excel文件中获取对象实体
+     * 根据Excel行获取对象实例
+     *
+     * @param row  Excel行对象
+     * @param type 目标对象
+     * @param <M>  目标对象类型
+     * @return 对象实例
+     */
+    public static <M> M getObject(Row row, @Nonnull Class<M> type) {
+        if (row == null) {
+            return null;
+        }
+        M object = Objects.initialize(type);
+        Field[] fields = Objects.getFields(type);
+        for (int i = 0; i < fields.length; i++) {
+            Field field = fields[i];
+            field.setAccessible(true);
+            try {
+                field.set(object, getValue(row.getCell(i), field.getType()));
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return object;
+    }
+
+    /**
+     * 从Excel文件中获取对象实例
      *
      * @param <M>    数据类型
      * @param sheet  Excel sheet
-     * @param reader Excel对象实体读取接口
-     * @return 对象实体列表
+     * @param reader Excel对象实例读取接口
+     * @return 对象实例列表
      */
     public static <M> List<M> getObjects(Sheet sheet, Reader<M> reader) {
         return getObjects(sheet, 0, reader);
     }
 
     /**
-     * 从Excel文件中获取对象实体
+     * 从Excel文件中获取对象实例
      *
      * @param <M>      数据类型
      * @param workbook Excel文件工作薄
-     * @param reader   Excel对象实体读取接口
-     * @return 对象实体列表
+     * @param reader   Excel对象实例读取接口
+     * @return 对象实例列表
      */
     public static <M> List<M> getObjects(Workbook workbook, Reader<M> reader) {
         return getObjects(workbook, 0, reader);
     }
 
     /**
-     * 从Excel文件中获取对象实体
+     * 从Excel文件中获取对象实例
      *
      * @param <M>    数据类型
      * @param sheet  Excel sheet
      * @param index  开始数据行下标（从0开始）
-     * @param reader Excel对象实体读取接口
-     * @return 对象实体列表
+     * @param reader Excel对象实例读取接口
+     * @return 对象实例列表
      */
     @Nonnull
     public static <M> List<M> getObjects(Sheet sheet, @Min(0) int index, Reader<M> reader) {
@@ -888,13 +535,13 @@ public abstract class Excels {
     }
 
     /**
-     * 从Excel文件中获取对象实体
+     * 从Excel文件中获取对象实例
      *
      * @param <M>      数据类型
      * @param workbook Excel文件工作薄
      * @param index    开始数据行下标（从0开始）
-     * @param reader   Excel对象实体读取接口
-     * @return 对象实体列表
+     * @param reader   Excel对象实例读取接口
+     * @return 对象实例列表
      */
     @Nonnull
     public static <M> List<M> getObjects(Workbook workbook, @Min(0) int index, Reader<M> reader) {
@@ -907,14 +554,14 @@ public abstract class Excels {
     }
 
     /**
-     * 从Excel文件中获取对象实体
+     * 从Excel文件中获取对象实例
      *
      * @param <M>    数据类型
      * @param sheet  Excel sheet
      * @param index  开始数据行下标（从0开始）
      * @param count  当前记录数（从1开始）
-     * @param reader Excel对象实体读取接口
-     * @return 对象实体列表
+     * @param reader Excel对象实例读取接口
+     * @return 对象实例列表
      */
     @Nonempty
     private static <M> List<M> getObjects(Sheet sheet, @Min(0) int index, int[] count, Reader<M> reader) {
@@ -932,12 +579,33 @@ public abstract class Excels {
     }
 
     /**
-     * 将对象实体设置到Excel文件中
+     * 设置对象实例到Excel行
+     *
+     * @param row    Excel行对象
+     * @param object 对象实例
+     */
+    public static void setObject(@Nonnull Row row, Object object) {
+        if (object != null) {
+            Field[] fields = Objects.getFields(object.getClass());
+            for (int i = 0; i < fields.length; i++) {
+                Field field = fields[i];
+                field.setAccessible(true);
+                try {
+                    setValue(row.createCell(i), field.get(object));
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
+
+    /**
+     * 将对象实例设置到Excel文件中
      *
      * @param <M>     数据类型
      * @param sheet   Excel sheet
-     * @param objects 对象实体列表
-     * @param writer  Excel对象实体写入接口
+     * @param objects 对象实例列表
+     * @param writer  Excel对象实例写入接口
      * @return 设置数量
      */
     public static <M> int setObjects(Sheet sheet, List<M> objects, Writer<M> writer) {
@@ -945,12 +613,12 @@ public abstract class Excels {
     }
 
     /**
-     * 将对象实体设置到Excel文件中
+     * 将对象实例设置到Excel文件中
      *
      * @param <M>      数据类型
      * @param workbook Excel文件工作薄
-     * @param objects  对象实体列表
-     * @param writer   Excel对象实体写入接口
+     * @param objects  对象实例列表
+     * @param writer   Excel对象实例写入接口
      * @return 设置数量
      */
     public static <M> int setObjects(Workbook workbook, List<M> objects, Writer<M> writer) {
@@ -958,20 +626,19 @@ public abstract class Excels {
     }
 
     /**
-     * 将对象实体设置到Excel文件中
+     * 将对象实例设置到Excel文件中
      *
      * @param <M>     数据类型
      * @param sheet   Excel sheet
      * @param index   开始数据行下标（从0开始）
-     * @param objects 对象实体列表
-     * @param writer  Excel对象实体写入接口
+     * @param objects 对象实例列表
+     * @param writer  Excel对象实例写入接口
      * @return 设置数量
      */
     @Nonnull
     public static <M> int setObjects(Sheet sheet, @Min(0) int index, List<M> objects, Writer<M> writer) {
         int count = 0;
-        for (int i = 0; i < objects.size(); i++) {
-            M object = objects.get(i);
+        for (M object : objects) {
             if (object != null) {
                 writer.write(object, sheet.createRow(index++), ++count);
             }
@@ -980,26 +647,24 @@ public abstract class Excels {
     }
 
     /**
-     * 将对象实体设置到Excel文件中
+     * 将对象实例设置到Excel文件中
      *
      * @param <M>      数据类型
      * @param workbook Excel文件工作薄
      * @param index    开始数据行下标（从0开始）
-     * @param objects  对象实体列表
-     * @param writer   Excel对象实体写入接口
+     * @param objects  对象实例列表
+     * @param writer   Excel对象实例写入接口
      * @return 设置数量
      */
     @Nonnull
     public static <M> int setObjects(Workbook workbook, @Min(0) int index, List<M> objects, Writer<M> writer) {
-        int count = 0;
-        int r = index;
         Sheet sheet = null;
-        for (int i = 0; i < objects.size(); i++) {
-            if (i % 50000 == 0) {
+        int i = 0, count = 0, r = index;
+        for (M object : objects) {
+            if (i++ % 50000 == 0) {
                 r = index;
                 sheet = workbook.createSheet();
             }
-            M object = objects.get(i);
             if (object != null) {
                 writer.write(object, sheet.createRow(r++), ++count);
             }
@@ -1008,10 +673,29 @@ public abstract class Excels {
     }
 
     /**
+     * 设置Excel文件标题
+     *
+     * @param sheet  Excel sheet
+     * @param titles 标题数组
+     */
+    @Nonnull
+    public static void setTitles(Sheet sheet, String... titles) {
+        if (titles.length > 0) {
+            Workbook workbook = sheet.getWorkbook();
+            Font font = workbook.createFont();
+            font.setBoldweight(Font.BOLDWEIGHT_BOLD);
+            CellStyle style = workbook.createCellStyle();
+            style.setFont(font);
+            style.setAlignment(CellStyle.ALIGN_CENTER);
+            setValues(sheet.createRow(0), style, titles);
+        }
+    }
+
+    /**
      * Excel文件迭代
      *
      * @param sheet  Excel sheet
-     * @param reader Excel对象实体读取接口
+     * @param reader Excel对象实例读取接口
      * @return 读取数量
      */
     public static int iteration(Sheet sheet, Reader<?> reader) {
@@ -1022,7 +706,7 @@ public abstract class Excels {
      * Excel文件迭代
      *
      * @param workbook Excel文件工作薄
-     * @param reader   Excel对象实体读取接口
+     * @param reader   Excel对象实例读取接口
      * @return 读取数量
      */
     public static int iteration(Workbook workbook, Reader<?> reader) {
@@ -1034,7 +718,7 @@ public abstract class Excels {
      *
      * @param sheet  Excel sheet
      * @param index  开始数据行下标（从0开始）
-     * @param reader Excel对象实体读取接口
+     * @param reader Excel对象实例读取接口
      * @return 读取数量
      */
     @Nonnull
@@ -1049,7 +733,7 @@ public abstract class Excels {
      *
      * @param workbook Excel文件工作薄
      * @param index    开始数据行下标（从0开始）
-     * @param reader   Excel对象实体读取接口
+     * @param reader   Excel对象实例读取接口
      * @return 读取数量
      */
     @Nonnull
@@ -1067,7 +751,7 @@ public abstract class Excels {
      * @param sheet  Excel sheet
      * @param index  开始数据行下标（从0开始）
      * @param count  当前记录数（从1开始）
-     * @param reader Excel对象实体读取接口
+     * @param reader Excel对象实例读取接口
      */
     @Nonnull
     private static void iteration(Sheet sheet, @Min(0) int index, int[] count, Reader<?> reader) {

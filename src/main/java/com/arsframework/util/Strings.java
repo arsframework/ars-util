@@ -4,6 +4,8 @@ import java.util.*;
 import java.io.File;
 import java.net.URL;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.regex.Pattern;
 
 import com.arsframework.annotation.Min;
@@ -474,6 +476,10 @@ public abstract class Strings {
             return ((CharSequence) object).toString();
         } else if (object instanceof Date) {
             return Dates.format((Date) object);
+        } else if (object instanceof LocalDate) {
+            return Dates.format((LocalDate) object);
+        } else if (object instanceof LocalDateTime) {
+            return Dates.format((LocalDateTime) object);
         } else if (object instanceof Class) {
             return ((Class<?>) object).getName();
         } else if (object instanceof byte[]) {

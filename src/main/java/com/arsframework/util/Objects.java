@@ -222,237 +222,6 @@ public abstract class Objects {
     }
 
     /**
-     * 判断数组中是否存在制定对象
-     *
-     * @param <T>    数据类型
-     * @param array  数组
-     * @param object 对象
-     * @return true/false
-     */
-    public static <T> boolean isExist(@Nonnull T[] array, T object) {
-        if (array.length > 0 && object != null) {
-            for (T t : array) {
-                if (isEqual(t, object)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * 判断数组中是否存在制定对象
-     *
-     * @param <T>        数据类型
-     * @param array      数组
-     * @param object     对象
-     * @param comparator 比较器
-     * @return true/false
-     */
-    public static <T> boolean isExist(@Nonnull T[] array, T object, @Nonnull Comparator<T> comparator) {
-        if (array.length > 0 && object != null) {
-            for (T t : array) {
-                if (comparator.compare(t, object) == 0) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * 判断集合中是否存在制定对象
-     *
-     * @param <T>        数据类型
-     * @param collection 集合
-     * @param object     对象
-     * @return true/false
-     */
-    public static <T> boolean isExist(@Nonnull Collection<T> collection, T object) {
-        if (!collection.isEmpty() && object != null) {
-            for (T t : collection) {
-                if (isEqual(t, object)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * 判断集合中是否存在制定对象
-     *
-     * @param <T>        数据类型
-     * @param collection 集合
-     * @param object     对象
-     * @param comparator 对象比较器
-     * @return true/false
-     */
-    public static <T> boolean isExist(@Nonnull Collection<T> collection, T object, @Nonnull Comparator<T> comparator) {
-        if (!collection.isEmpty() && object != null) {
-            for (T t : collection) {
-                if (comparator.compare(t, object) == 0) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * 判断两个对象是否相同
-     *
-     * @param <T>    对象类型
-     * @param object 对象
-     * @param other  对象
-     * @return true/false
-     */
-    public static <T> boolean isEqual(T object, T other) {
-        return (object == other && object == null) || (object != null && object.equals(other)) || (other != null && other.equals(object));
-    }
-
-    /**
-     * 判断两个数组中元素是否相同
-     *
-     * @param <T>   数据类型
-     * @param array 比较数组
-     * @param other 被比较数组
-     * @return true/false
-     */
-    @Nonnull
-    public static <T> boolean isEqual(T[] array, T[] other) {
-        return isEqual(array, other, (T o1, T o2) -> o1.equals(o2) ? 0 : -1);
-    }
-
-    /**
-     * 判断两个数组中元素是否相同
-     *
-     * @param <T>        数据类型
-     * @param array      比较数组
-     * @param other      被比较数组
-     * @param comparator 比较器
-     * @return true/false
-     */
-    public static <T> boolean isEqual(T[] array, T[] other, @Nonnull Comparator<T> comparator) {
-        return (array == null && other == null)
-                || (array != null && other != null && array.length == 0 && other.length == 0)
-                || isEqual(Arrays.asList(array), Arrays.asList(other), comparator);
-    }
-
-    /**
-     * 判断两个集合中元素是否相同
-     *
-     * @param <T>        数据类型
-     * @param collection 比较集合
-     * @param other      被比较集合
-     * @return true/false
-     */
-    public static <T> boolean isEqual(Collection<T> collection, Collection<T> other) {
-        return isEqual(collection, other, (o1, o2) -> o1.equals(o2) ? 0 : -1);
-    }
-
-    /**
-     * 判断两个集合中元素是否相同
-     *
-     * @param <T>        数据类型
-     * @param collection 比较集合
-     * @param other      被比较集合
-     * @param comparator 比较器
-     * @return true/false
-     */
-    public static <T> boolean isEqual(Collection<T> collection, Collection<T> other, @Nonnull Comparator<T> comparator) {
-        if ((collection == null && other == null)
-                || (collection != null && other != null && collection.isEmpty() && other.isEmpty())) {
-            return true;
-        } else if (collection != null && other != null && collection.size() != other.size()) {
-            return false;
-        }
-        boolean equals = true;
-        List<T> list2 = other instanceof List ? (List<T>) other : new ArrayList<T>(other);
-        Map<Integer, Object> exists = new HashMap<>();
-        for (T o1 : collection) {
-            boolean found = false;
-            for (int i = 0; i < list2.size(); i++) {
-                if (comparator.compare(o1, list2.get(i)) == 0) {
-                    found = true;
-                    exists.put(i, null);
-                    break;
-                }
-            }
-            if (!found) {
-                equals = false;
-                break;
-            }
-        }
-        if (equals) {
-            for (int i = 0; i < list2.size(); i++) {
-                if (exists.containsKey(i)) {
-                    continue;
-                }
-                boolean found = false;
-                for (T o1 : collection) {
-                    if (comparator.compare(o1, list2.get(i)) == 0) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    return false;
-                }
-            }
-        }
-        return equals;
-    }
-
-    /**
-     * 判断两个字典元素是否相同
-     *
-     * @param <K>   键类型
-     * @param <V>   值类型
-     * @param map   比较字典
-     * @param other 被比较字典
-     * @return true/false
-     */
-    public static <K, V> boolean isEqual(Map<K, V> map, Map<K, V> other) {
-        if ((map == null && other == null) || (map != null && other != null && map.isEmpty() && other.isEmpty())) {
-            return true;
-        } else if (map != null && other != null && map.size() != other.size()) {
-            return false;
-        }
-        for (Entry<K, V> entry : map.entrySet()) {
-            if (!isEqual(entry.getValue(), other.get(entry.getKey()))) {
-                return false;
-            }
-        }
-        for (Entry<K, V> entry : other.entrySet()) {
-            if (!isEqual(entry.getValue(), map.get(entry.getKey()))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * 判断对象是否为数组
-     *
-     * @param object 对象
-     * @return true/false
-     */
-    public static boolean isArray(Object object) {
-        return object != null && object.getClass().isArray();
-    }
-
-    /**
-     * 判断对象是否为数字
-     *
-     * @param object 对象
-     * @return true/false
-     */
-    public static boolean isNumber(Object object) {
-        return object != null && isNumberClass(object.getClass());
-    }
-
-    /**
      * 根据字段名称获取字段对象
      *
      * @param cls  类对象
@@ -505,7 +274,7 @@ public abstract class Objects {
                 }
             }
             Class<?> parent = cls.getSuperclass();
-            while (parent != null) {
+            while (parent != Object.class) {
                 try {
                     fields[i] = parent.getDeclaredField(name);
                     continue outer;
@@ -774,60 +543,6 @@ public abstract class Objects {
         }
     }
 
-
-    /**
-     * 计算对象数组的hash值
-     *
-     * @param objects 对象数组
-     * @return hash值
-     */
-    @Nonempty
-    public static int hash(Object... objects) {
-        int code = 1;
-        for (Object object : objects) {
-            if (object instanceof Byte) {
-                code = 31 * code + (int) (Byte) object;
-            } else if (object instanceof Character) {
-                code = 31 * code + (int) (Character) object;
-            } else if (object instanceof Short) {
-                code = 31 * code + (int) (Short) object;
-            } else if (object instanceof Integer) {
-                code = 31 * code + (int) (Integer) object;
-            } else if (object instanceof Long) {
-                long v = (long) (Long) object;
-                code = 31 * code + (int) (v ^ (v >>> 32));
-            } else if (object instanceof Float) {
-                code = 31 * code + Float.floatToIntBits((float) (Float) object);
-            } else if (object instanceof Double) {
-                long bits = Double.doubleToLongBits((double) (Double) object);
-                code = 31 * code + (int) (bits ^ (bits >>> 32));
-            } else if (object instanceof Boolean) {
-                code = 31 * code + ((boolean) (Boolean) object ? 1 : 0);
-            } else if (object instanceof byte[]) {
-                code = 31 * code + Arrays.hashCode((byte[]) object);
-            } else if (object instanceof char[]) {
-                code = 31 * code + Arrays.hashCode((char[]) object);
-            } else if (object instanceof short[]) {
-                code = 31 * code + Arrays.hashCode((short[]) object);
-            } else if (object instanceof int[]) {
-                code = 31 * code + Arrays.hashCode((int[]) object);
-            } else if (object instanceof long[]) {
-                code = 31 * code + Arrays.hashCode((long[]) object);
-            } else if (object instanceof float[]) {
-                code = 31 * code + Arrays.hashCode((float[]) object);
-            } else if (object instanceof double[]) {
-                code = 31 * code + Arrays.hashCode((double[]) object);
-            } else if (object instanceof boolean[]) {
-                code = 31 * code + Arrays.hashCode((boolean[]) object);
-            } else if (object instanceof Object[]) {
-                code = 31 * code + hash((Object[]) object);
-            } else {
-                code = 31 * code + (object == null ? 0 : object.hashCode());
-            }
-        }
-        return code;
-    }
-
     /**
      * 对象比较
      *
@@ -879,32 +594,6 @@ public abstract class Objects {
             return 0;
         });
         return list;
-    }
-
-    /**
-     * 获取两个对象实例不同属性值
-     *
-     * @param <M>    数据类型
-     * @param object 对象实例
-     * @param other  对象实例
-     * @return 不同属性值
-     */
-    @Nonnull
-    public static <M> Map<String, Object[]> difference(M object, M other) {
-        Map<String, Object[]> different = new LinkedHashMap<>();
-        for (Field field : getFields(object.getClass())) {
-            field.setAccessible(true);
-            try {
-                Object value1 = field.get(object);
-                Object value2 = field.get(other);
-                if (!isEqual(value1, value2)) {
-                    different.put(field.getName(), new Object[]{value1, value2});
-                }
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return different;
     }
 
     /**
@@ -1178,10 +867,11 @@ public abstract class Objects {
         if (object == null) {
             return buildArray(type, 0);
         } else if (object instanceof List) {
+            int i = 0;
             List<?> list = (List<?>) object;
             T[] array = buildArray(type, list.size());
-            for (int i = 0; i < list.size(); i++) {
-                array[i] = (T) toObject(type, list.get(i));
+            for (Object o : list) {
+                array[i++] = (T) toObject(type, o);
             }
             return array;
         } else if (object instanceof Collection) {

@@ -1,6 +1,9 @@
 package com.arsframework.util;
 
 import java.util.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -17,18 +20,6 @@ import com.arsframework.annotation.Nonempty;
  * @version 2019-03-22 09:38
  */
 public abstract class Dates {
-    /**
-     * 日期格式模式
-     */
-    @Deprecated
-    public static final String DATE_PATTERN = "yyyy-MM-dd";
-
-    /**
-     * 日期时间格式模式
-     */
-    @Deprecated
-    public static final String DATETIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
-
     /**
      * 默认日期格式
      */
@@ -83,13 +74,13 @@ public abstract class Dates {
     private static final ThreadLocal<DecimalFormat> decimalFormat = ThreadLocal.withInitial(() -> new DecimalFormat("0.##"));
 
     /**
-     * 根据日期格式转换模式获取日期格式转换处理对象
+     * 构建日期格式处理对象
      *
      * @param pattern 日期格式转换模式字符串
-     * @return 日期格式化处理对象
+     * @return 日期格式处理对象
      */
     @Nonempty
-    public static DateFormat getDateFormat(String pattern) {
+    public static DateFormat buildDateFormat(String pattern) {
         Map<String, DateFormat> formats = dateFormats.get();
         DateFormat format = formats.get(pattern);
         if (format == null) {
@@ -122,7 +113,7 @@ public abstract class Dates {
         }
         for (String pattern : patterns) {
             try {
-                return getDateFormat(pattern).parse(source);
+                return buildDateFormat(pattern).parse(source);
             } catch (ParseException e) {
             }
         }
@@ -147,7 +138,49 @@ public abstract class Dates {
      * @return 日期时间字符串形式
      */
     public static String format(Date date, @Nonempty String pattern) {
-        return date == null ? null : getDateFormat(pattern).format(date);
+        return date == null ? null : buildDateFormat(pattern).format(date);
+    }
+
+    /**
+     * 将日期时间对象转换成字符串形式
+     *
+     * @param date 日期时间对象
+     * @return 日期时间字符串形式
+     */
+    public static String format(LocalDate date) {
+        return format(date, DEFAULT_DATETIME_FORMAT);
+    }
+
+    /**
+     * 将日期时间对象转换成字符串形式
+     *
+     * @param date    日期时间对象
+     * @param pattern 格式模式
+     * @return 日期时间字符串形式
+     */
+    public static String format(LocalDate date, @Nonempty String pattern) {
+        return date == null ? null : date.format(DateTimeFormatter.ofPattern(pattern));
+    }
+
+    /**
+     * 将日期时间对象转换成字符串形式
+     *
+     * @param date 日期时间对象
+     * @return 日期时间字符串形式
+     */
+    public static String format(LocalDateTime date) {
+        return format(date, DEFAULT_DATETIME_FORMAT);
+    }
+
+    /**
+     * 将日期时间对象转换成字符串形式
+     *
+     * @param date    日期时间对象
+     * @param pattern 格式模式
+     * @return 日期时间字符串形式
+     */
+    public static String format(LocalDateTime date, @Nonempty String pattern) {
+        return date == null ? null : date.format(DateTimeFormatter.ofPattern(pattern));
     }
 
     /**

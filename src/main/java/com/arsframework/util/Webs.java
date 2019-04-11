@@ -11,14 +11,8 @@ import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
-import java.nio.channels.ReadableByteChannel;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.parser.ParserDelegator;
-
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.disk.DiskFileItem;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 import com.arsframework.annotation.Min;
 import com.arsframework.annotation.Nonnull;
@@ -142,239 +136,6 @@ public abstract class Webs {
                 .append(':').append(request.getServerPort());
         String context = request.getContextPath();
         return context == null ? url.toString() : url.append(context).toString();
-    }
-
-    /**
-     * 拼接字符串参数
-     *
-     * @param param 参数串
-     * @param key   拼接参数名称
-     * @param value 拼接参数值
-     */
-    private static void concatParam(@Nonnull StringBuilder param, @Nonnull String key, Object value) {
-        if (param.length() > 0) {
-            param.append("&");
-        }
-        param.append(key).append("=");
-        if (!Objects.isEmpty(value)) {
-            param.append(Strings.toString(value));
-        }
-    }
-
-    /**
-     * 将键/值映射表转化成Http字符串形式参数
-     *
-     * @param map 键/值映射表
-     * @return 参数字符串形式
-     */
-    @Nonnull
-    public static String map2param(Map<?, ?> map) {
-        if (map.isEmpty()) {
-            return Strings.EMPTY_STRING;
-        }
-        StringBuilder param = new StringBuilder();
-        for (Map.Entry<?, ?> entry : map.entrySet()) {
-            if (entry.getKey() == null) {
-                continue;
-            }
-            String key = Strings.toString(entry.getKey());
-            Object value = entry.getValue();
-            if (value instanceof Object[] || value instanceof Collection) {
-                for (Object o : value instanceof Object[] ? Arrays.asList((Object[]) value) : (Collection<?>) value) {
-                    concatParam(param, key, o);
-                }
-            } else {
-                concatParam(param, key, value);
-            }
-        }
-        return param.toString();
-    }
-
-    /**
-     * 将参数字符串形式转换成键/值映射
-     *
-     * @param param 参数字符串形式
-     * @return 键/值映射
-     */
-    @Nonnull
-    public static Map<String, Object> param2map(String param) {
-        if (param.isEmpty()) {
-            return new HashMap<>(0);
-        }
-        String[] sections = param.split("&");
-        Map<String, Object> parameters = new HashMap<>(sections.length);
-        for (String section : sections) {
-            if ((section = section.trim()).isEmpty()) {
-                continue;
-            }
-            String[] kv = section.split("=");
-            String key = kv[0].trim();
-            if (key.isEmpty()) {
-                continue;
-            }
-            String value = kv.length > 1 ? kv[1].trim() : null;
-            Object exist = parameters.get(key);
-            if (exist == null) {
-                parameters.put(key, value);
-            } else if (value != null) {
-                if (exist instanceof List) {
-                    ((List<String>) exist).add(value);
-                } else {
-                    List<String> list = new LinkedList<>();
-                    list.add((String) exist);
-                    list.add(value);
-                    parameters.put(key, list);
-                }
-            }
-        }
-        return parameters;
-    }
-
-    /**
-     * 获取Http请求数据字节流
-     *
-     * @param request Http请求对象
-     * @return 字节数组
-     * @throws IOException IO操作异常
-     */
-    @Nonnull
-    public static byte[] getBytes(HttpServletRequest request) throws IOException {
-        try (InputStream is = request.getInputStream()) {
-            return Streams.getBytes(is);
-        }
-    }
-
-    /**
-     * 获取URL参数
-     *
-     * @param url 资源地址
-     * @return 参数键/值映射
-     */
-    @Nonnull
-    public static Map<String, Object> getUrlParameters(String url) {
-        int index = url.indexOf('?');
-        return index < 0 ? new HashMap<>(0) : param2map(url.substring(index + 1));
-    }
-
-    /**
-     * 获取普通表单请求参数
-     *
-     * @param request HTTP请求对象
-     * @return 参数键/值表
-     */
-    @Nonnull
-    public static Map<String, Object> getFormParameters(HttpServletRequest request) {
-        Map<String, Object> parameters = new HashMap<>();
-        Enumeration<String> names = request.getParameterNames();
-        while (names.hasMoreElements()) {
-            String name = names.nextElement();
-            Object value = null;
-            String[] values = request.getParameterValues(name);
-            if (values.length == 1) {
-                String param = values[0].trim();
-                if (!param.isEmpty()) {
-                    value = param;
-                }
-            } else {
-                List<String> _values = new ArrayList<>(values.length);
-                for (int i = 0; i < values.length; i++) {
-                    String param = values[i].trim();
-                    if (!param.isEmpty()) {
-                        _values.add(param);
-                    }
-                }
-                if (_values.size() == 1) {
-                    value = _values.get(0);
-                } else if (!_values.isEmpty()) {
-                    value = _values;
-                }
-            }
-            parameters.put(name, value);
-        }
-        return parameters;
-    }
-
-    /**
-     * 获取文件上传表单参数
-     *
-     * @param request  HTTP请求对象
-     * @param uploader 文件上传处理器
-     * @return 参数键/值表
-     * @throws FileUploadException 文件上传异常
-     */
-    @Nonnull
-    public static Map<String, Object> getUploadParameters(HttpServletRequest request, ServletFileUpload uploader)
-            throws FileUploadException {
-        List<?> items = uploader.parseRequest(request);
-        Map<String, Object> parameters = new HashMap<>(items.size());
-        for (int i = 0; i < items.size(); i++) {
-            final FileItem item = (FileItem) items.get(i);
-            Object value = null;
-            String name = item.getFieldName();
-            if (item.isFormField()) {
-                try {
-                    String param = new String(item.get(), Strings.CHARSET_UTF8).trim();
-                    if (!param.isEmpty()) {
-                        value = param;
-                    }
-                } catch (UnsupportedEncodingException e) {
-                    throw new RuntimeException(e);
-                }
-            } else {
-                File file = ((DiskFileItem) item).getStoreLocation();
-                value = new Nfile(Files.getName(item.getName())) {
-                    private static final long serialVersionUID = 1L;
-
-                    @Override
-                    public long getSize() {
-                        return item.getSize();
-                    }
-
-                    @Override
-                    public boolean isLocal() {
-                        return file.exists();
-                    }
-
-                    @Override
-                    public File getLocal() {
-                        return file;
-                    }
-
-                    @Override
-                    public InputStream getInputStream() throws IOException {
-                        return item.getInputStream();
-                    }
-
-                };
-            }
-            Object o = parameters.get(name);
-            if (o == null) {
-                parameters.put(name, value);
-            } else if (value != null) {
-                if (o instanceof List) {
-                    ((List<Object>) o).add(value);
-                } else {
-                    List<Object> values = new LinkedList<>();
-                    values.add(o);
-                    values.add(value);
-                    parameters.put(name, values);
-                }
-            }
-        }
-        return parameters;
-    }
-
-    /**
-     * 获取JSON参数
-     *
-     * @param request HTTP请求对象
-     * @return 参数键/值表
-     * @throws IOException IO操作异常
-     */
-    @Nonnull
-    public static Map<String, Object> getJsonParameters(HttpServletRequest request) throws IOException {
-        String json = new String(getBytes(request));
-        return json.isEmpty() ? Collections.emptyMap() : (Map<String, Object>) Jsons.parse(json);
     }
 
     /**
@@ -504,8 +265,9 @@ public abstract class Webs {
      * @param file     文件对象
      * @throws IOException IO操作异常
      */
+    @Nonnull
     public static void write(HttpServletResponse response, File file) throws IOException {
-        write(response, new Nfile(file));
+        write(response, file, file.getName());
     }
 
     /**
@@ -513,74 +275,31 @@ public abstract class Webs {
      *
      * @param response HTTP响应对象
      * @param file     文件对象
+     * @param name     文件名称
      * @throws IOException IO操作异常
      */
     @Nonnull
-    public static void write(HttpServletResponse response, Nfile file) throws IOException {
-        String name = new String(file.getName().getBytes(), "ISO-8859-1");
-        response.setContentType("application/octet-stream");
-        response.setHeader("Content-Disposition", "attachment; filename=" + name);
-        if (file.getSize() > 0) {
-            response.setHeader("Content-Length", String.valueOf(file.getSize()));
-        }
+    public static void write(HttpServletResponse response, File file, String name) throws IOException {
+        initializeFileResponseHeader(response, name);
         try (OutputStream os = response.getOutputStream()) {
-            file.write(os);
+            Streams.write(file, os);
         }
     }
 
     /**
-     * 向Http响应对象中写入数据
+     * 初始化文件响应头
      *
      * @param response HTTP响应对象
-     * @param bytes    数据字节数组
-     * @throws IOException IO操作异常
+     * @param name     文件名称
      */
     @Nonnull
-    public static void write(HttpServletResponse response, byte[] bytes) throws IOException {
-        try (OutputStream os = response.getOutputStream()) {
-            os.write(bytes);
-        }
-    }
-
-    /**
-     * 向Http响应对象中写入数据
-     *
-     * @param response HTTP响应对象
-     * @param object   数据对象
-     * @throws IOException IO操作异常
-     */
-    @Nonnull
-    public static void write(HttpServletResponse response, Object object) throws IOException {
-        try (OutputStream os = response.getOutputStream()) {
-            os.write(Strings.toString(object).getBytes());
-        }
-    }
-
-    /**
-     * 向Http响应对象中写入数据
-     *
-     * @param response HTTP响应对象
-     * @param input    数据输入流
-     * @throws IOException IO操作异常
-     */
-    @Nonnull
-    public static void write(HttpServletResponse response, InputStream input) throws IOException {
-        try (OutputStream os = response.getOutputStream()) {
-            Streams.write(input, os);
-        }
-    }
-
-    /**
-     * 向Http响应对象中写入数据
-     *
-     * @param response HTTP响应对象
-     * @param input    数据输入通道
-     * @throws IOException IO操作异常
-     */
-    @Nonnull
-    public static void write(HttpServletResponse response, ReadableByteChannel input) throws IOException {
-        try (OutputStream os = response.getOutputStream()) {
-            Streams.write(input, os);
+    public static void initializeFileResponseHeader(HttpServletResponse response, String name) {
+        try {
+            name = new String(name.getBytes(), "ISO-8859-1");
+            response.setContentType("application/octet-stream");
+            response.setHeader("Content-Disposition", "attachment; filename=" + name);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -601,17 +320,6 @@ public abstract class Webs {
      * @param html html文本
      * @return 纯文本
      */
-    @Deprecated
-    public static String getText(String html) {
-        return getHtmlText(html);
-    }
-
-    /**
-     * 获取html中纯文本
-     *
-     * @param html html文本
-     * @return 纯文本
-     */
     @Nonnull
     public static String getHtmlText(String html) {
         try {
@@ -619,18 +327,6 @@ public abstract class Webs {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    /**
-     * 获取html中纯文本
-     *
-     * @param reader html数据流
-     * @return 纯文本
-     * @throws IOException IO操作异常
-     */
-    @Deprecated
-    public static String getText(Reader reader) throws IOException {
-        return getHtmlText(reader);
     }
 
     /**
