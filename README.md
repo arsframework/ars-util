@@ -10,7 +10,7 @@ JDK1.8+
 <dependency>
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 
@@ -64,5 +64,9 @@ JDK1.8+
 3. 更新```ars-annotation```依赖版本号为```1.4.0```
 
 ### v1.1.0
+1. 内部优化及Bug修复
+2. 移除已过时的类和方法
+
+### v1.2.0
 1. 内部优化及Bug修复
 2. 移除已过时的类和方法

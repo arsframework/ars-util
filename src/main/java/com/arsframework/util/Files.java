@@ -2,7 +2,6 @@ package com.arsframework.util;
 
 import java.io.*;
 import java.util.*;
-import java.text.DecimalFormat;
 
 import com.arsframework.annotation.Min;
 import com.arsframework.annotation.Nonnull;
@@ -15,11 +14,6 @@ import com.arsframework.annotation.Nonempty;
  * @version 2019-03-22 09:38
  */
 public abstract class Files {
-    /**
-     * 当前线程数字格式化对象
-     */
-    private static final ThreadLocal<DecimalFormat> decimalFormat = ThreadLocal.withInitial(() -> new DecimalFormat("0.##"));
-
     /**
      * 创建文件目录
      *
@@ -123,52 +117,56 @@ public abstract class Files {
     }
 
     /**
-     * 将文件大小转换成带单位的文件大小表示
+     * 文件/文件目录属性
      *
-     * @param size 文件大小
-     * @return 带单位的文件大小表示
+     * @param <T> 属性类型
      */
-    public static String toUnitSize(@Min(0) long size) {
-        if (size == 0) {
-            return "0Byte";
-        }
-        StringBuilder buffer = new StringBuilder();
-        if (size >= 1073741824) {
-            buffer.append(decimalFormat.get().format(size / 1073741824d)).append("GB");
-        } else if (size >= 1048576) {
-            buffer.append(decimalFormat.get().format(size / 1048576d)).append("MB");
-        } else if (size >= 1024) {
-            buffer.append(decimalFormat.get().format(size / 1024d)).append("KB");
-        } else {
-            buffer.append(size).append("Byte");
-        }
-        return buffer.toString();
-    }
+    public static final class Property<T> {
+        /**
+         * 属性类型
+         */
+        public final Class<T> type;
 
-    /**
-     * 文件/文件目录属性枚举
-     */
-    public enum Property {
+        /**
+         * 属性名称
+         */
+        public final String name;
+
+        @Nonempty
+        private Property(Class<T> type, String name) {
+            this.name = name;
+            this.type = type;
+        }
+
         /**
          * 文件/文件目录名称属性
          */
-        NAME,
+        public static final Property<String> NAME = new Property<>(String.class, "name");
 
         /**
          * 文件/文件目录大小属性
          */
-        SIZE,
+        public static final Property<Long> SIZE = new Property<>(Long.class, "size");
 
         /**
          * 文件/文件目录最后修改时间属性
          */
-        MODIFIED,
+        public static final Property<Long> MODIFIED = new Property<>(Long.class, "modified");
 
         /**
          * 是否为文件目录属性
          */
-        DIRECTORY;
+        public static final Property<Boolean> DIRECTORY = new Property<>(Boolean.class, "directory");
 
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof Property && this.type == ((Property) other).type && this.name.equals(((Property) other).name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(new Object[]{this.name, this.type});
+        }
     }
 
     /**
@@ -180,7 +178,7 @@ public abstract class Files {
     /**
      * 文件描述对象
      */
-    public static class Describe implements Serializable {
+    public static class Describe implements Comparable<Describe>, Serializable {
         private static final long serialVersionUID = 1L;
 
         /**
@@ -201,7 +199,7 @@ public abstract class Files {
         /**
          * 文件/文件目录最后修改时间
          */
-        public final Date modified;
+        public final long modified;
 
         /**
          * 是否为文件目录
@@ -209,16 +207,31 @@ public abstract class Files {
         public final boolean directory;
 
         public Describe(File file) {
-            this(file.getPath().replace("\\", "/"), file.getName(), file.length(), new Date(file.lastModified()), file.isDirectory());
+            this(file.getPath().replace("\\", "/"), file.getName(), file.length(), file.lastModified(), file.isDirectory());
         }
 
         @Nonnull
-        public Describe(String path, String name, @Min(0) long size, Date modified, boolean directory) {
+        public Describe(String path, String name, @Min(0) long size, long modified, boolean directory) {
             this.path = path;
             this.name = name;
             this.size = size;
             this.modified = modified;
             this.directory = directory;
+        }
+
+        @Override
+        public int compareTo(Describe other) {
+            return this.path.compareTo(other.path);
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof Describe && this.path.equals(((Describe) other).path);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 + this.path.hashCode();
         }
 
         @Override
@@ -229,43 +242,49 @@ public abstract class Files {
 
     /**
      * 等于条件
+     *
+     * @param <T> 数据类型
      */
-    public static class Equal implements Condition {
-        public final Property property; // 比较属性
-        public final Object value; // 比较值
+    public static class Equal<T> implements Condition {
+        public final Property<T> property; // 比较属性
+        public final T[] values; // 比较值数组
 
         @Nonnull
-        public Equal(Property property, Object value) {
+        public Equal(Property<T> property, T... values) {
             this.property = property;
-            this.value = value;
+            this.values = values;
         }
 
     }
 
     /**
      * 不等于
+     *
+     * @param <T> 数据类型
      */
-    public static class NotEqual implements Condition {
-        public final Property property; // 比较属性
-        public final Object value; // 比较值
+    public static class NotEqual<T> implements Condition {
+        public final Property<T> property; // 比较属性
+        public final T[] values; // 比较值数组
 
         @Nonnull
-        public NotEqual(Property property, Object value) {
+        public NotEqual(Property<T> property, T... values) {
             this.property = property;
-            this.value = value;
+            this.values = values;
         }
 
     }
 
     /**
      * 大于
+     *
+     * @param <T> 数据类型
      */
-    public static class Large implements Condition {
-        public final Property property; // 比较属性
-        public final Object value; // 比较值
+    public static class Large<T> implements Condition {
+        public final Property<T> property; // 比较属性
+        public final T value; // 比较值
 
         @Nonnull
-        public Large(Property property, Object value) {
+        public Large(Property<T> property, T value) {
             this.property = property;
             this.value = value;
         }
@@ -274,13 +293,15 @@ public abstract class Files {
 
     /**
      * 大于或等于
+     *
+     * @param <T> 数据类型
      */
-    public static class LargeEqual implements Condition {
-        public final Property property; // 比较属性
-        public final Object value; // 比较值
+    public static class LargeEqual<T> implements Condition {
+        public final Property<T> property; // 比较属性
+        public final T value; // 比较值
 
         @Nonnull
-        public LargeEqual(Property property, Object value) {
+        public LargeEqual(Property<T> property, T value) {
             this.property = property;
             this.value = value;
         }
@@ -289,13 +310,15 @@ public abstract class Files {
 
     /**
      * 小于
+     *
+     * @param <T> 数据类型
      */
-    public static class Less implements Condition {
-        public final Property property; // 比较属性
-        public final Object value; // 比较值
+    public static class Less<T> implements Condition {
+        public final Property<T> property; // 比较属性
+        public final T value; // 比较值
 
         @Nonnull
-        public Less(Property property, Object value) {
+        public Less(Property<T> property, T value) {
             this.property = property;
             this.value = value;
         }
@@ -304,13 +327,15 @@ public abstract class Files {
 
     /**
      * 小于或等于
+     *
+     * @param <T> 数据类型
      */
-    public static class LessEqual implements Condition {
-        public final Property property; // 比较属性
-        public final Object value; // 比较值
+    public static class LessEqual<T> implements Condition {
+        public final Property<T> property; // 比较属性
+        public final T value; // 比较值
 
         @Nonnull
-        public LessEqual(Property property, Object value) {
+        public LessEqual(Property<T> property, T value) {
             this.property = property;
             this.value = value;
         }
@@ -319,35 +344,39 @@ public abstract class Files {
 
     /**
      * 大于和小于
+     *
+     * @param <T> 数据类型
      */
-    public static class Between implements Condition {
-        public final Property property; // 比较属性
-        public final Object low; // 低值
-        public final Object high; // 高值
+    public static class Between<T> implements Condition {
+        public final Property<T> property; // 比较属性
+        public final T min; // 最小值
+        public final T max; // 最大值
 
         @Nonnull
-        public Between(Property property, Object low, Object high) {
+        public Between(Property<T> property, T min, T max) {
             this.property = property;
-            this.low = low;
-            this.high = high;
+            this.min = min;
+            this.max = max;
         }
 
     }
 
     /**
      * 模糊匹配
+     *
+     * @param <T> 数据类型
      */
-    public static class Like implements Condition {
-        public final Property property; // 比较属性
-        public final String value; // 比较值
+    public static class Like<T> implements Condition {
+        public final Property<T> property; // 比较属性
+        public final T value; // 比较值
         public final Position position; // 比较位置
 
-        public Like(Property property, String value) {
+        public Like(Property<T> property, T value) {
             this(property, value, Position.ANY);
         }
 
         @Nonnull
-        public Like(Property property, String value, Position position) {
+        public Like(Property<T> property, T value, Position position) {
             this.property = property;
             this.value = value;
             this.position = position;
@@ -415,22 +444,24 @@ public abstract class Files {
      * 等于
      *
      * @param property 属性
-     * @param value    属性值
+     * @param values   属性值数组
+     * @param <T>      数据类型
      * @return 条件对象
      */
-    public static Equal eq(Property property, Object value) {
-        return new Equal(property, valueAdapter(property, value));
+    public static <T> Equal eq(Property<T> property, T... values) {
+        return new Equal(property, values);
     }
 
     /**
      * 不等于
      *
      * @param property 属性
-     * @param value    属性值
+     * @param values   属性值数组
+     * @param <T>      数据类型
      * @return 条件对象
      */
-    public static NotEqual ne(Property property, Object value) {
-        return new NotEqual(property, valueAdapter(property, value));
+    public static <T> NotEqual ne(Property<T> property, T... values) {
+        return new NotEqual(property, values);
     }
 
     /**
@@ -438,10 +469,11 @@ public abstract class Files {
      *
      * @param property 属性
      * @param value    属性值
+     * @param <T>      数据类型
      * @return 条件对象
      */
-    public static Large gt(Property property, Object value) {
-        return new Large(property, valueAdapter(property, value));
+    public static <T> Large gt(Property<T> property, T value) {
+        return new Large(property, value);
     }
 
     /**
@@ -449,10 +481,11 @@ public abstract class Files {
      *
      * @param property 属性
      * @param value    属性值
+     * @param <T>      数据类型
      * @return 条件对象
      */
-    public static LargeEqual ge(Property property, Object value) {
-        return new LargeEqual(property, valueAdapter(property, value));
+    public static <T> LargeEqual ge(Property<T> property, T value) {
+        return new LargeEqual(property, value);
     }
 
     /**
@@ -460,10 +493,11 @@ public abstract class Files {
      *
      * @param property 属性
      * @param value    属性值
+     * @param <T>      数据类型
      * @return 条件对象
      */
-    public static Less lt(Property property, Object value) {
-        return new Less(property, valueAdapter(property, value));
+    public static <T> Less lt(Property<T> property, T value) {
+        return new Less(property, value);
     }
 
     /**
@@ -471,22 +505,36 @@ public abstract class Files {
      *
      * @param property 属性
      * @param value    属性值
+     * @param <T>      数据类型
      * @return 条件对象
      */
-    public static LessEqual le(Property property, Object value) {
-        return new LessEqual(property, valueAdapter(property, value));
+    public static <T> LessEqual le(Property<T> property, T value) {
+        return new LessEqual(property, value);
     }
 
     /**
      * 属性值在两个值之间
      *
      * @param property 属性
-     * @param low      低值
-     * @param high     高值
+     * @param min      最小值
+     * @param max      最大值
+     * @param <T>      数据类型
      * @return 条件对象
      */
-    public static Between between(Property property, Object low, Object high) {
-        return new Between(property, valueAdapter(property, low), valueAdapter(property, high));
+    public static <T> Between between(Property<T> property, T min, T max) {
+        return new Between(property, min, max);
+    }
+
+    /**
+     * 包含指定字符串
+     *
+     * @param property 属性
+     * @param value    属性值
+     * @param <T>      数据类型
+     * @return 条件对象
+     */
+    public static <T> Like like(Property<T> property, T value) {
+        return like(property, value, Like.Position.ANY);
     }
 
     /**
@@ -495,9 +543,10 @@ public abstract class Files {
      * @param property 属性
      * @param value    属性值
      * @param position 匹配位置
+     * @param <T>      数据类型
      * @return 条件对象
      */
-    public static Like like(Property property, String value, Like.Position position) {
+    public static <T> Like like(Property<T> property, T value, Like.Position position) {
         return new Like(property, value, position);
     }
 
@@ -522,25 +571,6 @@ public abstract class Files {
     }
 
     /**
-     * 将值类型转换成属性对应类型
-     *
-     * @param property 属性
-     * @param value    值
-     * @return 转换后的值
-     */
-    public static Object valueAdapter(@Nonnull Property property, Object value) {
-        boolean array = value != null && value.getClass().isArray();
-        if (property == Property.NAME) {
-            return array ? Objects.toArray(String.class, value) : Objects.toObject(String.class, value);
-        } else if (property == Property.SIZE) {
-            return array ? Objects.toArray(long.class, value) : Objects.toObject(long.class, value);
-        } else if (property == Property.MODIFIED) {
-            return array ? Objects.toArray(Date.class, value) : Objects.toObject(Date.class, value);
-        }
-        return array ? Objects.toArray(boolean.class, value) : Objects.toObject(boolean.class, value);
-    }
-
-    /**
      * 判断文件描述是否满足小于条件
      *
      * @param describe 文件描述对象
@@ -549,14 +579,9 @@ public abstract class Files {
      */
     @Nonnull
     public static boolean isSatisfy(Describe describe, Less less) {
-        if (less.property == Property.NAME && describe.name.compareToIgnoreCase((String) less.value) > -1) {
-            return false;
-        } else if (less.property == Property.SIZE && describe.size >= (Long) less.value) {
-            return false;
-        } else if (less.property == Property.MODIFIED && !describe.modified.before((Date) less.value)) {
-            return false;
-        }
-        return describe.directory == false && (Boolean) less.value == true;
+        return (less.property == Property.NAME && describe.name.compareToIgnoreCase((String) less.value) < 0)
+                || (less.property == Property.SIZE && describe.size < (long) less.value)
+                || (less.property == Property.MODIFIED && describe.modified < (long) less.value);
     }
 
     /**
@@ -568,23 +593,12 @@ public abstract class Files {
      */
     @Nonnull
     public static boolean isSatisfy(Describe describe, Like like) {
-        String value = like.value.toUpperCase();
-        String source;
         if (like.property == Property.NAME) {
-            source = describe.name.toUpperCase();
-        } else if (like.property == Property.SIZE) {
-            source = String.valueOf(describe.size);
-        } else if (like.property == Property.MODIFIED) {
-            source = Dates.format(describe.modified);
-        } else {
-            source = String.valueOf(describe.directory);
-        }
-        if (like.position == Like.Position.BEGIN && source.indexOf(value) > 0) {
-            return false;
-        } else if (like.position == Like.Position.END && source.length() > source.lastIndexOf(value) + value.length()) {
-            return false;
-        } else if (like.position == Like.Position.ANY && source.indexOf(value) < 0) {
-            return false;
+            String source = describe.name.toUpperCase();
+            String value = ((String) like.value).toUpperCase();
+            return (like.position == Like.Position.BEGIN && source.indexOf(value) == 0)
+                    || (like.position == Like.Position.END && source.lastIndexOf(value) == source.length() - value.length())
+                    || (like.position == Like.Position.ANY && source.indexOf(value) > -1);
         }
         return true;
     }
@@ -598,53 +612,15 @@ public abstract class Files {
      */
     @Nonnull
     public static boolean isSatisfy(Describe describe, Equal equal) {
-        int matched = 0;
-        if (equal.property == Property.NAME) {
-            if (equal.value instanceof String[]) {
-                for (String name : (String[]) equal.value) {
-                    if (describe.name.equalsIgnoreCase(name)) {
-                        matched++;
-                        break;
-                    }
-                }
-            } else if (describe.name.equalsIgnoreCase((String) equal.value)) {
-                matched++;
-            }
-        } else if (equal.property == Property.SIZE) {
-            if (equal.value instanceof long[]) {
-                for (long size : (long[]) equal.value) {
-                    if (describe.size == size) {
-                        matched++;
-                        break;
-                    }
-                }
-            } else if (describe.size == (Long) equal.value) {
-                matched++;
-            }
-        } else if (equal.property == Property.MODIFIED) {
-            if (equal.value instanceof Date[]) {
-                for (Date date : (Date[]) equal.value) {
-                    if (describe.modified.compareTo(date) == 0) {
-                        matched++;
-                        break;
-                    }
-                }
-            } else if (describe.modified.compareTo((Date) equal.value) == 0) {
-                matched++;
-            }
-        } else {
-            if (equal.value instanceof boolean[]) {
-                for (boolean directory : (boolean[]) equal.value) {
-                    if (describe.directory == directory) {
-                        matched++;
-                        break;
-                    }
-                }
-            } else if (describe.directory == (Boolean) equal.value) {
-                matched++;
+        for (Object value : equal.values) {
+            if ((equal.property == Property.NAME && describe.name.equalsIgnoreCase((String) value))
+                    || (equal.property == Property.SIZE && describe.size == (long) value)
+                    || (equal.property == Property.MODIFIED && describe.modified == (long) value)
+                    || (equal.property == Property.DIRECTORY && describe.directory == (boolean) value)) {
+                return true;
             }
         }
-        return matched > 0;
+        return false;
     }
 
     /**
@@ -656,14 +632,9 @@ public abstract class Files {
      */
     @Nonnull
     public static boolean isSatisfy(Describe describe, Large large) {
-        if (large.property == Property.NAME && describe.name.compareToIgnoreCase((String) large.value) < 0) {
-            return false;
-        } else if (large.property == Property.SIZE && describe.size <= (Long) large.value) {
-            return false;
-        } else if (large.property == Property.MODIFIED && !describe.modified.after((Date) large.value)) {
-            return false;
-        }
-        return describe.directory == true && (Boolean) large.value == false;
+        return (large.property == Property.NAME && describe.name.compareToIgnoreCase((String) large.value) > 0)
+                || (large.property == Property.SIZE && describe.size > (long) large.value)
+                || (large.property == Property.MODIFIED && describe.modified > (long) large.value);
     }
 
     /**
@@ -675,17 +646,12 @@ public abstract class Files {
      */
     @Nonnull
     public static boolean isSatisfy(Describe describe, Between between) {
-        if (between.property == Property.NAME && (describe.name.compareToIgnoreCase((String) between.low) < 0
-                || describe.name.compareToIgnoreCase((String) between.high) > 0)) {
-            return false;
-        } else if (between.property == Property.SIZE
-                && (describe.size < (Long) between.low || describe.size > (Long) between.high)) {
-            return false;
-        } else if (between.property == Property.MODIFIED
-                && (describe.modified.before((Date) between.low) || describe.modified.after((Date) between.high))) {
-            return false;
-        }
-        return true;
+        return (between.property == Property.NAME && describe.name.compareToIgnoreCase((String) between.min) >= 0
+                && describe.name.compareToIgnoreCase((String) between.max) <= 0)
+                || (between.property == Property.SIZE
+                && describe.size >= (long) between.min && describe.size <= (long) between.max)
+                || (between.property == Property.MODIFIED
+                && describe.modified >= (long) between.min && describe.modified <= (long) between.max);
     }
 
     /**
@@ -697,48 +663,7 @@ public abstract class Files {
      */
     @Nonnull
     public static boolean isSatisfy(Describe describe, NotEqual notEqual) {
-        if (notEqual.property == Property.NAME) {
-            if (notEqual.value instanceof String[]) {
-                for (String name : (String[]) notEqual.value) {
-                    if (describe.name.equalsIgnoreCase(name)) {
-                        return false;
-                    }
-                }
-            } else if (describe.name.equalsIgnoreCase((String) notEqual.value)) {
-                return false;
-            }
-        } else if (notEqual.property == Property.SIZE) {
-            if (notEqual.value instanceof long[]) {
-                for (long size : (long[]) notEqual.value) {
-                    if (describe.size == size) {
-                        return false;
-                    }
-                }
-            } else if (describe.size == (Long) notEqual.value) {
-                return false;
-            }
-        } else if (notEqual.property == Property.MODIFIED) {
-            if (notEqual.value instanceof Date[]) {
-                for (Date date : (Date[]) notEqual.value) {
-                    if (describe.modified.compareTo(date) == 0) {
-                        return false;
-                    }
-                }
-            } else if (describe.modified.compareTo((Date) notEqual.value) == 0) {
-                return false;
-            }
-        } else {
-            if (notEqual.value instanceof boolean[]) {
-                for (boolean directory : (boolean[]) notEqual.value) {
-                    if (describe.directory == directory) {
-                        return false;
-                    }
-                }
-            } else if (describe.directory == (Boolean) notEqual.value) {
-                return false;
-            }
-        }
-        return true;
+        return !isSatisfy(describe, new Equal(notEqual.property, notEqual.values));
     }
 
     /**
@@ -750,14 +675,9 @@ public abstract class Files {
      */
     @Nonnull
     public static boolean isSatisfy(Describe describe, LessEqual lessEqual) {
-        if (lessEqual.property == Property.NAME && describe.name.compareToIgnoreCase((String) lessEqual.value) > 0) {
-            return false;
-        } else if (lessEqual.property == Property.SIZE && describe.size > (Long) lessEqual.value) {
-            return false;
-        } else if (lessEqual.property == Property.MODIFIED && describe.modified.after((Date) lessEqual.value)) {
-            return false;
-        }
-        return describe.directory == false;
+        return (lessEqual.property == Property.NAME && describe.name.compareToIgnoreCase((String) lessEqual.value) <= 0)
+                || (lessEqual.property == Property.SIZE && describe.size <= (long) lessEqual.value)
+                || (lessEqual.property == Property.MODIFIED && describe.modified <= (long) lessEqual.value);
     }
 
     /**
@@ -769,14 +689,9 @@ public abstract class Files {
      */
     @Nonnull
     public static boolean isSatisfy(Describe describe, LargeEqual largeEqual) {
-        if (largeEqual.property == Property.NAME && describe.name.compareToIgnoreCase((String) largeEqual.value) < 0) {
-            return false;
-        } else if (largeEqual.property == Property.SIZE && describe.size < (Long) largeEqual.value) {
-            return false;
-        } else if (largeEqual.property == Property.MODIFIED && describe.modified.before((Date) largeEqual.value)) {
-            return false;
-        }
-        return describe.directory == true;
+        return (largeEqual.property == Property.NAME && describe.name.compareToIgnoreCase((String) largeEqual.value) >= 0)
+                || (largeEqual.property == Property.SIZE && describe.size >= (long) largeEqual.value)
+                || (largeEqual.property == Property.MODIFIED && describe.modified >= (long) largeEqual.value);
     }
 
     /**
@@ -811,40 +726,6 @@ public abstract class Files {
     }
 
     /**
-     * 文件比较
-     *
-     * @param file   比较文件
-     * @param other  被比较文件
-     * @param orders 排序对象
-     * @return 比较结果
-     */
-    @Nonempty
-    public static int compare(File file, File other, Order... orders) {
-        for (Order order : orders) {
-            int compare = 0;
-            if (order.property == Property.NAME) {
-                compare = file.getName().compareTo(other.getName());
-            } else if (order.property == Property.SIZE) {
-                long l1 = file.length();
-                long l2 = other.length();
-                compare = l1 < l2 ? -1 : l1 == l2 ? 0 : 1;
-            } else if (order.property == Property.MODIFIED) {
-                long m1 = file.lastModified();
-                long m2 = other.lastModified();
-                compare = m1 < m2 ? -1 : m1 == m2 ? 0 : 1;
-            } else if (order.property == Property.DIRECTORY) {
-                boolean d1 = file.isDirectory();
-                boolean d2 = other.isDirectory();
-                compare = d1 && !d2 ? -1 : d1 == d2 ? 0 : 1;
-            }
-            if (compare != 0) {
-                return order instanceof Asc ? compare : -compare;
-            }
-        }
-        return 0;
-    }
-
-    /**
      * 文件描述比较
      *
      * @param describe 比较文件描述对象
@@ -861,7 +742,7 @@ public abstract class Files {
             } else if (order.property == Property.SIZE) {
                 compare = describe.size < other.size ? -1 : describe.size == other.size ? 0 : 1;
             } else if (order.property == Property.MODIFIED) {
-                compare = describe.modified.compareTo(other.modified);
+                compare = describe.modified < other.modified ? -1 : describe.modified == other.modified ? 0 : 1;
             } else if (order.property == Property.DIRECTORY) {
                 compare = describe.directory && !other.directory ? -1 : describe.directory == other.directory ? 0 : 1;
             }
@@ -873,17 +754,6 @@ public abstract class Files {
     }
 
     /**
-     * 对文件列表排序
-     *
-     * @param files  文件对象数组
-     * @param orders 排序对象数组
-     */
-    @Nonempty
-    public static void sort(File[] files, Order... orders) {
-        Arrays.sort(files, (File o1, File o2) -> Files.compare(o1, o2, orders));
-    }
-
-    /**
      * 对文件描述列表排序
      *
      * @param describes 文件描述对象数组
@@ -891,7 +761,7 @@ public abstract class Files {
      */
     @Nonempty
     public static void sort(Describe[] describes, Order... orders) {
-        Arrays.sort(describes, (Describe o1, Describe o2) -> Files.compare(o1, o2, orders));
+        Arrays.sort(describes, (Describe o1, Describe o2) -> compare(o1, o2, orders));
     }
 
     /**
@@ -902,6 +772,6 @@ public abstract class Files {
      */
     @Nonempty
     public static void sort(List<Describe> describes, Order... orders) {
-        Collections.sort(describes, (Describe o1, Describe o2) -> Files.compare(o1, o2, orders));
+        Collections.sort(describes, (Describe o1, Describe o2) -> compare(o1, o2, orders));
     }
 }

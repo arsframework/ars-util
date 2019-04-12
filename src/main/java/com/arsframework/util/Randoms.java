@@ -1,6 +1,8 @@
 package com.arsframework.util;
 
 import java.util.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.lang.reflect.Field;
 
 import com.arsframework.annotation.Lt;
@@ -26,7 +28,7 @@ public abstract class Randoms {
      * @param <T> 数据类型
      * @author yongqiangwu
      */
-    public interface RandomGenerator<T> {
+    public interface Generator<T> {
         /**
          * 生成随机数
          *
@@ -37,11 +39,11 @@ public abstract class Randoms {
     }
 
     /**
-     * 随机生成对象属性排除策略接口
+     * 随机生成对象属性排器接口
      *
      * @author yongqiangwu
      */
-    public interface ExcludeStrategy {
+    public interface Excluder {
         /**
          * 判断是否排除
          *
@@ -49,7 +51,7 @@ public abstract class Randoms {
          * @param field 字段对象
          * @return true/false
          */
-        boolean exclude(Class<?> type, Field field);
+        boolean excluded(Class<?> type, Field field);
 
     }
 
@@ -58,16 +60,16 @@ public abstract class Randoms {
      *
      * @author yongqiangwu
      */
-    public interface RandomGeneratorFactory {
+    public interface GeneratorBuilder {
         /**
-         * 获取随机数生成接口
+         * 构建随机数生成接口
          *
          * @param <T>   数据类型
          * @param type  对象类型
          * @param field 字段对象
          * @return 随机数生成接口
          */
-        <T> RandomGenerator<T> getRandomGenerator(Class<T> type, Field field);
+        <T> Generator<T> buildGenerator(Class<T> type, Field field);
 
     }
 
@@ -79,8 +81,8 @@ public abstract class Randoms {
      */
     public static class RandomBeanFactory<T> {
         protected final Class<T> type; // 对象类型
-        private ExcludeStrategy excludeStrategy;
-        private RandomGeneratorFactory randomGeneratorFactory;
+        private Excluder excluder;
+        private GeneratorBuilder generatorBuilder;
         private final LinkedList<Class<?>> executed = new LinkedList<>(); // 已执行对象类型
 
         @Nonnull
@@ -97,11 +99,10 @@ public abstract class Randoms {
          */
         @Nonnull
         protected <M> M execute(Class<M> type) {
-            if (this.excludeStrategy != null && this.excludeStrategy.exclude(type, null)) {
+            if (this.excluder != null && this.excluder.excluded(type, null)) {
                 return null;
             }
-            RandomGenerator<?> generator = this.randomGeneratorFactory == null ? null
-                    : this.randomGeneratorFactory.getRandomGenerator(type, null);
+            Generator<?> generator = this.generatorBuilder == null ? null : this.generatorBuilder.buildGenerator(type, null);
             if (generator != null) {
                 return (M) generator.generate();
             }
@@ -109,6 +110,10 @@ public abstract class Randoms {
                 return (M) randomEnum((Class<Enum<?>>) type);
             } else if (Date.class.isAssignableFrom(type)) {
                 return (M) randomDate();
+            } else if (LocalDate.class.isAssignableFrom(type)) {
+                return (M) Dates.adapter(randomDate()).toLocalDate();
+            } else if (LocalDateTime.class.isAssignableFrom(type)) {
+                return (M) Dates.adapter(randomDate());
             } else if (type == byte.class || type == Byte.class) {
                 return (M) Byte.valueOf((byte) randomInteger());
             } else if (type == char.class || type == Character.class) {
@@ -139,12 +144,11 @@ public abstract class Randoms {
             this.executed.add(type);
             M instance = Objects.initialize(type);
             for (Field field : Objects.getFields(type)) {
-                if (this.excludeStrategy != null && this.excludeStrategy.exclude(type, field)) {
+                if (this.excluder != null && this.excluder.excluded(type, field)) {
                     continue;
                 }
                 Object value;
-                generator = this.randomGeneratorFactory == null ? null
-                        : this.randomGeneratorFactory.getRandomGenerator(type, field);
+                generator = this.generatorBuilder == null ? null : this.generatorBuilder.buildGenerator(type, field);
                 if (generator != null) {
                     value = generator.generate();
                 } else if (Map.class.isAssignableFrom(field.getType())) {
@@ -178,26 +182,26 @@ public abstract class Randoms {
         }
 
         /**
-         * 注册随机生成属性排除策略
+         * 注册随机生成属性排除器
          *
-         * @param excludeStrategy 随机生成属性排除策略
+         * @param excluder 随机生成属性排除器
          * @return 随机对象实例生成工厂
          */
         @Nonnull
-        public RandomBeanFactory<T> register(ExcludeStrategy excludeStrategy) {
-            this.excludeStrategy = excludeStrategy;
+        public RandomBeanFactory<T> register(Excluder excluder) {
+            this.excluder = excluder;
             return this;
         }
 
         /**
          * 注册随机数生成接口工厂
          *
-         * @param randomGeneratorFactory 随机数生成接口工厂
+         * @param generatorBuilder 随机数生成接口工厂
          * @return 随机对象实例生成工厂
          */
         @Nonnull
-        public RandomBeanFactory<T> register(RandomGeneratorFactory randomGeneratorFactory) {
-            this.randomGeneratorFactory = randomGeneratorFactory;
+        public RandomBeanFactory<T> register(GeneratorBuilder generatorBuilder) {
+            this.generatorBuilder = generatorBuilder;
             return this;
         }
 

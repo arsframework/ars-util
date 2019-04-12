@@ -122,18 +122,6 @@ public abstract class Excels {
      * 构建Excel工作薄
      *
      * @param input 数据输入流
-     * @return Excel工作薄
-     * @throws IOException IO操作异常
-     */
-    @Nonnull
-    public static Workbook buildWorkbook(InputStream input) throws IOException {
-        return buildWorkbook(input, Type.XLSX);
-    }
-
-    /**
-     * 构建Excel工作薄
-     *
-     * @param input 数据输入流
      * @param type  文件类型
      * @return Excel工作薄
      * @throws IOException IO操作异常

@@ -206,7 +206,7 @@ public abstract class Webs {
             template = new StringBuilder("/").append(template).toString();
         }
         if (!new File(ROOT_PATH, template).exists()) {
-            throw new IOException("Template does not exist:" + template);
+            throw new IOException("Template does not exist: " + template);
         }
         RequestDispatcher dispatcher = request.getRequestDispatcher(template);
         PrintWriter writer = new PrintWriter(new OutputStreamWriter(output));

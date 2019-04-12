@@ -1,11 +1,11 @@
 package com.arsframework.util;
 
 import java.util.*;
+import java.time.ZoneId;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.text.DateFormat;
-import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
@@ -20,6 +20,11 @@ import com.arsframework.annotation.Nonempty;
  * @version 2019-03-22 09:38
  */
 public abstract class Dates {
+    /**
+     * 默认时区
+     */
+    public static final ZoneId DEFAULT_ZONE = ZoneId.systemDefault();
+
     /**
      * 默认日期格式
      */
@@ -48,7 +53,7 @@ public abstract class Dates {
     /**
      * 日期时间格式数组
      */
-    public static final String[] DATETIME_FORMATS = {DEFAULT_DATETIME_FORMAT, "yyyy/MM/dd HH:mm:ss", "yyyyMMddHHmmss", "yyyyMMdd-HHmmss"};
+    public static final String[] DATETIME_FORMATS = {DEFAULT_DATETIME_FORMAT, "yyyy/MM/dd HH:mm:ss", "yyyyMMddHHmmss"};
 
     /**
      * 所有日期格式数组
@@ -67,11 +72,6 @@ public abstract class Dates {
      * 当前线程格式模式/日期格式化对象映射表
      */
     private static final ThreadLocal<Map<String, DateFormat>> dateFormats = ThreadLocal.withInitial(() -> new HashMap<>());
-
-    /**
-     * 当前线程数字格式化对象
-     */
-    private static final ThreadLocal<DecimalFormat> decimalFormat = ThreadLocal.withInitial(() -> new DecimalFormat("0.##"));
 
     /**
      * 构建日期格式处理对象
@@ -117,8 +117,39 @@ public abstract class Dates {
             } catch (ParseException e) {
             }
         }
-        throw new RuntimeException("Unparseable date:" + source);
+        throw new RuntimeException("Unparseable date: " + source);
     }
+
+    /**
+     * 日期对象适配
+     *
+     * @param date 本地日期对象
+     * @return 日期对象
+     */
+    public static Date adapter(LocalDate date) {
+        return date == null ? null : Date.from(date.atStartOfDay().atZone(DEFAULT_ZONE).toInstant());
+    }
+
+    /**
+     * 日期对象适配
+     *
+     * @param date 本地日期时间对象
+     * @return 日期对象
+     */
+    public static Date adapter(LocalDateTime date) {
+        return date == null ? null : Date.from(date.atZone(DEFAULT_ZONE).toInstant());
+    }
+
+    /**
+     * 日期对象适配
+     *
+     * @param date 日期对象
+     * @return 本地日期时间对象
+     */
+    public static LocalDateTime adapter(Date date) {
+        return date == null ? null : LocalDateTime.ofInstant(date.toInstant(), DEFAULT_ZONE);
+    }
+
 
     /**
      * 将日期时间对象转换成字符串形式
@@ -387,37 +418,62 @@ public abstract class Dates {
     }
 
     /**
-     * 获取制定年份第一天
+     * 获取指定年份第一天
      *
      * @param year 年份
      * @return 日期
      */
     public static Date getFirstDate(@Min(1970) int year) {
-        return parse(new StringBuilder().append(year).append("-01-").append("01").toString());
+        return getFirstDate(year, 1);
     }
 
     /**
-     * 将时间长度毫秒数转换成带单位的时间表示（d:天、h:时、m:分、s:秒、ms:毫秒）
+     * 获取指定年份及月份第一天
      *
-     * @param time 时间长度毫秒数
-     * @return 带单位的时间表示
+     * @param year  年份
+     * @param month 月份(从1开始)
+     * @return 日期
      */
-    public static String toUnitTime(@Min(0) long time) {
-        if (time == 0) {
-            return "0ms";
-        }
-        StringBuilder buffer = new StringBuilder();
-        if (time >= 86400000) {
-            buffer.append(decimalFormat.get().format(time / 86400000d)).append('d');
-        } else if (time >= 3600000) {
-            buffer.append(decimalFormat.get().format(time / 3600000d)).append('h');
-        } else if (time >= 60000) {
-            buffer.append(decimalFormat.get().format(time / 60000d)).append('m');
-        } else if (time >= 1000) {
-            buffer.append(decimalFormat.get().format(time / 1000d)).append('s');
-        } else {
-            buffer.append(time).append("ms");
-        }
-        return buffer.toString();
+    public static Date getFirstDate(@Min(1970) int year, @Min(1) int month) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.YEAR, year);
+        calendar.set(Calendar.MONTH, month - 1);
+        calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMinimum(Calendar.DAY_OF_MONTH));
+        return calendar.getTime();
+    }
+
+    /**
+     * 获取当前年份最后一天
+     *
+     * @return 日期
+     */
+    public static Date getLastDate() {
+        return getLastDate(getYear());
+    }
+
+    /**
+     * 获取指定年份最后一天
+     *
+     * @param year 年份
+     * @return 日期
+     */
+    public static Date getLastDate(@Min(1970) int year) {
+        return getLastDate(year, 1);
+    }
+
+    /**
+     * 获取指定年份及月份最后一天
+     *
+     * @param year  年份
+     * @param month 月份(从1开始)
+     * @return 日期
+     */
+    public static Date getLastDate(@Min(1970) int year, @Min(1) int month) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.clear();
+        calendar.set(Calendar.YEAR, year);
+        calendar.set(Calendar.MONTH, month - 1);
+        calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
+        return calendar.getTime();
     }
 }

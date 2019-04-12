@@ -6,6 +6,8 @@ import java.io.Serializable;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.JarURLConnection;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.jar.JarFile;
@@ -282,7 +284,7 @@ public abstract class Objects {
                     parent = parent.getSuperclass();
                 }
             }
-            throw new RuntimeException("No such field:" + name);
+            throw new RuntimeException("No such field: " + name);
         }
         return fields;
     }
@@ -405,7 +407,7 @@ public abstract class Objects {
      * @param values 需要填充的属性/值Map对象
      */
     @Nonnull
-    public static void setValues(Object object, Map<?, ?> values) {
+    public static void setValues(Object object, Map<String, ?> values) {
         if (!values.isEmpty()) {
             Class<?> meta = object.getClass();
             while (meta != Object.class) {
@@ -436,6 +438,22 @@ public abstract class Objects {
         T target = (T) initialize(source.getClass());
         copy(source, target);
         return target;
+    }
+
+    /**
+     * 拷贝对象实例，深度克隆
+     *
+     * @param <T>    数据类型
+     * @param source 源对象
+     * @return 对象实例副本
+     */
+    @Nonnull
+    public static <T extends Serializable> T clone(T source) {
+        try {
+            return (T) Streams.deserialize(Streams.serialize(source));
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -490,7 +508,7 @@ public abstract class Objects {
      * @return 对象实例
      */
     @Nonnull
-    public static <T> T initialize(Class<T> type, Map<?, ?> values) {
+    public static <T> T initialize(Class<T> type, Map<String, ?> values) {
         Class<?> cls = type;
         T instance = initialize(type);
         if (!values.isEmpty()) {
@@ -525,22 +543,6 @@ public abstract class Objects {
     public static <T> T[] buildArray(Class<T> type, @Min(0) int length) {
         Class<?> _type = isBasicClass(type) ? getBasicWrapClass(type) : type;
         return (T[]) Array.newInstance(_type, length);
-    }
-
-    /**
-     * 拷贝对象实例，深度克隆
-     *
-     * @param <T>    数据类型
-     * @param source 源对象
-     * @return 对象实例副本
-     */
-    @Nonnull
-    public static <T extends Serializable> T clone(T source) {
-        try {
-            return (T) Streams.deserialize(Streams.serialize(source));
-        } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     /**
@@ -756,6 +758,10 @@ public abstract class Objects {
             return toEnum((Class<Enum>) type, object);
         } else if (Date.class.isAssignableFrom(type)) {
             return toDate(object);
+        } else if (LocalDate.class.isAssignableFrom(type)) {
+            return Dates.adapter(toDate(object)).toLocalDate();
+        } else if (LocalDateTime.class.isAssignableFrom(type)) {
+            return Dates.adapter(toDate(object));
         } else if (type == String.class) {
             return Strings.toString(object);
         } else if (type == Class.class) {

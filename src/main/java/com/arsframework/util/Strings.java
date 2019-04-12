@@ -6,6 +6,7 @@ import java.net.URL;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.text.DecimalFormat;
 import java.util.regex.Pattern;
 
 import com.arsframework.annotation.Min;
@@ -55,6 +56,11 @@ public abstract class Strings {
     public static final Character[] CHARS = new Character[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a',
             'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
             'w', 'x', 'y', 'z'};
+
+    /**
+     * 当前线程数字格式化对象
+     */
+    public static final ThreadLocal<DecimalFormat> DEFAULT_DECIMAL_FORMAT = ThreadLocal.withInitial(() -> new DecimalFormat("0.##"));
 
     /**
      * 字符串列表正则表达式匹配模式
@@ -456,7 +462,7 @@ public abstract class Strings {
         if (index > 0 && path.substring(0, index).toLowerCase().equals("classpath")) {
             URL url = String.class.getClassLoader().getResource(path.substring(index + 1));
             if (url == null) {
-                throw new RuntimeException("URL does not exist:" + url);
+                throw new RuntimeException("URL does not exist: " + url);
             }
             return url.getFile();
         }
@@ -502,6 +508,54 @@ public abstract class Strings {
             return Arrays.toString((Object[]) object);
         }
         return object == null ? null : object.toString();
+    }
+
+    /**
+     * 将数据大小转换成带单位的大小表示
+     *
+     * @param size 数据大小
+     * @return 数据大小单位表示
+     */
+    public static String formatUnitSize(@Min(0) long size) {
+        if (size == 0) {
+            return "0Byte";
+        }
+        StringBuilder buffer = new StringBuilder();
+        if (size >= 1073741824) {
+            buffer.append(DEFAULT_DECIMAL_FORMAT.get().format(size / 1073741824d)).append("GB");
+        } else if (size >= 1048576) {
+            buffer.append(DEFAULT_DECIMAL_FORMAT.get().format(size / 1048576d)).append("MB");
+        } else if (size >= 1024) {
+            buffer.append(DEFAULT_DECIMAL_FORMAT.get().format(size / 1024d)).append("KB");
+        } else {
+            buffer.append(size).append("Byte");
+        }
+        return buffer.toString();
+    }
+
+    /**
+     * 将时间长度毫秒数转换成带单位的时间表示（d:天、h:时、m:分、s:秒、ms:毫秒）
+     *
+     * @param time 时间长度毫秒数
+     * @return 带单位的时间表示
+     */
+    public static String formatUnitTime(@Min(0) long time) {
+        if (time == 0) {
+            return "0ms";
+        }
+        StringBuilder buffer = new StringBuilder();
+        if (time >= 86400000) {
+            buffer.append(DEFAULT_DECIMAL_FORMAT.get().format(time / 86400000d)).append('d');
+        } else if (time >= 3600000) {
+            buffer.append(DEFAULT_DECIMAL_FORMAT.get().format(time / 3600000d)).append('h');
+        } else if (time >= 60000) {
+            buffer.append(DEFAULT_DECIMAL_FORMAT.get().format(time / 60000d)).append('m');
+        } else if (time >= 1000) {
+            buffer.append(DEFAULT_DECIMAL_FORMAT.get().format(time / 1000d)).append('s');
+        } else {
+            buffer.append(time).append("ms");
+        }
+        return buffer.toString();
     }
 
     /**
@@ -755,7 +809,7 @@ public abstract class Strings {
             }
         }
         if (start != end) {
-            throw new IllegalStateException("Illegal expression:" + expression);
+            throw new IllegalStateException("Illegal expression: " + expression);
         }
         if (offset < expression.length()) {
             sections.add(expression.substring(offset));
