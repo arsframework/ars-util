@@ -1,5 +1,5 @@
 # ars-util
-Arsframework util模块采用纯Java语言编写，提供了针对日常处理需要的工具方法，如日期、文档、Excel、JSON、字符串等。
+Arsframework util模块提供了针对日常处理需要的工具方法，如日期、文档、Excel、JSON、字符串等。
 
 ## 1 环境依赖
 JDK1.8+
