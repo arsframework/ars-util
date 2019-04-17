@@ -61,7 +61,6 @@ public abstract class Excels {
          *
          * @param row   数据行对象
          * @param count 当前记录数（从1开始）
-         * @return 对象实例
          */
         void read(Row row, int count);
     }
@@ -765,6 +764,7 @@ public abstract class Excels {
     /**
      * 读Excel文件
      *
+     * @param <M>     数据类型
      * @param sheet   Excel表格
      * @param objects 对象实例列表
      * @param writer  Excel对象实例写入接口
@@ -777,6 +777,7 @@ public abstract class Excels {
     /**
      * 读Excel文件
      *
+     * @param <M>      数据类型
      * @param workbook Excel文件工作薄
      * @param objects  对象实例列表
      * @param writer   Excel对象实例写入接口
@@ -789,6 +790,7 @@ public abstract class Excels {
     /**
      * 读Excel文件
      *
+     * @param <M>     数据类型
      * @param sheet   Excel表格
      * @param objects 对象实例列表
      * @param index   开始数据行下标（从0开始）
@@ -809,6 +811,7 @@ public abstract class Excels {
     /**
      * 读Excel文件
      *
+     * @param <M>      数据类型
      * @param workbook Excel文件工作薄
      * @param objects  对象实例列表
      * @param index    开始数据行下标（从0开始）
