@@ -206,10 +206,6 @@ public abstract class Files {
          */
         public final boolean directory;
 
-        public Describe(File file) {
-            this(file.getPath().replace("\\", "/"), file.getName(), file.length(), file.lastModified(), file.isDirectory());
-        }
-
         @Nonnull
         public Describe(String path, String name, @Min(0) long size, long modified, boolean directory) {
             this.path = path;
@@ -237,6 +233,18 @@ public abstract class Files {
         @Override
         public String toString() {
             return this.path;
+        }
+
+        /**
+         * 文件/文件描述转换
+         *
+         * @param file 文件对象
+         * @return 文件描述对象
+         */
+        @Nonnull
+        public static Describe parse(File file) {
+            return new Describe(file.getPath().replace("\\", "/"),
+                    file.getName(), file.length(), file.lastModified(), file.isDirectory());
         }
     }
 
@@ -701,7 +709,7 @@ public abstract class Files {
      * @param conditions 查询条件数组
      * @return true/false
      */
-    @Nonempty
+    @Nonnull
     public static boolean isSatisfy(Describe describe, Condition... conditions) {
         for (Condition condition : conditions) {
             if (condition instanceof Less && !isSatisfy(describe, (Less) condition)) {
@@ -733,24 +741,25 @@ public abstract class Files {
      * @param orders   排序对象
      * @return 比较结果
      */
-    @Nonempty
-    public static int compare(Describe describe, Describe other, Order... orders) {
-        for (Order order : orders) {
-            int compare = 0;
-            if (order.property == Property.NAME) {
-                compare = describe.name.compareTo(other.name);
-            } else if (order.property == Property.SIZE) {
-                compare = describe.size < other.size ? -1 : describe.size == other.size ? 0 : 1;
-            } else if (order.property == Property.MODIFIED) {
-                compare = describe.modified < other.modified ? -1 : describe.modified == other.modified ? 0 : 1;
-            } else if (order.property == Property.DIRECTORY) {
-                compare = describe.directory && !other.directory ? -1 : describe.directory == other.directory ? 0 : 1;
-            }
-            if (compare != 0) {
-                return order instanceof Asc ? compare : -compare;
+    public static int compare(Describe describe, Describe other, @Nonnull Order... orders) {
+        if (describe != null && other != null) {
+            for (Order order : orders) {
+                int compare = 0;
+                if (order.property == Property.NAME) {
+                    compare = describe.name.compareTo(other.name);
+                } else if (order.property == Property.SIZE) {
+                    compare = describe.size < other.size ? -1 : describe.size == other.size ? 0 : 1;
+                } else if (order.property == Property.MODIFIED) {
+                    compare = describe.modified < other.modified ? -1 : describe.modified == other.modified ? 0 : 1;
+                } else if (order.property == Property.DIRECTORY) {
+                    compare = describe.directory && !other.directory ? -1 : describe.directory == other.directory ? 0 : 1;
+                }
+                if (compare != 0) {
+                    return order instanceof Asc ? compare : -compare;
+                }
             }
         }
-        return 0;
+        return describe == null && other == null ? 0 : describe == null ? -1 : other == null ? 1 : 0;
     }
 
     /**
@@ -759,7 +768,7 @@ public abstract class Files {
      * @param describes 文件描述对象数组
      * @param orders    排序对象数组
      */
-    @Nonempty
+    @Nonnull
     public static void sort(Describe[] describes, Order... orders) {
         Arrays.sort(describes, (Describe o1, Describe o2) -> compare(o1, o2, orders));
     }
@@ -770,7 +779,7 @@ public abstract class Files {
      * @param describes 文件描述对象列表
      * @param orders    排序对象数组
      */
-    @Nonempty
+    @Nonnull
     public static void sort(List<Describe> describes, Order... orders) {
         Collections.sort(describes, (Describe o1, Describe o2) -> compare(o1, o2, orders));
     }

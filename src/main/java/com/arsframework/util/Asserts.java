@@ -4,9 +4,11 @@ import java.util.Map;
 import java.util.Date;
 import java.util.Arrays;
 import java.util.Collection;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
+import com.arsframework.annotation.Le;
 import com.arsframework.annotation.Nonnull;
-import com.arsframework.annotation.Nonempty;
 
 /**
  * 断言工具类
@@ -63,6 +65,8 @@ public abstract class Asserts {
         if ((object instanceof Number && ((Number) object).longValue() < value)
                 || (object instanceof Enum && ((Enum) object).ordinal() < value)
                 || (object instanceof Date && ((Date) object).getTime() < value)
+                || (object instanceof LocalDate && Dates.getTime((LocalDate) object) < value)
+                || (object instanceof LocalDateTime && Dates.getTime((LocalDateTime) object) < value)
                 || (object instanceof CharSequence && ((CharSequence) object).length() < value)
                 || (object instanceof Map && ((Map) object).size() < value)
                 || (object instanceof Collection && ((Collection) object).size() < value)
@@ -90,6 +94,8 @@ public abstract class Asserts {
         if ((object instanceof Number && ((Number) object).longValue() > value)
                 || (object instanceof Enum && ((Enum) object).ordinal() > value)
                 || (object instanceof Date && ((Date) object).getTime() > value)
+                || (object instanceof LocalDate && Dates.getTime((LocalDate) object) > value)
+                || (object instanceof LocalDateTime && Dates.getTime((LocalDateTime) object) > value)
                 || (object instanceof CharSequence && ((CharSequence) object).length() > value)
                 || (object instanceof Map && ((Map) object).size() > value)
                 || (object instanceof Collection && ((Collection) object).size() > value)
@@ -114,10 +120,13 @@ public abstract class Asserts {
      * @param max    最大值
      * @throws IllegalStateException 验证异常
      */
-    public static void size(Object object, long min, long max) throws IllegalStateException {
+    public static void size(Object object, @Le("max") long min, long max) throws IllegalStateException {
         if ((object instanceof Number && (((Number) object).longValue() < min || ((Number) object).longValue() > max))
                 || (object instanceof Enum && (((Enum) object).ordinal() < min || ((Enum) object).ordinal() > max))
                 || (object instanceof Date && (((Date) object).getTime() < min || ((Date) object).getTime() > max))
+                || (object instanceof LocalDate && (Dates.getTime((LocalDate) object) < min || Dates.getTime((LocalDate) object) > max))
+                || (object instanceof LocalDateTime
+                && (Dates.getTime((LocalDateTime) object) < min || Dates.getTime((LocalDateTime) object) > max))
                 || (object instanceof CharSequence && (((CharSequence) object).length() < min || ((CharSequence) object).length() > max))
                 || (object instanceof Map && (((Map) object).size() < min || ((Map) object).size() > max))
                 || (object instanceof Collection && (((Collection) object).size() < min || ((Collection) object).size() > max))
@@ -141,11 +150,13 @@ public abstract class Asserts {
      * @param values 选项数组
      * @throws IllegalStateException 验证异常
      */
-    public static void option(Object object, @Nonempty long... values) throws IllegalStateException {
+    public static void option(Object object, @Nonnull long... values) throws IllegalStateException {
         Arrays.sort(values);
         if ((object instanceof Number && Arrays.binarySearch(values, ((Number) object).longValue()) < 0)
                 || (object instanceof Enum && Arrays.binarySearch(values, ((Enum) object).ordinal()) < 0)
                 || (object instanceof Date && Arrays.binarySearch(values, ((Date) object).getTime()) < 0)
+                || (object instanceof LocalDate && Arrays.binarySearch(values, Dates.getTime((LocalDate) object)) < 0)
+                || (object instanceof LocalDateTime && Arrays.binarySearch(values, Dates.getTime((LocalDateTime) object)) < 0)
                 || (object instanceof CharSequence && Arrays.binarySearch(values, ((CharSequence) object).length()) < 0)
                 || (object instanceof Map && Arrays.binarySearch(values, ((Map) object).size()) < 0)
                 || (object instanceof Collection && Arrays.binarySearch(values, ((Collection) object).size()) < 0)

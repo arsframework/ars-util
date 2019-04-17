@@ -46,6 +46,11 @@ public abstract class Strings {
     public static final String HEX_SEQUENCE = "0123456789ABCDEF";
 
     /**
+     * 字符串列表正则表达式匹配模式
+     */
+    public static final Pattern LIST_PATTERN = Pattern.compile(" *\\[.*\\] *");
+
+    /**
      * 当前文件目录
      */
     public static final String CURRENT_PATH = Strings.class.getResource("/").getPath();
@@ -61,11 +66,6 @@ public abstract class Strings {
      * 当前线程数字格式化对象
      */
     public static final ThreadLocal<DecimalFormat> DEFAULT_DECIMAL_FORMAT = ThreadLocal.withInitial(() -> new DecimalFormat("0.##"));
-
-    /**
-     * 字符串列表正则表达式匹配模式
-     */
-    private static Pattern listPattern;
 
     /**
      * 将字符转换字节
@@ -462,7 +462,7 @@ public abstract class Strings {
         if (index > 0 && path.substring(0, index).toLowerCase().equals("classpath")) {
             URL url = String.class.getClassLoader().getResource(path.substring(index + 1));
             if (url == null) {
-                throw new RuntimeException("URL does not exist: " + url);
+                throw new IllegalStateException("URL does not exist: " + url);
             }
             return url.getFile();
         }
@@ -476,7 +476,9 @@ public abstract class Strings {
      * @return 字符串形式
      */
     public static String toString(Object object) {
-        if (object instanceof Float || object instanceof Double) {
+        if (object instanceof BigDecimal) {
+            return ((BigDecimal) object).stripTrailingZeros().toPlainString();
+        } else if (object instanceof Float || object instanceof Double) {
             return new BigDecimal(object.toString()).stripTrailingZeros().toPlainString();
         } else if (object instanceof CharSequence) {
             return ((CharSequence) object).toString();
@@ -702,39 +704,12 @@ public abstract class Strings {
     }
 
     /**
-     * 构建字符串列表正则表达式匹配模式
-     *
-     * @return 正则表达式匹配模式对象
-     */
-    private static Pattern buildListPattern() {
-        if (listPattern == null) {
-            synchronized (Strings.class) {
-                if (listPattern == null) {
-                    listPattern = Pattern.compile(" *\\[.*\\] *");
-                }
-            }
-        }
-        return listPattern;
-    }
-
-    /**
-     * 判断字符串是否为列表形式
-     *
-     * @param source 字符串对象
-     * @return true/false
-     */
-    public static boolean isList(CharSequence source) {
-        return isBlank(source) ? false : buildListPattern().matcher(source).matches();
-    }
-
-    /**
      * 将字符串转换成列表对象
      *
      * @param source 源字符串
      * @return 对象列表
      */
-    @Nonempty
-    public static List<?> toList(CharSequence source) {
+    private static List<?> parseList(CharSequence source) {
         int skip = 0;
         StringBuilder buffer = new StringBuilder();
         List<StringBuilder> buffers = new LinkedList<>();
@@ -757,11 +732,7 @@ public abstract class Strings {
         buffers.add(buffer);
         List<Object> list = new ArrayList<>(buffers.size());
         for (StringBuilder b : buffers) {
-            if (b.length() == 0) {
-                list.add(null);
-            } else {
-                list.add(isList(b) ? toList(b) : b.toString());
-            }
+            list.add(b.length() == 0 ? null : LIST_PATTERN.matcher(b).matches() ? parseList(b) : b.toString());
         }
         return list;
     }
@@ -773,7 +744,7 @@ public abstract class Strings {
      * @return 条件逻辑对象
      */
     public static Condition condition(String expression) {
-        if (isEmpty(expression)) {
+        if (isBlank(expression)) {
             return null;
         }
         boolean continued = false;
@@ -808,12 +779,10 @@ public abstract class Strings {
                 }
             }
         }
-        if (start != end) {
-            throw new IllegalStateException("Illegal expression: " + expression);
-        }
         if (offset < expression.length()) {
             sections.add(expression.substring(offset));
         }
+
         Condition condition = null;
         for (int i = 0; i < sections.size(); i += 2) {
             Condition _condition;
@@ -829,12 +798,12 @@ public abstract class Strings {
                 _condition = condition(section);
             } else {
                 int split = section.indexOf("=");
-                String key = split < 0 ? section.trim() : section.substring(0, split).trim();
-                if (isBlank(key)) {
-                    continue;
+                String key = split < 1 ? null : section.substring(0, split).trim();
+                if (isEmpty(key)) {
+                    throw new IllegalStateException("Illegal expression: " + expression);
                 }
-                String value = split < 0 ? null : section.substring(split + 1).trim();
-                _condition = new Match(key, isList(value) ? toList(value) : isBlank(value) ? null : value);
+                String value = section.substring(split + 1).trim();
+                _condition = new Match(key, value.isEmpty() ? null : LIST_PATTERN.matcher(value).matches() ? parseList(value) : value);
             }
             if (condition == null) {
                 condition = _condition;

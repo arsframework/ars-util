@@ -71,17 +71,17 @@ public abstract class Dates {
     /**
      * 当前线程格式模式/日期格式化对象映射表
      */
-    private static final ThreadLocal<Map<String, DateFormat>> dateFormats = ThreadLocal.withInitial(() -> new HashMap<>());
+    private static final ThreadLocal<Map<String, DateFormat>> formatters = ThreadLocal.withInitial(() -> new HashMap<>());
 
     /**
-     * 构建日期格式处理对象
+     * 构建日期格式处理器
      *
      * @param pattern 日期格式转换模式字符串
      * @return 日期格式处理对象
      */
     @Nonempty
-    public static DateFormat buildDateFormat(String pattern) {
-        Map<String, DateFormat> formats = dateFormats.get();
+    public static DateFormat buildFormatter(String pattern) {
+        Map<String, DateFormat> formats = formatters.get();
         DateFormat format = formats.get(pattern);
         if (format == null) {
             format = new SimpleDateFormat(pattern);
@@ -113,7 +113,7 @@ public abstract class Dates {
         }
         for (String pattern : patterns) {
             try {
-                return buildDateFormat(pattern).parse(source);
+                return buildFormatter(pattern).parse(source);
             } catch (ParseException e) {
             }
         }
@@ -169,7 +169,7 @@ public abstract class Dates {
      * @return 日期时间字符串形式
      */
     public static String format(Date date, @Nonempty String pattern) {
-        return date == null ? null : buildDateFormat(pattern).format(date);
+        return date == null ? null : buildFormatter(pattern).format(date);
     }
 
     /**
@@ -475,5 +475,27 @@ public abstract class Dates {
         calendar.set(Calendar.MONTH, month - 1);
         calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
         return calendar.getTime();
+    }
+
+    /**
+     * 获取本地日期毫秒数
+     *
+     * @param date 本地日期对象
+     * @return 毫秒数
+     */
+    @Nonnull
+    public static long getTime(LocalDate date) {
+        return date.atStartOfDay(DEFAULT_ZONE).toInstant().toEpochMilli();
+    }
+
+    /**
+     * 获取本地日期时间毫秒数
+     *
+     * @param date 本地日期时间对象
+     * @return 毫秒数
+     */
+    @Nonnull
+    public static long getTime(LocalDateTime date) {
+        return date.atZone(DEFAULT_ZONE).toInstant().toEpochMilli();
     }
 }

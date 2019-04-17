@@ -3,20 +3,20 @@ package com.arsframework.util;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.JarURLConnection;
+import java.time.ZoneId;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.jar.JarFile;
 import java.util.jar.JarEntry;
 import java.lang.reflect.*;
 
-import com.arsframework.annotation.Min;
 import com.arsframework.annotation.Nonnull;
-import com.arsframework.annotation.Nonempty;
 
 /**
  * 对象处理工具类
@@ -39,6 +39,363 @@ public abstract class Objects {
      * 空类对象数组
      */
     public static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
+
+    /**
+     * 判断类型是否是基本数据类型
+     *
+     * @param cls 数据类型
+     * @return true/false
+     */
+    public static boolean isBasicClass(Class<?> cls) {
+        try {
+            return cls == null ? false : Number.class.isAssignableFrom(cls) ? true :
+                    ((Class<?>) cls.getField("TYPE").get(null)).isPrimitive();
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            return cls.isPrimitive() || cls == Byte.class || cls == Character.class || cls == Integer.class || cls == Short.class
+                    || cls == Long.class || cls == Float.class || cls == Double.class || cls == Boolean.class;
+        }
+    }
+
+    /**
+     * 判断数据类型是否是数字类型
+     *
+     * @param cls 数据类型
+     * @return true/false
+     */
+    public static boolean isNumberClass(Class<?> cls) {
+        return cls != null && (Number.class.isAssignableFrom(cls) || cls == byte.class || cls == char.class
+                || cls == short.class || cls == int.class || cls == double.class || cls == long.class);
+    }
+
+    /**
+     * 判断对象是否为空
+     *
+     * @param object 对象
+     * @return true/false
+     */
+    public static boolean isEmpty(Object object) {
+        if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)
+                || (object instanceof Map && ((Map<?, ?>) object).isEmpty())
+                || (object instanceof Collection && ((Collection<?>) object).isEmpty())) {
+            return true;
+        }
+        Class<?> type = object.getClass();
+        if (type.isArray()) {
+            Class<?> component = type.getComponentType();
+            if (component == byte.class) {
+                return ((byte[]) object).length == 0;
+            } else if (component == char.class) {
+                return ((char[]) object).length == 0;
+            } else if (component == int.class) {
+                return ((int[]) object).length == 0;
+            } else if (component == short.class) {
+                return ((short[]) object).length == 0;
+            } else if (component == long.class) {
+                return ((long[]) object).length == 0;
+            } else if (component == float.class) {
+                return ((float[]) object).length == 0;
+            } else if (component == double.class) {
+                return ((double[]) object).length == 0;
+            } else if (component == boolean.class) {
+                return ((boolean[]) object).length == 0;
+            }
+            return ((Object[]) object).length == 0;
+        }
+        return false;
+    }
+
+    /**
+     * 根据字段名称获取字段对象
+     *
+     * @param cls  类对象
+     * @param name 字段名称
+     * @return 字段对象
+     */
+    @Nonnull
+    public static Field getField(Class<?> cls, String name) {
+        do {
+            try {
+                return cls.getDeclaredField(name);
+            } catch (NoSuchFieldException e) {
+            }
+        } while ((cls = cls.getSuperclass()) != Object.class);
+        throw new RuntimeException(String.format("No such field '%s'", name));
+    }
+
+    /**
+     * 根据字段名称获取字段对象
+     *
+     * @param cls   类对象
+     * @param names 字段名称数组
+     * @return 字段对象数组
+     */
+    @Nonnull
+    public static Field[] getFields(Class<?> cls, String... names) {
+        if (names.length == 0) {
+            List<Field> fields = new LinkedList<>();
+            do {
+                for (Field field : cls.getDeclaredFields()) {
+                    if (!Modifier.isStatic(field.getModifiers()) && !field.getName().startsWith("this$")) {
+                        fields.add(field);
+                    }
+                }
+            } while ((cls = cls.getSuperclass()) != Object.class);
+            return fields.toArray(EMPTY_FIELD_ARRAY);
+        }
+        Field[] fields = new Field[names.length];
+        for (int i = 0; i < names.length; i++) {
+            fields[i] = getField(cls, names[i]);
+        }
+        return fields;
+    }
+
+    /**
+     * 获取对象属性名称
+     *
+     * @param cls 对象类型
+     * @return 字段名称数组
+     */
+    @Nonnull
+    public static String[] getProperties(Class<?> cls) {
+        List<String> properties = new LinkedList<>();
+        do {
+            for (Field field : cls.getDeclaredFields()) {
+                if (!Modifier.isStatic(field.getModifiers())) {
+                    properties.add(field.getName());
+                }
+            }
+        } while ((cls = cls.getSuperclass()) != Object.class);
+        return properties.toArray(Strings.EMPTY_ARRAY);
+    }
+
+    /**
+     * 获取对象指定字段的值
+     *
+     * @param object   对象实例
+     * @param property 属性名称
+     * @return 字段值
+     */
+    @Nonnull
+    public static Object getValue(Object object, String property) {
+        String suffix = null;
+        int index = property.indexOf('.');
+        if (index > 0) {
+            suffix = property.substring(index + 1);
+            property = property.substring(0, index);
+        }
+        Field field = getField(object.getClass(), property);
+        field.setAccessible(true);
+        try {
+            Object value = field.get(object);
+            return value == null || suffix == null ? value : getValue(value, suffix);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 获取对象实例指定属性
+     *
+     * @param object     对象实例
+     * @param properties 属性名称数组（如果为空则获取所有属性值）
+     * @return 键/值对象
+     */
+    @Nonnull
+    public static Map<String, Object> getValues(Object object, String... properties) {
+        if (properties.length == 0) {
+            Class<?> cls = object.getClass();
+            Map<String, Object> values = new HashMap<>();
+            do {
+                for (Field field : cls.getDeclaredFields()) {
+                    if (!Modifier.isStatic(field.getModifiers())) {
+                        field.setAccessible(true);
+                        try {
+                            values.put(field.getName(), field.get(object));
+                        } catch (IllegalAccessException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+            } while ((cls = cls.getSuperclass()) != Object.class);
+            return values;
+        }
+        Map<String, Object> values = new HashMap<>(properties.length);
+        for (String property : properties) {
+            values.put(property, getValue(object, property));
+        }
+        return values;
+    }
+
+    /**
+     * 设置对象指定属性的值，对象属性必须支持set方法
+     *
+     * @param object   对象实例
+     * @param property 属性名称
+     * @param value    字段值
+     */
+    public static void setValue(@Nonnull Object object, @Nonnull String property, Object value) {
+        Field field = getField(object.getClass(), property);
+        field.setAccessible(true);
+        try {
+            field.set(object, toObject(field.getType(), value));
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 将Map对象所包含的键/值填充到Bean对象实例对应的非静态属性中
+     *
+     * @param object 对象实例
+     * @param values 需要填充的属性/值Map对象
+     */
+    @Nonnull
+    public static void setValues(Object object, Map<String, ?> values) {
+        if (!values.isEmpty()) {
+            Class<?> cls = object.getClass();
+            do {
+                for (Field field : cls.getDeclaredFields()) {
+                    if (!Modifier.isStatic(field.getModifiers()) && values.containsKey(field.getName())) {
+                        field.setAccessible(true);
+                        try {
+                            field.set(object, toObject(field.getType(), values.get(field.getName())));
+                        } catch (IllegalAccessException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+            } while ((cls = cls.getSuperclass()) != Object.class);
+        }
+    }
+
+    /**
+     * 将属性值填充到Bean对象实例对应的非静态属性中
+     *
+     * @param object 对象实例
+     * @param values 需要填充的属性值数组
+     */
+    @Nonnull
+    public static void setValues(Object object, Object... values) {
+        if (values.length > 0) {
+            int i = 0;
+            Class<?> cls = object.getClass();
+            do {
+                for (Field field : cls.getDeclaredFields()) {
+                    if (i >= values.length) {
+                        break;
+                    }
+                    if (!Modifier.isStatic(field.getModifiers())) {
+                        field.setAccessible(true);
+                        try {
+                            field.set(object, toObject(field.getType(), values[i++]));
+                        } catch (IllegalAccessException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+            } while ((cls = cls.getSuperclass()) != Object.class && i < values.length);
+        }
+    }
+
+    /**
+     * 对象拷贝（属性复制）
+     *
+     * @param <T>    数据类型
+     * @param source 源对象
+     * @return 目标对象
+     */
+    @Nonnull
+    public static <T> T copy(T source) {
+        T target = (T) initialize(source.getClass());
+        copy(source, target);
+        return target;
+    }
+
+    /**
+     * 拷贝对象实例，深度克隆
+     *
+     * @param <T>    数据类型
+     * @param source 源对象
+     * @return 对象实例副本
+     */
+    @Nonnull
+    public static <T extends Serializable> T clone(T source) {
+        try {
+            return (T) Streams.deserialize(Streams.serialize(source));
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 对象拷贝（属性复制）
+     *
+     * @param <T>    数据类型
+     * @param source 源对象
+     * @param target 目标对象
+     */
+    @Nonnull
+    public static <T> void copy(T source, T target) {
+        Class<?> type = source.getClass();
+        do {
+            for (Field field : type.getDeclaredFields()) {
+                if (!Modifier.isStatic(field.getModifiers()) && !Modifier.isFinal(field.getModifiers())) {
+                    field.setAccessible(true);
+                    try {
+                        field.set(target, field.get(source));
+                    } catch (IllegalAccessException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        } while ((type = type.getSuperclass()) != Object.class);
+    }
+
+    /**
+     * 初始化对象实例
+     *
+     * @param <T>  数据类型
+     * @param type 对象类型
+     * @return 对象实例
+     */
+    @Nonnull
+    public static <T> T initialize(Class<T> type) {
+        try {
+            return type.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 初始化对象实例
+     *
+     * @param <T>    数据类型
+     * @param type   对象类型
+     * @param values 属性值数组
+     * @return 对象实例
+     */
+    @Nonnull
+    public static <T> T initialize(Class<T> type, Object... values) {
+        T instance = initialize(type);
+        setValues(instance, values);
+        return instance;
+    }
+
+    /**
+     * 初始化对象实例
+     *
+     * @param <T>    数据类型
+     * @param type   对象类型
+     * @param values 初始化参数
+     * @return 对象实例
+     */
+    @Nonnull
+    public static <T> T initialize(Class<T> type, Map<String, ?> values) {
+        T instance = initialize(type);
+        setValues(instance, values);
+        return instance;
+    }
 
     /**
      * 根据泛型参数类型获取泛型类型
@@ -111,506 +468,7 @@ public abstract class Objects {
         } else if (cls == boolean.class) {
             return Boolean.class;
         }
-        return cls;
-    }
-
-    /**
-     * 判断类型是否是基本数据类型
-     *
-     * @param cls 数据类型
-     * @return true/false
-     */
-    public static boolean isBasicClass(Class<?> cls) {
-        try {
-            return cls == null ? false : Number.class.isAssignableFrom(cls) ? true :
-                    ((Class<?>) cls.getField("TYPE").get(null)).isPrimitive();
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            return cls.isPrimitive();
-        }
-    }
-
-    /**
-     * 判断对象类型是否是元类型
-     * <p>
-     * 元类型包括基本数据类型、字符串类型、枚举类型、日期类型、类对象类型
-     *
-     * @param cls 对象类型
-     * @return true/false
-     */
-    public static boolean isMetaClass(Class<?> cls) {
-        return cls != null && (isBasicClass(cls) || cls == String.class || cls == Class.class || cls == Object.class
-                || Enum.class.isAssignableFrom(cls) || Date.class.isAssignableFrom(cls));
-    }
-
-    /**
-     * 判断类型是否是基本数据包装类型
-     *
-     * @param cls 数据类型
-     * @return true/false
-     */
-    public static boolean isBasicWrapClass(Class<?> cls) {
-        return cls != null && (cls == Byte.class || cls == Character.class || cls == Integer.class || cls == Short.class
-                || cls == Long.class || cls == Float.class || cls == Double.class || cls == Boolean.class);
-    }
-
-    /**
-     * 判断类型是否是基本数据数字类型
-     *
-     * @param cls 数据类型
-     * @return true/false
-     */
-    public static boolean isBasicNumberClass(Class<?> cls) {
-        return cls != null && (cls == byte.class || cls == char.class || cls == short.class || cls == int.class
-                || cls == double.class || cls == long.class);
-    }
-
-    /**
-     * 判断类型是否是基本数据数字包装类型
-     *
-     * @param cls 数据类型
-     * @return true/false
-     */
-    public static boolean isBasicNumberWrapClass(Class<?> cls) {
-        return cls != null && (cls == Byte.class || cls == Character.class || cls == Short.class || cls == Integer.class
-                || cls == Double.class || cls == Long.class);
-    }
-
-    /**
-     * 判断数据类型是否是数字类型
-     *
-     * @param cls 数据类型
-     * @return true/false
-     */
-    public static boolean isNumberClass(Class<?> cls) {
-        return cls != null && (isBasicNumberClass(cls) || isBasicNumberWrapClass(cls));
-    }
-
-    /**
-     * 判断对象是否为空
-     *
-     * @param object 对象
-     * @return true/false
-     */
-    public static boolean isEmpty(Object object) {
-        if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)
-                || (object instanceof Map && ((Map<?, ?>) object).isEmpty())
-                || (object instanceof Collection && ((Collection<?>) object).isEmpty())
-                || (object instanceof Iterable && !((Iterable<?>) object).iterator().hasNext())) {
-            return true;
-        }
-        Class<?> type = object.getClass();
-        if (type.isArray()) {
-            Class<?> component = type.getComponentType();
-            if (component == byte.class) {
-                return ((byte[]) object).length == 0;
-            } else if (component == char.class) {
-                return ((char[]) object).length == 0;
-            } else if (component == int.class) {
-                return ((int[]) object).length == 0;
-            } else if (component == short.class) {
-                return ((short[]) object).length == 0;
-            } else if (component == long.class) {
-                return ((long[]) object).length == 0;
-            } else if (component == float.class) {
-                return ((float[]) object).length == 0;
-            } else if (component == double.class) {
-                return ((double[]) object).length == 0;
-            } else if (component == boolean.class) {
-                return ((boolean[]) object).length == 0;
-            }
-            return ((Object[]) object).length == 0;
-        }
-        return false;
-    }
-
-    /**
-     * 根据字段名称获取字段对象
-     *
-     * @param cls  类对象
-     * @param name 字段名称
-     * @return 字段对象
-     */
-    @Nonempty
-    public static Field getField(Class<?> cls, String name) {
-        try {
-            return cls.getDeclaredField(name);
-        } catch (NoSuchFieldException e) {
-            Class<?> parent = cls.getSuperclass();
-            if (parent == null) {
-                throw new RuntimeException(e);
-            }
-            return getField(parent, name);
-        }
-    }
-
-    /**
-     * 根据字段名称获取字段对象
-     *
-     * @param cls   类对象
-     * @param names 字段名称数组
-     * @return 字段对象数组
-     */
-    @Nonnull
-    public static Field[] getFields(Class<?> cls, String... names) {
-        if (names == null || names.length == 0) {
-            List<Field> fields = new LinkedList<>();
-            while (cls != Object.class) {
-                for (Field field : cls.getDeclaredFields()) {
-                    if (!Modifier.isStatic(field.getModifiers()) && !field.getName().startsWith("this$")) {
-                        fields.add(field);
-                    }
-                }
-                cls = cls.getSuperclass();
-            }
-            return fields.toArray(EMPTY_FIELD_ARRAY);
-        }
-        Field[] fields = new Field[names.length];
-        Field[] _fields = cls.getDeclaredFields();
-        outer:
-        for (int i = 0; i < names.length; i++) {
-            String name = names[i];
-            for (Field field : _fields) {
-                if (field.getName().equals(name)) {
-                    fields[i] = field;
-                    continue outer;
-                }
-            }
-            Class<?> parent = cls.getSuperclass();
-            while (parent != Object.class) {
-                try {
-                    fields[i] = parent.getDeclaredField(name);
-                    continue outer;
-                } catch (NoSuchFieldException e) {
-                    parent = parent.getSuperclass();
-                }
-            }
-            throw new RuntimeException("No such field: " + name);
-        }
-        return fields;
-    }
-
-    /**
-     * 获取对象属性名称
-     *
-     * @param cls 对象类型
-     * @return 字段名称数组
-     */
-    @Nonnull
-    public static String[] getProperties(Class<?> cls) {
-        if (Enum.class.isAssignableFrom(cls)) {
-            try {
-                Method method = cls.getMethod("values");
-                method.setAccessible(true);
-                Object[] values = (Object[]) method.invoke(cls);
-                String[] properties = new String[values.length];
-                for (int i = 0; i < values.length; i++) {
-                    properties[i] = values[i].toString();
-                }
-                return properties;
-            } catch (ReflectiveOperationException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        List<String> properties = new LinkedList<>();
-        while (cls != Object.class) {
-            Field[] fields = cls.getDeclaredFields();
-            for (Field field : fields) {
-                if (!Modifier.isStatic(field.getModifiers())) {
-                    properties.add(field.getName());
-                }
-            }
-            cls = cls.getSuperclass();
-        }
-        return properties.toArray(Strings.EMPTY_ARRAY);
-    }
-
-    /**
-     * 获取对象指定字段的值
-     *
-     * @param object   对象实例
-     * @param property 属性名称
-     * @return 字段值
-     */
-    @Nonempty
-    public static Object getValue(Object object, String property) {
-        String suffix = null;
-        int index = property.indexOf('.');
-        if (index > 0) {
-            suffix = property.substring(index + 1);
-            property = property.substring(0, index);
-        }
-        Field field = getField(object.getClass(), property);
-        field.setAccessible(true);
-        try {
-            Object value = field.get(object);
-            return value == null || suffix == null ? value : getValue(value, suffix);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * 获取对象实例指定属性
-     *
-     * @param object     对象实例
-     * @param properties 属性名称数组（如果为空则获取所有属性值）
-     * @return 键/值对象
-     */
-    @Nonnull
-    public static Map<String, Object> getValues(Object object, String... properties) {
-        if (properties.length == 0) {
-            Map<String, Object> values = new HashMap<>();
-            Class<?> meta = object.getClass();
-            while (meta != Object.class) {
-                for (Field field : meta.getDeclaredFields()) {
-                    if (!Modifier.isStatic(field.getModifiers())) {
-                        field.setAccessible(true);
-                        try {
-                            values.put(field.getName(), field.get(object));
-                        } catch (IllegalAccessException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                }
-                meta = meta.getSuperclass();
-            }
-            return values;
-        }
-        Map<String, Object> values = new HashMap<>(properties.length);
-        for (String property : properties) {
-            values.put(property, getValue(object, property));
-        }
-        return values;
-    }
-
-    /**
-     * 设置对象指定属性的值，对象属性必须支持set方法
-     *
-     * @param object   对象实例
-     * @param property 属性名称
-     * @param value    字段值
-     */
-    public static void setValue(@Nonnull Object object, @Nonempty String property, Object value) {
-        Field field = getField(object.getClass(), property);
-        field.setAccessible(true);
-        try {
-            field.set(object, value);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * 将Map对象所包含的键/值填充到Bean对象实例对应的非静态属性中
-     *
-     * @param object 对象实例
-     * @param values 需要填充的属性/值Map对象
-     */
-    @Nonnull
-    public static void setValues(Object object, Map<String, ?> values) {
-        if (!values.isEmpty()) {
-            Class<?> meta = object.getClass();
-            while (meta != Object.class) {
-                for (Field field : meta.getDeclaredFields()) {
-                    if (values.containsKey(field.getName()) && !Modifier.isStatic(field.getModifiers())) {
-                        field.setAccessible(true);
-                        try {
-                            field.set(object, values.get(field.getName()));
-                        } catch (IllegalAccessException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                }
-                meta = meta.getSuperclass();
-            }
-        }
-    }
-
-    /**
-     * 对象拷贝（属性复制）
-     *
-     * @param <T>    数据类型
-     * @param source 源对象
-     * @return 目标对象
-     */
-    @Nonnull
-    public static <T> T copy(T source) {
-        T target = (T) initialize(source.getClass());
-        copy(source, target);
-        return target;
-    }
-
-    /**
-     * 拷贝对象实例，深度克隆
-     *
-     * @param <T>    数据类型
-     * @param source 源对象
-     * @return 对象实例副本
-     */
-    @Nonnull
-    public static <T extends Serializable> T clone(T source) {
-        try {
-            return (T) Streams.deserialize(Streams.serialize(source));
-        } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * 对象拷贝（属性复制）
-     *
-     * @param <T>    数据类型
-     * @param source 源对象
-     * @param target 目标对象
-     */
-    @Nonnull
-    public static <T> void copy(T source, T target) {
-        Class<?> type = source.getClass();
-        while (type != Object.class) {
-            for (Field field : type.getDeclaredFields()) {
-                int modifiers = field.getModifiers();
-                if (Modifier.isStatic(modifiers) || Modifier.isFinal(modifiers)) {
-                    continue;
-                }
-                field.setAccessible(true);
-                try {
-                    field.set(target, field.get(source));
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            type = type.getSuperclass();
-        }
-    }
-
-    /**
-     * 初始化对象实例
-     *
-     * @param <T>  数据类型
-     * @param type 对象类型
-     * @return 对象实例
-     */
-    @Nonnull
-    public static <T> T initialize(Class<T> type) {
-        try {
-            return type.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * 初始化对象实例
-     *
-     * @param <T>    数据类型
-     * @param type   对象类型
-     * @param values 初始化参数
-     * @return 对象实例
-     */
-    @Nonnull
-    public static <T> T initialize(Class<T> type, Map<String, ?> values) {
-        Class<?> cls = type;
-        T instance = initialize(type);
-        if (!values.isEmpty()) {
-            while (cls != Object.class) {
-                for (Field field : cls.getDeclaredFields()) {
-                    Object value;
-                    if (values.containsKey(field.getName()) && !Modifier.isStatic(field.getModifiers())
-                            && !isEmpty(value = values.get(field.getName()))) {
-                        field.setAccessible(true);
-                        try {
-                            field.set(instance, value);
-                        } catch (IllegalAccessException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                }
-                cls = cls.getSuperclass();
-            }
-        }
-        return instance;
-    }
-
-    /**
-     * 获取数组对象
-     *
-     * @param <T>    数据类型
-     * @param type   数组类型
-     * @param length 数组长度
-     * @return 数组对象
-     */
-    @Nonnull
-    public static <T> T[] buildArray(Class<T> type, @Min(0) int length) {
-        Class<?> _type = isBasicClass(type) ? getBasicWrapClass(type) : type;
-        return (T[]) Array.newInstance(_type, length);
-    }
-
-    /**
-     * 对象比较
-     *
-     * @param o1 比较对象
-     * @param o2 比较对象
-     * @return 比较结果数字
-     */
-    public static int compare(Object o1, Object o2) {
-        if (o1 == o2) {
-            return 0;
-        } else if (o1 == null) {
-            return -1;
-        } else if (o2 == null) {
-            return 1;
-        } else if (o1.getClass() == o2.getClass() && o1 instanceof Comparable) {
-            return ((Comparable<Object>) o1).compareTo(o2);
-        }
-        int h1 = o1.hashCode();
-        int h2 = o2.hashCode();
-        return h1 < h2 ? -1 : h1 == h2 ? 0 : 1;
-    }
-
-    /**
-     * 将对象集合按照属性值排序（属性名以“+”号开头或不以“-”号开头表示升序，以“-”号开头表示降序）
-     *
-     * @param <M>        数据类型
-     * @param collection 对象集合
-     * @param properties 属性名称数组
-     * @return 排序后对象集合
-     */
-    @Nonnull
-    public static <M> List<M> sort(Collection<M> collection, String... properties) {
-        List<M> list = collection instanceof List ? (List<M>) collection : new ArrayList<M>(collection);
-        Collections.sort(list, (o1, o2) -> {
-            if (properties.length == 0) {
-                return Objects.compare(o1, o2);
-            }
-            for (String property : properties) {
-                Boolean asc = property.charAt(0) == '+' ? Boolean.TRUE
-                        : property.charAt(0) == '-' ? Boolean.FALSE : null;
-                if (asc != null) {
-                    property = property.substring(1);
-                }
-                int offset = Objects.compare(getValue(o1, property), getValue(o2, property));
-                if (offset != 0) {
-                    return asc == null || asc == Boolean.TRUE ? offset : -offset;
-                }
-            }
-            return 0;
-        });
-        return list;
-    }
-
-    /**
-     * 获取目标异常信息
-     *
-     * @param throwable 异常对象
-     * @return 信息内容
-     */
-    @Nonnull
-    public static String getThrowableMessage(Throwable throwable) {
-        Throwable cause;
-        while ((cause = throwable.getCause()) != null) {
-            throwable = cause;
-        }
-        return throwable.getMessage();
+        throw new IllegalArgumentException("Class must be basic type");
     }
 
     /**
@@ -619,7 +477,7 @@ public abstract class Objects {
      * @param pack 包路径名
      * @return Java类集合
      */
-    @Nonempty
+    @Nonnull
     public static List<Class<?>> getClasses(String pack) {
         List<Class<?>> classes = new ArrayList<>();
         // 获取包的名字 并进行替换
@@ -683,7 +541,7 @@ public abstract class Objects {
      * @param path 包路径
      * @return 对象列表
      */
-    @Nonempty
+    @Nonnull
     private static List<Class<?>> getClasses(String pack, String path) {
         File dir = new File(path);
         if (!dir.exists() || !dir.isDirectory()) {
@@ -708,227 +566,69 @@ public abstract class Objects {
     }
 
     /**
-     * 获取树型键/值对象比较器
+     * 获取目标异常信息
      *
-     * @param <K> 键类型
-     * @param <V> 值类型
-     * @param map 树型键/值对象
-     * @return 比较器对象
+     * @param throwable 异常对象
+     * @return 信息内容
      */
     @Nonnull
-    private static <K, V> Comparator<K> getTreeMapComparator(TreeMap<K, V> map) {
-        try {
-            Field field = map.getClass().getDeclaredField("comparator");
-            field.setAccessible(true);
-            return (Comparator<K>) field.get(map);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+    public static String getThrowableMessage(Throwable throwable) {
+        Throwable cause;
+        while ((cause = throwable.getCause()) != null) {
+            throwable = cause;
         }
+        return throwable.getMessage();
     }
 
     /**
      * 对象类型转换
      *
+     * @param <T>    对象类型
      * @param type   转换目标类型
      * @param object 被转换对象
      * @return 转换后对象
      */
-    public static Object toObject(@Nonnull Class<?> type, Object object) {
+    public static <T> T toObject(@Nonnull Class<T> type, Object object) {
         if (type == Object.class) {
-            return object;
-        } else if (type.isArray()) {
-            return toArray(type.getComponentType(), object);
+            return (T) object;
         } else if (type == byte.class || type == Byte.class) {
-            return toByte((Class<Byte>) type, object);
+            return (T) toByte(object);
         } else if (type == char.class || type == Character.class) {
-            return toCharacter((Class<Character>) type, object);
+            return (T) toCharacter(object);
         } else if (type == boolean.class || type == Boolean.class) {
-            return toBoolean((Class<Boolean>) type, object);
+            return (T) toBoolean(object);
         } else if (type == int.class || type == Integer.class) {
-            return toInteger((Class<Integer>) type, object);
+            return (T) toInteger(object);
+        } else if (type == BigInteger.class) {
+            return (T) (object instanceof BigInteger ? object : new BigInteger(object.toString()));
+        } else if (type == BigDecimal.class) {
+            return (T) (object instanceof BigDecimal ? object : new BigDecimal(object.toString()));
         } else if (type == short.class || type == Short.class) {
-            return toShort((Class<Short>) type, object);
+            return (T) toShort(object);
         } else if (type == float.class || type == Float.class) {
-            return toFloat((Class<Float>) type, object);
+            return (T) toFloat(object);
         } else if (type == double.class || type == Double.class) {
-            return toDouble((Class<Double>) type, object);
+            return (T) toDouble(object);
         } else if (type == long.class || type == Long.class) {
-            return toLong((Class<Long>) type, object);
+            return (T) toLong(object);
         } else if (Enum.class.isAssignableFrom(type)) {
-            return toEnum((Class<Enum>) type, object);
+            return (T) toEnum((Class<Enum>) type, object);
         } else if (Date.class.isAssignableFrom(type)) {
-            return toDate(object);
+            return (T) toDate(object);
         } else if (LocalDate.class.isAssignableFrom(type)) {
-            return Dates.adapter(toDate(object)).toLocalDate();
+            return (T) (object instanceof LocalDate ? object : object instanceof LocalDateTime ? ((LocalDateTime) object).toLocalDate() :
+                    Dates.adapter(toDate(object)).toLocalDate());
         } else if (LocalDateTime.class.isAssignableFrom(type)) {
-            return Dates.adapter(toDate(object));
+            return (T) (object instanceof LocalDateTime ? object : object instanceof LocalDate ?
+                    ((LocalDate) object).atStartOfDay(ZoneId.systemDefault()).toLocalDateTime() : Dates.adapter(toDate(object)));
         } else if (type == String.class) {
-            return Strings.toString(object);
+            return (T) Strings.toString(object);
         } else if (type == Class.class) {
-            return toClass(object);
-        } else if (object instanceof Set) {
-            return toSet(type, object);
-        } else if (object instanceof List) {
-            return toList(type, object);
-        } else if (object instanceof Iterable) {
-            return toList(type, object);
-        } else if (object instanceof Map) {
-            return toMap(type, (Map<?, ?>) object);
-        } else if (object instanceof byte[]) {
-            return toArray(type.isArray() ? (Class<Object>) type.getComponentType() : (Class<Object>) type, object);
-        } else if (object instanceof char[]) {
-            return toArray(type.isArray() ? (Class<Object>) type.getComponentType() : (Class<Object>) type, object);
-        } else if (object instanceof int[]) {
-            return toArray(type.isArray() ? (Class<Object>) type.getComponentType() : (Class<Object>) type, object);
-        } else if (object instanceof short[]) {
-            return toArray(type.isArray() ? (Class<Object>) type.getComponentType() : (Class<Object>) type, object);
-        } else if (object instanceof long[]) {
-            return toArray(type.isArray() ? (Class<Object>) type.getComponentType() : (Class<Object>) type, object);
-        } else if (object instanceof float[]) {
-            return toArray(type.isArray() ? (Class<Object>) type.getComponentType() : (Class<Object>) type, object);
-        } else if (object instanceof double[]) {
-            return toArray(type.isArray() ? (Class<Object>) type.getComponentType() : (Class<Object>) type, object);
-        } else if (object instanceof boolean[]) {
-            return toArray(type.isArray() ? (Class<Object>) type.getComponentType() : (Class<Object>) type, object);
-        } else if (object instanceof Object[]) {
-            return toArray(type.isArray() ? (Class<Object>) type.getComponentType() : (Class<Object>) type, object);
+            return (T) toClass(object);
         } else if (object != null && !type.isAssignableFrom(object.getClass())) {
             throw new IllegalArgumentException("Cannot convert " + object + " to " + type);
         }
-        return object;
-    }
-
-    /**
-     * 键/值对类型转换
-     *
-     * @param <K>    键类型
-     * @param <V>    值类型
-     * @param <T>    目标数据类型
-     * @param type   转换类型
-     * @param object 被转换对象
-     * @return 键/值对象
-     */
-    public static <K, V, T> Map<K, T> toMap(@Nonnull Class<T> type, Map<K, V> object) {
-        if (object == null) {
-            return new HashMap<K, T>(0);
-        }
-        Map<K, T> map = object instanceof TreeMap ? new TreeMap<K, T>(getTreeMapComparator((TreeMap<K, V>) object))
-                : object instanceof LinkedHashMap ? new LinkedHashMap<K, T>(object.size())
-                : new HashMap<K, T>(object.size());
-        for (Entry<K, V> entry : object.entrySet()) {
-            map.put(entry.getKey(), (T) toObject(type, entry.getValue()));
-        }
-        return map;
-    }
-
-    /**
-     * 集合类型转换
-     *
-     * @param <T>    数据类型
-     * @param type   转换类型
-     * @param object 被转换对象
-     * @return Set
-     */
-    public static <T> Set<T> toSet(@Nonnull Class<T> type, Object object) {
-        if (object == null) {
-            return new HashSet<T>(0);
-        }
-        T[] array = toArray(type, object);
-        Set<T> set = new HashSet<T>(array.length);
-        for (T o : array) {
-            set.add(o);
-        }
-        return set;
-    }
-
-    /**
-     * 列表类型转换
-     *
-     * @param <T>    数据类型
-     * @param type   转换类型
-     * @param object 被转换对象
-     * @return List
-     */
-    public static <T> List<T> toList(@Nonnull Class<T> type, Object object) {
-        if (object == null) {
-            return new ArrayList<T>(0);
-        }
-        T[] array = toArray(type, object);
-        List<T> list = new ArrayList<T>(array.length);
-        for (T o : array) {
-            list.add(o);
-        }
-        return list;
-    }
-
-    /**
-     * 将对象转换成数组
-     *
-     * @param <T>    数据类型
-     * @param type   数组类型
-     * @param object 被转换对象
-     * @return 数组对象
-     */
-    public static <T> T[] toArray(@Nonnull Class<T> type, Object object) {
-        if (object == null) {
-            return buildArray(type, 0);
-        } else if (object instanceof List) {
-            int i = 0;
-            List<?> list = (List<?>) object;
-            T[] array = buildArray(type, list.size());
-            for (Object o : list) {
-                array[i++] = (T) toObject(type, o);
-            }
-            return array;
-        } else if (object instanceof Collection) {
-            Collection<?> collection = (Collection<?>) object;
-            T[] array = buildArray(type, collection.size());
-            int i = 0;
-            for (Object o : collection) {
-                array[i++] = (T) toObject(type, o);
-            }
-            return array;
-        } else if (object instanceof Iterable) {
-            List<T> list = new LinkedList<T>();
-            Iterator<?> iterator = ((Iterable<?>) object).iterator();
-            while (iterator.hasNext()) {
-                list.add((T) toObject(type, iterator.next()));
-            }
-            return list.toArray(buildArray(type, 0));
-        } else if (object.getClass().isArray()) {
-            Class<?> component = object.getClass().getComponentType();
-            if (type == component || type.isAssignableFrom(component)) {
-                return (T[]) object;
-            }
-            Collection<?> collection;
-            if (component == byte.class) {
-                collection = Arrays.asList((byte[]) object);
-            } else if (component == char.class) {
-                collection = Arrays.asList((char[]) object);
-            } else if (component == int.class) {
-                collection = Arrays.asList((int[]) object);
-            } else if (component == short.class) {
-                collection = Arrays.asList((short[]) object);
-            } else if (component == long.class) {
-                collection = Arrays.asList((long[]) object);
-            } else if (component == float.class) {
-                collection = Arrays.asList((float[]) object);
-            } else if (component == double.class) {
-                collection = Arrays.asList((double[]) object);
-            } else if (component == boolean.class) {
-                collection = Arrays.asList((boolean[]) object);
-            } else {
-                collection = Arrays.asList((Object[]) object);
-            }
-            T[] array = buildArray(type, collection.size());
-            for (int i = 0, len = collection.size(); i < len; i++) {
-                array[i] = (T) toObject(type, ((List<?>) collection).get(i));
-            }
-            return array;
-        }
-        T[] array = buildArray(type, 1);
-        array[0] = (T) toObject(type, object);
-        return array;
+        return (T) object;
     }
 
     /**
@@ -938,22 +638,8 @@ public abstract class Objects {
      * @return 字节对象
      */
     public static Byte toByte(Object object) {
-        return toByte(Byte.class, object);
-    }
-
-    /**
-     * 字节类型转换
-     *
-     * @param type   字节类型
-     * @param object 被转换对象
-     * @return 字节对象
-     */
-    private static Byte toByte(@Nonnull Class<Byte> type, Object object) {
-        if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)) {
-            return type == byte.class ? (byte) 0 : null;
-        }
-        return (Byte) (object instanceof Byte ? object
-                : object instanceof Number ? ((Number) object).byteValue() : Byte.parseByte(object.toString()));
+        return object == null ? null : object instanceof Byte ? (Byte) object :
+                object instanceof Number ? ((Number) object).byteValue() : Byte.parseByte(object.toString());
     }
 
     /**
@@ -963,22 +649,8 @@ public abstract class Objects {
      * @return 字符对象
      */
     public static Character toCharacter(Object object) {
-        return toCharacter(Character.class, object);
-    }
-
-    /**
-     * 字符类型转换
-     *
-     * @param type   字符类型
-     * @param object 被转换对象
-     * @return 字符对象
-     */
-    private static Character toCharacter(@Nonnull Class<Character> type, Object object) {
-        if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)) {
-            return type == char.class ? (char) 0 : null;
-        }
-        return (Character) (object instanceof Character ? object
-                : object instanceof Number ? ((Number) object).intValue() : Integer.parseInt(object.toString()));
+        return object == null ? null : object instanceof Character ? (Character) object :
+                Character.valueOf((char) (object instanceof Number ? ((Number) object).intValue() : Integer.parseInt(object.toString())));
     }
 
     /**
@@ -988,21 +660,8 @@ public abstract class Objects {
      * @return 真假对象
      */
     public static Boolean toBoolean(Object object) {
-        return toBoolean(Boolean.class, object);
-    }
-
-    /**
-     * 真假类型转换
-     *
-     * @param type   真假类型
-     * @param object 被转换对象
-     * @return 真假对象
-     */
-    private static Boolean toBoolean(@Nonnull Class<Boolean> type, Object object) {
-        if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)) {
-            return type == boolean.class ? false : null;
-        }
-        return (Boolean) (object instanceof Boolean ? object : Boolean.parseBoolean(object.toString()));
+        return object == null ? null : object instanceof Boolean ? (Boolean) object : object instanceof Number ?
+                ((Number) object).intValue() > 0 ? Boolean.TRUE : Boolean.FALSE : Boolean.parseBoolean(object.toString());
     }
 
     /**
@@ -1012,22 +671,8 @@ public abstract class Objects {
      * @return 整形对象
      */
     public static Integer toInteger(Object object) {
-        return toInteger(Integer.class, object);
-    }
-
-    /**
-     * 整形类型转换
-     *
-     * @param type   整形类型
-     * @param object 被转换对象
-     * @return 整形对象
-     */
-    private static Integer toInteger(@Nonnull Class<Integer> type, Object object) {
-        if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)) {
-            return type == int.class ? 0 : null;
-        }
-        return (Integer) (object instanceof Character ? object
-                : object instanceof Number ? ((Number) object).intValue() : Integer.parseInt(object.toString()));
+        return object == null ? null : object instanceof Integer ? (Integer) object :
+                object instanceof Number ? ((Number) object).intValue() : Integer.parseInt(object.toString());
     }
 
     /**
@@ -1037,22 +682,8 @@ public abstract class Objects {
      * @return 短整形对象
      */
     public static Short toShort(Object object) {
-        return toShort(Short.class, object);
-    }
-
-    /**
-     * 短整形类型转换
-     *
-     * @param type   短整形类型
-     * @param object 被转换对象
-     * @return 短整形对象
-     */
-    private static Short toShort(@Nonnull Class<Short> type, Object object) {
-        if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)) {
-            return type == short.class ? (short) 0 : null;
-        }
-        return (Short) (object instanceof Short ? object
-                : object instanceof Number ? ((Number) object).shortValue() : Short.parseShort(object.toString()));
+        return object == null ? null : object instanceof Short ? (Short) object :
+                object instanceof Number ? ((Number) object).shortValue() : Short.parseShort(object.toString());
     }
 
     /**
@@ -1062,23 +693,10 @@ public abstract class Objects {
      * @return 单精度浮点对象
      */
     public static Float toFloat(Object object) {
-        return toFloat(Float.class, object);
+        return object == null ? null : object instanceof Float ? (Float) object :
+                object instanceof Number ? ((Number) object).floatValue() : Float.parseFloat(object.toString());
     }
 
-    /**
-     * 单精度浮点类型转换
-     *
-     * @param type   单精度浮点类型
-     * @param object 被转换对象
-     * @return 单精度浮点对象
-     */
-    private static Float toFloat(@Nonnull Class<Float> type, Object object) {
-        if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)) {
-            return type == float.class ? (float) 0 : null;
-        }
-        return (Float) (object instanceof Short ? object
-                : object instanceof Number ? ((Number) object).floatValue() : Float.parseFloat(object.toString()));
-    }
 
     /**
      * 双精度浮点类型转换
@@ -1087,22 +705,8 @@ public abstract class Objects {
      * @return 双精度浮点对象
      */
     public static Double toDouble(Object object) {
-        return toDouble(Double.class, object);
-    }
-
-    /**
-     * 双精度浮点类型转换
-     *
-     * @param type   双精度浮点类型
-     * @param object 被转换对象
-     * @return 双精度浮点对象
-     */
-    private static Double toDouble(@Nonnull Class<Double> type, Object object) {
-        if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)) {
-            return type == double.class ? (double) 0 : null;
-        }
-        return (Double) (object instanceof Double ? object
-                : object instanceof Number ? ((Number) object).doubleValue() : Double.parseDouble(object.toString()));
+        return object == null ? null : object instanceof Double ? (Double) object :
+                object instanceof Number ? ((Number) object).doubleValue() : Double.parseDouble(object.toString());
     }
 
     /**
@@ -1112,22 +716,8 @@ public abstract class Objects {
      * @return 长整形对象
      */
     public static Long toLong(Object object) {
-        return toLong(Long.class, object);
-    }
-
-    /**
-     * 长整形类型转换
-     *
-     * @param type   长整形类型
-     * @param object 被转换对象
-     * @return 长整形对象
-     */
-    private static Long toLong(@Nonnull Class<Long> type, Object object) {
-        if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)) {
-            return type == long.class ? (long) 0 : null;
-        }
-        return (Long) (object instanceof Long ? object
-                : object instanceof Number ? ((Number) object).longValue() : Long.parseLong(object.toString()));
+        return object == null ? null : object instanceof Long ? (Long) object :
+                object instanceof Number ? ((Number) object).longValue() : Long.parseLong(object.toString());
     }
 
     /**
@@ -1139,8 +729,7 @@ public abstract class Objects {
      * @return 枚举实例
      */
     public static <T extends Enum<T>> T toEnum(@Nonnull Class<T> type, Object object) {
-        return object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0) ? null
-                : object instanceof Enum ? (T) object : Enum.valueOf(type, object.toString());
+        return object == null ? null : object.getClass() == type ? (T) object : Enum.valueOf(type, object.toString());
     }
 
     /**
@@ -1150,10 +739,20 @@ public abstract class Objects {
      * @return 日期
      */
     public static Date toDate(Object object) {
-        return object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0) ? null
-                : object instanceof Date ? (Date) object
-                : object instanceof Number ? new Date(((Number) object).longValue())
-                : Dates.parse(object.toString());
+        return toDate(object, Dates.ALL_DATE_FORMATS);
+    }
+
+    /**
+     * 日期类型转换
+     *
+     * @param object   被转换对象
+     * @param patterns 格式模式数组
+     * @return 日期
+     */
+    public static Date toDate(Object object, String... patterns) {
+        return object == null ? null : object instanceof Date ? (Date) object : object instanceof LocalDate ?
+                Dates.adapter((LocalDate) object) : object instanceof LocalDateTime ? Dates.adapter((LocalDateTime) object) :
+                object instanceof Number ? new Date(((Number) object).longValue()) : Dates.parse(object.toString(), patterns);
     }
 
     /**
@@ -1164,8 +763,7 @@ public abstract class Objects {
      */
     public static Class<?> toClass(Object object) {
         try {
-            return object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0) ? null
-                    : object instanceof Class ? (Class<?>) object : Class.forName(object.toString());
+            return object == null ? null : object instanceof Class ? (Class<?>) object : Class.forName(object.toString());
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }

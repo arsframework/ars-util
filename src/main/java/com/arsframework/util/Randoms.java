@@ -1,14 +1,16 @@
 package com.arsframework.util;
 
 import java.util.*;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.lang.reflect.Field;
+import java.lang.reflect.Array;
 
 import com.arsframework.annotation.Lt;
 import com.arsframework.annotation.Min;
 import com.arsframework.annotation.Nonnull;
-import com.arsframework.annotation.Nonempty;
 
 /**
  * 随机数处理工具类
@@ -126,6 +128,10 @@ public abstract class Randoms {
                 return (M) Double.valueOf(randomInteger());
             } else if (type == int.class || type == Integer.class) {
                 return (M) Integer.valueOf(randomInteger());
+            } else if (type == BigInteger.class) {
+                return (M) new BigInteger(String.valueOf(randomInteger()));
+            } else if (type == BigDecimal.class) {
+                return (M) new BigDecimal(String.valueOf(randomInteger()));
             } else if (type == long.class || type == Long.class) {
                 return (M) Long.valueOf(randomInteger());
             } else if (type == boolean.class || type == Boolean.class) {
@@ -134,7 +140,7 @@ public abstract class Randoms {
                 return (M) randomString();
             } else if (type.isArray()) {
                 Class<?> component = type.getComponentType();
-                Object[] array = Objects.buildArray(component, 1);
+                Object[] array = (Object[]) Array.newInstance(component, 1);
                 array[0] = this.execute(component);
                 return (M) array;
             }
@@ -187,7 +193,6 @@ public abstract class Randoms {
          * @param excluder 随机生成属性排除器
          * @return 随机对象实例生成工厂
          */
-        @Nonnull
         public RandomBeanFactory<T> register(Excluder excluder) {
             this.excluder = excluder;
             return this;
@@ -199,7 +204,6 @@ public abstract class Randoms {
          * @param generatorBuilder 随机数生成接口工厂
          * @return 随机对象实例生成工厂
          */
-        @Nonnull
         public RandomBeanFactory<T> register(GeneratorBuilder generatorBuilder) {
             this.generatorBuilder = generatorBuilder;
             return this;
@@ -326,7 +330,7 @@ public abstract class Randoms {
      * @param length 字符串长度
      * @return 字符串
      */
-    @Nonempty
+    @Nonnull
     public static String randomString(Character[] chars, @Min(1) int length) {
         StringBuilder buffer = new StringBuilder();
         for (int i = 0; i < length; i++) {
@@ -350,7 +354,7 @@ public abstract class Randoms {
      * @param chars 随机字符数组
      * @return 字符
      */
-    @Nonempty
+    @Nonnull
     public static Character randomCharacter(Character[] chars) {
         return chars[random.get().nextInt(chars.length)];
     }

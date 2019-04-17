@@ -35,6 +35,7 @@ import org.xhtmlrenderer.extend.ReplacedElementFactory;
 import org.xhtmlrenderer.css.style.CalculatedStyle;
 import org.xhtmlrenderer.simple.extend.FormSubmissionListener;
 
+import com.itextpdf.awt.PdfGraphics2D;
 import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfTemplate;
 import com.itextpdf.text.pdf.PdfContentByte;
@@ -195,7 +196,7 @@ public abstract class Documents {
             float height = this.cssHeight / outputDevice.getDotsPerPoint();
 
             PdfTemplate template = cb.createTemplate(width, height);
-            Graphics2D g2d = template.createGraphics(width, height);
+            Graphics2D g2d = new PdfGraphics2D(cb, width, height);
             PrintTranscoder prm = new PrintTranscoder();
             TranscoderInput ti = new TranscoderInput(this.svg);
             prm.transcode(ti, null);
@@ -295,21 +296,19 @@ public abstract class Documents {
     }
 
     /**
-     * 将html转换成PDF文件
+     * 将文本格式转换成PDF格式
      *
-     * @param html   Html数据
-     * @param output PDF文件输出流
-     * @param fonts  样式文件路径数据
+     * @param renderer 文本渲染器
+     * @param output   PDF文件输出流
+     * @param fonts    样式文件路径数据
      * @throws DocumentException 文档操作异常
      * @throws IOException       IO操作异常
      */
     @Nonnull
-    public static void html2pdf(String html, OutputStream output, String... fonts) throws DocumentException, IOException {
-        ITextRenderer renderer = new ITextRenderer();
+    public static void text2pdf(ITextRenderer renderer, OutputStream output, String... fonts) throws DocumentException, IOException {
         ChainingReplacedElementFactory chainingReplacedElementFactory = new ChainingReplacedElementFactory();
         chainingReplacedElementFactory.addReplacedElementFactory(new SVGReplacedElementFactory());
         renderer.getSharedContext().setReplacedElementFactory(chainingReplacedElementFactory);
-        renderer.setDocumentFromString(html);
         if (fonts.length > 0) {
             ITextFontResolver fontResolver = renderer.getFontResolver();
             for (String font : fonts) {
