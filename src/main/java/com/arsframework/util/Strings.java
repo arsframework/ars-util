@@ -51,6 +51,16 @@ public abstract class Strings {
     public static final Pattern LIST_PATTERN = Pattern.compile(" *\\[.*\\] *");
 
     /**
+     * 因为字母正则表达式匹配模式
+     */
+    public static final Pattern LETTER_PATTERN = Pattern.compile("[a-zA-Z]+");
+
+    /**
+     * 字符串列表正则表达式匹配模式
+     */
+    public static final Pattern NUMBER_PATTERN = Pattern.compile("-?(\\.?[0-9]+|[0-9]+\\.?[0-9]+|[0-9]+\\.?)");
+
+    /**
      * 当前文件目录
      */
     public static final String CURRENT_PATH = Strings.class.getResource("/").getPath();
@@ -218,6 +228,26 @@ public abstract class Strings {
             }
         }
         return true;
+    }
+
+    /**
+     * 判断字符串是否为数字
+     *
+     * @param source 字符串
+     * @return true/false
+     */
+    public static boolean isNumber(CharSequence source) {
+        return !isEmpty(source) && NUMBER_PATTERN.matcher(source).matches();
+    }
+
+    /**
+     * 判断字符串是否为因为字母
+     *
+     * @param source 字符串
+     * @return true/false
+     */
+    public static boolean isLetter(CharSequence source) {
+        return !isEmpty(source) && LETTER_PATTERN.matcher(source).matches();
     }
 
     /**

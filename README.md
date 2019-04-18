@@ -10,7 +10,7 @@ JDK1.8+
 <dependency>
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.3.0</version>
+    <version>1.3.1</version>
 </dependency>
 ```
 
@@ -70,3 +70,6 @@ JDK1.8+
 ### v1.3.0
 1. 内部优化及Bug修复
 2. 移除```com.arsframework.util.Jsons```工具类
+
+### v1.3.1
+1. 新增针对```Excel2007```版大文件数据遍历方法

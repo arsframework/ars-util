@@ -21,11 +21,11 @@ public abstract class Asserts {
      * 对象非Null验证
      *
      * @param object 目标对象
-     * @throws IllegalStateException 验证异常
+     * @throws IllegalArgumentException 参数异常
      */
-    public static void nonnull(Object object) throws IllegalStateException {
+    public static void nonnull(Object object) throws IllegalArgumentException {
         if (object == null) {
-            throw new IllegalStateException("Object must not be null");
+            throw new IllegalArgumentException("Object must not be null");
         }
     }
 
@@ -33,11 +33,11 @@ public abstract class Asserts {
      * 对象非空验证
      *
      * @param object 目标对象
-     * @throws IllegalStateException 验证异常
+     * @throws IllegalArgumentException 参数异常
      */
-    public static void nonempty(Object object) throws IllegalStateException {
+    public static void nonempty(Object object) throws IllegalArgumentException {
         if (Objects.isEmpty(object)) {
-            throw new IllegalStateException("Object must not be empty");
+            throw new IllegalArgumentException("Object must not be empty");
         }
     }
 
@@ -46,11 +46,11 @@ public abstract class Asserts {
      *
      * @param object 目标对象
      * @param regex  正则表达式
-     * @throws IllegalStateException 验证异常
+     * @throws IllegalArgumentException 参数异常
      */
-    public static void format(Object object, @Nonnull String regex) throws IllegalStateException {
-        if ((object instanceof Number || object instanceof CharSequence) && !object.toString().matches(regex)) {
-            throw new IllegalStateException(String.format("Object must be matched for '%s'", regex));
+    public static void format(Object object, @Nonnull String regex) throws IllegalArgumentException {
+        if (object == null || ((object instanceof Number || object instanceof CharSequence) && !object.toString().matches(regex))) {
+            throw new IllegalArgumentException(String.format("Object must be matched for '%s'", regex));
         }
     }
 
@@ -59,10 +59,11 @@ public abstract class Asserts {
      *
      * @param object 目标对象
      * @param value  最大值
-     * @throws IllegalStateException 验证异常
+     * @throws IllegalArgumentException 参数异常
      */
-    public static void min(Object object, long value) throws IllegalStateException {
-        if ((object instanceof Number && ((Number) object).longValue() < value)
+    public static void min(Object object, long value) throws IllegalArgumentException {
+        if (object == null
+                || (object instanceof Number && ((Number) object).longValue() < value)
                 || (object instanceof Enum && ((Enum) object).ordinal() < value)
                 || (object instanceof Date && ((Date) object).getTime() < value)
                 || (object instanceof LocalDate && Dates.getTime((LocalDate) object) < value)
@@ -79,7 +80,7 @@ public abstract class Asserts {
                 || (object instanceof long[] && ((long[]) object).length < value)
                 || (object instanceof double[] && ((double[]) object).length < value)
                 || (object instanceof boolean[] && ((boolean[]) object).length < value)) {
-            throw new IllegalStateException(String.format("Object size must be greater than or equal to %d", value));
+            throw new IllegalArgumentException(String.format("Object size must be greater than or equal to %d", value));
         }
     }
 
@@ -88,10 +89,11 @@ public abstract class Asserts {
      *
      * @param object 目标对象
      * @param value  最大值
-     * @throws IllegalStateException 验证异常
+     * @throws IllegalArgumentException 参数异常
      */
-    public static void max(Object object, long value) throws IllegalStateException {
-        if ((object instanceof Number && ((Number) object).longValue() > value)
+    public static void max(Object object, long value) throws IllegalArgumentException {
+        if (object == null
+                || (object instanceof Number && ((Number) object).longValue() > value)
                 || (object instanceof Enum && ((Enum) object).ordinal() > value)
                 || (object instanceof Date && ((Date) object).getTime() > value)
                 || (object instanceof LocalDate && Dates.getTime((LocalDate) object) > value)
@@ -108,7 +110,7 @@ public abstract class Asserts {
                 || (object instanceof long[] && ((long[]) object).length > value)
                 || (object instanceof double[] && ((double[]) object).length > value)
                 || (object instanceof boolean[] && ((boolean[]) object).length > value)) {
-            throw new IllegalStateException(String.format("Object size must be less than or equal to %d", value));
+            throw new IllegalArgumentException(String.format("Object size must be less than or equal to %d", value));
         }
     }
 
@@ -118,10 +120,11 @@ public abstract class Asserts {
      * @param object 目标对象
      * @param min    最小值
      * @param max    最大值
-     * @throws IllegalStateException 验证异常
+     * @throws IllegalArgumentException 参数异常
      */
-    public static void size(Object object, @Le("max") long min, long max) throws IllegalStateException {
-        if ((object instanceof Number && (((Number) object).longValue() < min || ((Number) object).longValue() > max))
+    public static void size(Object object, @Le("max") long min, long max) throws IllegalArgumentException {
+        if (object == null
+                || (object instanceof Number && (((Number) object).longValue() < min || ((Number) object).longValue() > max))
                 || (object instanceof Enum && (((Enum) object).ordinal() < min || ((Enum) object).ordinal() > max))
                 || (object instanceof Date && (((Date) object).getTime() < min || ((Date) object).getTime() > max))
                 || (object instanceof LocalDate && (Dates.getTime((LocalDate) object) < min || Dates.getTime((LocalDate) object) > max))
@@ -139,7 +142,7 @@ public abstract class Asserts {
                 || (object instanceof long[] && (((long[]) object).length < min || ((long[]) object).length > max))
                 || (object instanceof double[] && (((double[]) object).length < min || ((double[]) object).length > max))
                 || (object instanceof boolean[] && (((boolean[]) object).length < min || ((boolean[]) object).length > max))) {
-            throw new IllegalStateException(String.format("Object size must be in interval [%d, %d]", min, max));
+            throw new IllegalArgumentException(String.format("Object size must be in interval [%d, %d]", min, max));
         }
     }
 
@@ -148,11 +151,12 @@ public abstract class Asserts {
      *
      * @param object 目标对象
      * @param values 选项数组
-     * @throws IllegalStateException 验证异常
+     * @throws IllegalArgumentException 参数异常
      */
-    public static void option(Object object, @Nonnull long... values) throws IllegalStateException {
+    public static void option(Object object, @Nonnull long... values) throws IllegalArgumentException {
         Arrays.sort(values);
-        if ((object instanceof Number && Arrays.binarySearch(values, ((Number) object).longValue()) < 0)
+        if (object == null
+                || (object instanceof Number && Arrays.binarySearch(values, ((Number) object).longValue()) < 0)
                 || (object instanceof Enum && Arrays.binarySearch(values, ((Enum) object).ordinal()) < 0)
                 || (object instanceof Date && Arrays.binarySearch(values, ((Date) object).getTime()) < 0)
                 || (object instanceof LocalDate && Arrays.binarySearch(values, Dates.getTime((LocalDate) object)) < 0)
@@ -169,7 +173,31 @@ public abstract class Asserts {
                 || (object instanceof long[] && Arrays.binarySearch(values, ((long[]) object).length) < 0)
                 || (object instanceof double[] && Arrays.binarySearch(values, ((double[]) object).length) < 0)
                 || (object instanceof boolean[] && Arrays.binarySearch(values, ((boolean[]) object).length) < 0)) {
-            throw new IllegalStateException(String.format("Object must be in option %s", Arrays.toString(values)));
+            throw new IllegalArgumentException(String.format("Object must be in option %s", Arrays.toString(values)));
+        }
+    }
+
+    /**
+     * 对象数字验证
+     *
+     * @param object 目标对象
+     * @throws IllegalArgumentException 参数异常
+     */
+    public static void number(Object object) throws IllegalArgumentException {
+        if (!(object instanceof Number || (object instanceof CharSequence && Strings.isNumber((CharSequence) object)))) {
+            throw new IllegalArgumentException("Object must be number");
+        }
+    }
+
+    /**
+     * 对象字母验证
+     *
+     * @param object 目标对象
+     * @throws IllegalArgumentException 参数异常
+     */
+    public static void letter(Object object) throws IllegalArgumentException {
+        if (!(object instanceof CharSequence && Strings.isLetter((CharSequence) object))) {
+            throw new IllegalArgumentException("Object must be letter");
         }
     }
 }
