@@ -41,18 +41,6 @@ public abstract class Objects {
     public static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
 
     /**
-     * 对象适配接口
-     */
-    public interface Adapter {
-        /**
-         * @param type   目标类型
-         * @param object 适配对象
-         * @return 目标对象
-         */
-        Object adaption(Class<?> type, Object object);
-    }
-
-    /**
      * 判断类型是否是基本数据类型
      *
      * @param cls 数据类型
@@ -245,23 +233,11 @@ public abstract class Objects {
      * @param property 属性名称
      * @param value    字段值
      */
-    public static void setValue(Object object, String property, Object value) {
-        setValue(object, property, value, (t, o) -> toObject(t, o));
-    }
-
-    /**
-     * 设置对象指定属性的值，对象属性必须支持set方法
-     *
-     * @param object   对象实例
-     * @param property 属性名称
-     * @param value    字段值
-     * @param adapter  对象适配器
-     */
-    public static void setValue(@Nonnull Object object, @Nonnull String property, Object value, @Nonnull Adapter adapter) {
+    public static void setValue(@Nonnull Object object, @Nonnull String property, Object value) {
         Field field = getField(object.getClass(), property);
         field.setAccessible(true);
         try {
-            field.set(object, adapter.adaption(field.getType(), value));
+            field.set(object, toObject(field.getType(), value));
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -273,19 +249,8 @@ public abstract class Objects {
      * @param object 对象实例
      * @param values 需要填充的属性/值Map对象
      */
-    public static void setValues(Object object, Map<String, ?> values) {
-        setValues(object, values, (t, o) -> toObject(t, o));
-    }
-
-    /**
-     * 将Map对象所包含的键/值填充到Bean对象实例对应的非静态属性中
-     *
-     * @param object  对象实例
-     * @param values  需要填充的属性/值Map对象
-     * @param adapter 对象适配器
-     */
     @Nonnull
-    public static void setValues(Object object, Map<String, ?> values, Adapter adapter) {
+    public static void setValues(Object object, Map<String, ?> values) {
         if (!values.isEmpty()) {
             Class<?> cls = object.getClass();
             do {
@@ -293,7 +258,7 @@ public abstract class Objects {
                     if (!Modifier.isStatic(field.getModifiers()) && values.containsKey(field.getName())) {
                         field.setAccessible(true);
                         try {
-                            field.set(object, adapter.adaption(field.getType(), values.get(field.getName())));
+                            field.set(object, toObject(field.getType(), values.get(field.getName())));
                         } catch (IllegalAccessException e) {
                             throw new RuntimeException(e);
                         }
@@ -310,18 +275,6 @@ public abstract class Objects {
      * @param values 需要填充的属性值数组
      */
     public static void setValues(Object object, Object... values) {
-        setValues(object, values, (t, o) -> toObject(t, o));
-    }
-
-    /**
-     * 将属性值填充到Bean对象实例对应的非静态属性中
-     *
-     * @param object  对象实例
-     * @param values  需要填充的属性值数组
-     * @param adapter 对象适配器
-     */
-    @Nonnull
-    public static void setValues(Object object, Object[] values, Adapter adapter) {
         if (values.length > 0) {
             int i = 0;
             Class<?> cls = object.getClass();
@@ -333,7 +286,7 @@ public abstract class Objects {
                     if (!Modifier.isStatic(field.getModifiers())) {
                         field.setAccessible(true);
                         try {
-                            field.set(object, adapter.adaption(field.getType(), values[i++]));
+                            field.set(object, toObject(field.getType(), values[i++]));
                         } catch (IllegalAccessException e) {
                             throw new RuntimeException(e);
                         }
@@ -422,22 +375,8 @@ public abstract class Objects {
      * @return 对象实例
      */
     public static <T> T initialize(Class<T> type, Object... values) {
-        return initialize(type, values, (t, o) -> toObject(t, o));
-    }
-
-    /**
-     * 初始化对象实例
-     *
-     * @param <T>     数据类型
-     * @param type    对象类型
-     * @param values  属性值数组
-     * @param adapter 对象适配器
-     * @return 对象实例
-     */
-    @Nonnull
-    public static <T> T initialize(Class<T> type, Object[] values, Adapter adapter) {
         T instance = initialize(type);
-        setValues(instance, values, adapter);
+        setValues(instance, values);
         return instance;
     }
 
@@ -450,22 +389,8 @@ public abstract class Objects {
      * @return 对象实例
      */
     public static <T> T initialize(Class<T> type, Map<String, ?> values) {
-        return initialize(type, values, (t, o) -> toObject(t, o));
-    }
-
-    /**
-     * 初始化对象实例
-     *
-     * @param <T>     数据类型
-     * @param type    对象类型
-     * @param values  初始化参数
-     * @param adapter 对象适配器
-     * @return 对象实例
-     */
-    @Nonnull
-    public static <T> T initialize(Class<T> type, Map<String, ?> values, Adapter adapter) {
         T instance = initialize(type);
-        setValues(instance, values, adapter);
+        setValues(instance, values);
         return instance;
     }
 

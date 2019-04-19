@@ -295,7 +295,7 @@ public abstract class Webs {
     @Nonnull
     public static void initializeFileResponseHeader(HttpServletResponse response, String name) {
         try {
-            name = new String(name.getBytes(), "ISO-8859-1");
+            name = new String(name.getBytes(), Strings.CHARSET_ISO_8859_1);
             response.setContentType("application/octet-stream");
             response.setHeader("Content-Disposition", "attachment; filename=" + name);
         } catch (UnsupportedEncodingException e) {

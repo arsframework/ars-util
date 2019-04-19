@@ -31,14 +31,19 @@ public abstract class Strings {
     public static final String[] EMPTY_ARRAY = new String[0];
 
     /**
-     * GBK字符集
+     * GBK编码
      */
     public static final String CHARSET_GBK = "GBK";
 
     /**
-     * UTF8字符集
+     * UTF8编码
      */
     public static final String CHARSET_UTF8 = "UTF-8";
+
+    /**
+     * ISO-8859-1编码
+     */
+    public static final String CHARSET_ISO_8859_1 = "ISO-8859-1";
 
     /**
      * 16进制字符串序列
@@ -46,9 +51,19 @@ public abstract class Strings {
     public static final String HEX_SEQUENCE = "0123456789ABCDEF";
 
     /**
+     * URL正则表达式匹配模式
+     */
+    public static final Pattern URL_PATTERN = Pattern.compile("http(s)?://([\\w-]+\\.)+[\\w-]+(/[\\w- ./?%&=]*)?");
+
+    /**
      * 字符串列表正则表达式匹配模式
      */
     public static final Pattern LIST_PATTERN = Pattern.compile(" *\\[.*\\] *");
+
+    /**
+     * 邮箱正则表达式匹配模式
+     */
+    public static final Pattern EMAIL_PATTERN = Pattern.compile("\\w+([-+.]\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*");
 
     /**
      * 因为字母正则表达式匹配模式
@@ -231,6 +246,26 @@ public abstract class Strings {
     }
 
     /**
+     * 判断字符串是否为URL
+     *
+     * @param source 字符串
+     * @return true/false
+     */
+    public static boolean isUrl(CharSequence source) {
+        return !isEmpty(source) && URL_PATTERN.matcher(source).matches();
+    }
+
+    /**
+     * 判断字符串是否为Email
+     *
+     * @param source 字符串
+     * @return true/false
+     */
+    public static boolean isEmail(CharSequence source) {
+        return !isEmpty(source) && EMAIL_PATTERN.matcher(source).matches();
+    }
+
+    /**
      * 判断字符串是否为数字
      *
      * @param source 字符串
@@ -296,6 +331,16 @@ public abstract class Strings {
     }
 
     /**
+     * 清理字符串前后空格
+     *
+     * @param source 源字符串
+     * @return 清理后字符串
+     */
+    public static String trim(String source) {
+        return source == null || source.isEmpty() || (source = source.trim()).isEmpty() ? null : source;
+    }
+
+    /**
      * 清理字符串中所有空格及换行符
      *
      * @param source 源字符串
@@ -318,53 +363,53 @@ public abstract class Strings {
     /**
      * 将对象数组链接成字符串
      *
-     * @param array 对象数组
+     * @param objects 对象数组
      * @return 字符串
      */
-    public static String join(Object[] array) {
-        return join(array, EMPTY_STRING);
+    public static String join(Object... objects) {
+        return join(objects, EMPTY_STRING);
     }
 
     /**
      * 将对象数组链接成字符串
      *
-     * @param array 对象数组
-     * @param sign  链接标记
+     * @param objects 对象数组
+     * @param sign    链接标记
      * @return 连接后的字符串
      */
     @Nonnull
-    public static String join(Object[] array, CharSequence sign) {
-        return array.length == 0 ? EMPTY_STRING : join(Arrays.asList(array), sign);
+    public static String join(Object[] objects, CharSequence sign) {
+        return objects.length == 0 ? EMPTY_STRING : join(Arrays.asList(objects), sign);
     }
 
     /**
      * 将对象集合链接成字符串
      *
-     * @param collection 对象集合
+     * @param objects 对象集合
      * @return 字符串
      */
-    public static String join(Collection<?> collection) {
-        return join(collection, EMPTY_STRING);
+    public static String join(Collection<?> objects) {
+        return join(objects, EMPTY_STRING);
     }
 
     /**
      * 将对象集合链接成字符串
      *
-     * @param collection 对象集合
-     * @param sign       链接标记
+     * @param objects 对象集合
+     * @param sign    链接标记
      * @return 连接后的字符串
      */
     @Nonnull
-    public static String join(Collection<?> collection, CharSequence sign) {
-        if (collection.isEmpty()) {
+    public static String join(Collection<?> objects, CharSequence sign) {
+        if (objects.isEmpty()) {
             return EMPTY_STRING;
         }
         StringBuilder buffer = new StringBuilder();
-        for (Object o : collection) {
+        for (Object object : objects) {
             if (buffer.length() > 0 && sign.length() > 0) {
                 buffer.append(sign);
             }
-            buffer.append(o);
+            buffer.append(object);
         }
         return buffer.toString();
     }

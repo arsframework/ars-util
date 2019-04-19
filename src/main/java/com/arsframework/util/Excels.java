@@ -2,8 +2,6 @@ package com.arsframework.util;
 
 import java.io.*;
 import java.util.*;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.lang.reflect.Field;
 import java.lang.reflect.Array;
 
@@ -25,7 +23,6 @@ import org.apache.poi.xssf.model.SharedStringsTable;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 
 import com.arsframework.annotation.Min;
 import com.arsframework.annotation.Nonnull;
@@ -105,7 +102,7 @@ public abstract class Excels {
     /**
      * 基于XML的Excel行实现
      */
-    private static class XMLRow implements Row {
+    public static class XMLRow implements Row {
         /**
          * 行下标（从0开始）
          */
@@ -281,7 +278,7 @@ public abstract class Excels {
     /**
      * 基于XML的Excel单元格实现
      */
-    private static class XMLCell implements Cell {
+    public static class XMLCell implements Cell {
         private Row row;
         private int column;
         private Object value;
@@ -470,51 +467,49 @@ public abstract class Excels {
     }
 
     /**
-     * Excel2007数据读取处理器
+     * Excel2007数据读取处理器抽象实现
      */
-    public static class Excel2007Reader extends DefaultHandler {
+    public static abstract class AbstractExcel2007Reader extends DefaultHandler implements Reader {
         private Row row; // 当前行
         private int count; // 迭代数量
         private int index; // 开始行下标
         private int column; // 当前列下标
         private String value; // 当前单元格值
-        private CellType type; // 当前单元格类型
-        private Reader callback; // 行遍历回调接口
-        private boolean datable; // 当前单元格是否为日期格式
-        private boolean related; // 数据是否关联
-        private XMLReader parser;
-        private XSSFReader reader;
-        private SharedStringsTable shared;
+        protected boolean datable; // 值是否为日期
+        protected boolean related; // 数据是否关联
+        protected OPCPackage pkg; // 文件包
+        protected SharedStringsTable shared; // 共享字符串表
 
-        public Excel2007Reader(OPCPackage pkg, Reader callback) {
-            this(pkg, 0, callback);
+        public AbstractExcel2007Reader(OPCPackage pkg) {
+            this(pkg, 0);
         }
 
         @Nonnull
-        public Excel2007Reader(OPCPackage pkg, @Min(0) int index, Reader callback) {
+        public AbstractExcel2007Reader(OPCPackage pkg, @Min(0) int index) {
+            this.pkg = pkg;
             this.index = index;
-            this.callback = callback;
             this.value = Strings.EMPTY_STRING;
-            try {
-                this.reader = new XSSFReader(pkg);
-                this.parser = this.buildXMLReader();
-                this.shared = this.reader.getSharedStringsTable();
-            } catch (IOException | SAXException | OpenXML4JException e) {
-                throw new RuntimeException(e);
-            }
         }
 
         /**
-         * 重置数据读取处理器
+         * 构建行对象，解析行开始标签时调用
+         *
+         * @return 行对象实例
          */
-        protected void reset() {
-            this.count = 0;
-            this.column = 0;
-            this.row = null;
-            this.type = null;
-            this.value = Strings.EMPTY_STRING;
-            this.related = false;
-            this.datable = false;
+        protected Row buildRow() {
+            return new XMLRow();
+        }
+
+        /**
+         * 构建单元格，解析单元格开始标签时调用
+         *
+         * @param row    行对象
+         * @param column 列下标（从0开始）
+         * @return 单元格对象
+         */
+        @Nonnull
+        protected Cell buildCell(Row row, @Min(0) int column) {
+            return row.createCell(column);
         }
 
         /**
@@ -524,26 +519,90 @@ public abstract class Excels {
          * @throws SAXException 构建异常
          */
         protected XMLReader buildXMLReader() throws SAXException {
-            XMLReader reader = XMLReaderFactory.createXMLReader("org.apache.xerces.parsers.SAXParser");
-            reader.setContentHandler(this);
-            return reader;
+            return XMLReaderFactory.createXMLReader("org.apache.xerces.parsers.SAXParser");
+        }
+
+        /**
+         * 根据单元格标签属性解析单元格列下标，解析单元格开始标签时调用
+         *
+         * @param attributes 标签属性对象
+         * @return 列下标数字
+         */
+        @Nonnull
+        protected int analyseCellColumn(Attributes attributes) {
+            StringBuilder column = new StringBuilder();
+            for (char c : attributes.getValue("r").toCharArray()) {
+                if (c >= 'A' && c <= 'Z') {
+                    column.append(c);
+                }
+            }
+            return columnAdapter(column.toString());
+        }
+
+        /**
+         * 初始化单元格类型，解析单元格开始标签时调用
+         *
+         * @param cell       单元格对象
+         * @param attributes 标签属性对象
+         */
+        @Nonnull
+        protected void initializeCellType(Cell cell, Attributes attributes) {
+            String t = attributes.getValue("t");
+            String s = attributes.getValue("s");
+            this.datable = "1".equals(s) || "2".equals(s);
+            if ((this.related = "s".equals(t)) || "inlineStr".equals(t)) {
+                cell.setCellType(CellType.STRING);
+            } else if ("b".equals(t)) {
+                cell.setCellType(CellType.BOOLEAN);
+            } else if (this.datable || Strings.isEmpty(t)) {
+                cell.setCellType(CellType.NUMERIC);
+            } else {
+                cell.setCellType(CellType.STRING);
+            }
+        }
+
+        /**
+         * 初始化单元格值，解析单元格值结束标签时调用
+         *
+         * @param cell  单元格对象
+         * @param value 原始值
+         */
+        @Nonnull
+        protected void initializeCellValue(Cell cell, String value) {
+            if (this.related) { // 如果为字符串，则从共享关联表中取数据
+                cell.setCellValue(this.shared.getItemAt(Integer.parseInt(value)).getString());
+            } else if (cell.getCellType() == CellType.BOOLEAN) {
+                cell.setCellValue(Integer.parseInt(value) > 0);
+            } else if (cell.getCellType() == CellType.NUMERIC) {
+                double number = Double.parseDouble(value);
+                if (this.datable) {
+                    cell.setCellValue(HSSFDateUtil.getJavaDate(number));
+                } else {
+                    cell.setCellValue(number);
+                }
+            } else {
+                cell.setCellValue(value);
+            }
         }
 
         /**
          * Excel读操作
          *
-         * @return 数据读取行
+         * @return 数据行总数
          */
         public int process() {
-            this.reset();
             try {
-                Iterator<InputStream> sheets = this.reader.getSheetsData();
+                XMLReader parser = this.buildXMLReader();
+                parser.setContentHandler(this);
+                XSSFReader reader = new XSSFReader(this.pkg);
+                this.shared = reader.getSharedStringsTable();
+                Iterator<InputStream> sheets = reader.getSheetsData();
                 while (sheets.hasNext()) {
                     try (InputStream sheet = sheets.next()) {
-                        this.parser.parse(new InputSource(sheet));
+                        parser.parse(new InputSource(sheet));
                     }
                 }
-            } catch (IOException | SAXException | InvalidFormatException e) {
+            } catch (IOException | SAXException | OpenXML4JException e) {
                 throw new RuntimeException(e);
             }
             return this.count;
@@ -551,43 +610,29 @@ public abstract class Excels {
 
         @Override
         public void characters(char[] ch, int start, int length) throws SAXException {
-            this.value += new String(ch, start, length);
+            if (this.value.isEmpty()) {
+                this.value = new String(ch, start, length);
+            } else {
+                this.value += new String(ch, start, length);
+            }
         }
 
         @Override
         public void startElement(String uri, String localName, String name, Attributes attributes) throws SAXException {
-            if ("row".equals(name)) {
+            if ("row".equals(name)) { // 行开始标签
                 this.row = null; // 清空当前行
-                int i = Integer.parseInt(attributes.getValue("r")) - 1; // 当前行下标
-                if (i >= this.index) {
-                    this.row = new XMLRow();
-                    this.row.setRowNum(i);
+                int number = Integer.parseInt(attributes.getValue("r")) - 1; // 当前行下标
+                if (number >= this.index) {
+                    this.row = this.buildRow();
+                    this.row.setRowNum(number);
                 }
             } else if (this.row != null && this.row.getRowNum() >= this.index) {
                 this.value = Strings.EMPTY_STRING; // 清空过程数据
-                if ("c".equals(name)) {
-                    // 获取列下标并创建单元格
-                    StringBuilder column = new StringBuilder();
-                    for (char c : attributes.getValue("r").toCharArray()) {
-                        if (c >= 'A' && c <= 'Z') {
-                            column.append(c);
-                        }
-                    }
-                    this.row.createCell((this.column = columnAdapter(column.toString())));
-
-                    // 设置单元格数据类型
-                    String t = attributes.getValue("t");
-                    String s = attributes.getValue("s");
-                    this.datable = "1".equals(s) || "2".equals(s);
-                    if ((this.related = "s".equals(t)) || "inlineStr".equals(t)) {
-                        this.type = CellType.STRING;
-                    } else if ("b".equals(t)) {
-                        this.type = CellType.BOOLEAN;
-                    } else if ("e".equals(t)) {
-                        this.type = CellType.ERROR;
-                    } else if (this.datable || Strings.isEmpty(t)) {
-                        this.type = CellType.NUMERIC;
-                    }
+                if ("c".equals(name)) { // 单元格开始标签
+                    // 解析单元格所在列下标
+                    this.column = this.analyseCellColumn(attributes);
+                    // 构建单元格并初始化单元格值类型
+                    this.initializeCellType(this.buildCell(this.row, this.column), attributes);
                 }
             }
         }
@@ -595,28 +640,43 @@ public abstract class Excels {
         @Override
         public void endElement(String uri, String localName, String name) throws SAXException {
             if (this.row != null && this.row.getRowNum() >= this.index) {
-                if ("row".equals(name) && !isEmpty(this.row)) {
-                    this.callback.read(this.row, ++this.count); // 一行解析结束，执行回调接口
-                } else if (!this.value.isEmpty() && ("v".equals(name) || "t".equals(name))) {
-                    // 设置当前单元格类型及值
-                    Cell cell = this.row.getCell(this.column);
-                    cell.setCellType(this.type == CellType.ERROR ? CellType.STRING : this.type);
-                    if (this.related) { // 如果为字符串，则从共享关联表中取数据
-                        cell.setCellValue(this.shared.getItemAt(Integer.parseInt(this.value)).getString());
-                    } else if (this.type == CellType.BOOLEAN) {
-                        cell.setCellValue(Integer.parseInt(this.value) > 0);
-                    } else if (this.type == CellType.NUMERIC) {
-                        double number = Double.parseDouble(this.value);
-                        if (this.datable) {
-                            cell.setCellValue(HSSFDateUtil.getJavaDate(number));
-                        } else {
-                            cell.setCellValue(number);
-                        }
-                    } else {
-                        cell.setCellValue(this.value);
-                    }
+                if ("row".equals(name) && !isEmpty(this.row)) { // 行解析完成
+                    this.read(this.row, ++this.count);
+                } else if (!this.value.isEmpty() && ("v".equals(name) || "t".equals(name))) { // 值解析完成
+                    this.initializeCellValue(this.row.getCell(this.column), this.value);
                 }
             }
+        }
+    }
+
+    /**
+     * Excel2007数据行记录器
+     */
+    public static class Excel2007Counter extends AbstractExcel2007Reader {
+        public Excel2007Counter(OPCPackage pkg) {
+            super(pkg);
+        }
+
+        public Excel2007Counter(OPCPackage pkg, int index) {
+            super(pkg, index);
+        }
+
+        @Override
+        protected void initializeCellType(Cell cell, Attributes attributes) {
+            cell.setCellType(CellType.NUMERIC);
+        }
+
+        @Override
+        protected void initializeCellValue(Cell cell, String value) {
+            CellType type = cell.getCellType();
+            if (!(type == CellType.BLANK || type == CellType.STRING)
+                    || (type == CellType.STRING && !value.isEmpty() && !value.trim().isEmpty())) {
+                cell.setCellValue(1); // 设置1表示此单元格值不为空
+            }
+        }
+
+        @Override
+        public void read(Row row, int count) {
         }
     }
 
@@ -691,6 +751,20 @@ public abstract class Excels {
     public static Workbook buildWorkbook(File file) throws IOException {
         try (InputStream is = new FileInputStream(file)) {
             return buildWorkbook(is, Type.parse(Files.getSuffix(file.getName())));
+        }
+    }
+
+    /**
+     * 构建Excel工作薄
+     *
+     * @param path 文件路径
+     * @return Excel工作薄
+     * @throws IOException IO操作异常
+     */
+    @Nonnull
+    public static Workbook buildWorkbook(String path) throws IOException {
+        try (InputStream is = new FileInputStream(path)) {
+            return buildWorkbook(is, Type.parse(Files.getSuffix(path)));
         }
     }
 
@@ -806,28 +880,6 @@ public abstract class Excels {
     }
 
     /**
-     * 将单元格值转换成日期对象
-     *
-     * @param object 值对象
-     * @return 日期对象
-     */
-    public static Date toDate(Object object) {
-        return toDate(object, Dates.ALL_DATE_FORMATS);
-    }
-
-    /**
-     * 将单元格值转换成日期对象
-     *
-     * @param object   值对象
-     * @param patterns 日期格式数组
-     * @return 日期对象
-     */
-    public static Date toDate(Object object, String... patterns) {
-        return object == null ? null : object instanceof Date ? (Date) object : object instanceof Number ?
-                HSSFDateUtil.getJavaDate(((Number) object).doubleValue()) : Objects.toDate(object, patterns);
-    }
-
-    /**
      * 获取Excel单元格值
      *
      * @param cell Excel单元格对象
@@ -836,13 +888,17 @@ public abstract class Excels {
     public static Object getValue(Cell cell) {
         if (cell == null) {
             return null;
+        } else if (cell instanceof XMLCell) {
+            Object value = ((XMLCell) cell).value;
+            return value instanceof String ? Strings.trim((String) value) : value;
         }
         CellType type = cell.getCellType();
-        if (type == CellType.BOOLEAN) {
+        if (type == CellType.BLANK) {
+            return null;
+        } else if (type == CellType.BOOLEAN) {
             return cell.getBooleanCellValue();
         } else if (type == CellType.NUMERIC) {
-            return cell instanceof XMLCell ? ((XMLCell) cell).value :
-                    HSSFDateUtil.isCellDateFormatted(cell) ? cell.getDateCellValue() : cell.getNumericCellValue();
+            return HSSFDateUtil.isCellDateFormatted(cell) ? cell.getDateCellValue() : cell.getNumericCellValue();
         } else if (type == CellType.FORMULA) {
             if (cell.getCachedFormulaResultType() == CellType.ERROR) {
                 return FormulaError.forInt(cell.getErrorCellValue()).getString();
@@ -853,13 +909,11 @@ public abstract class Excels {
             } else if (value.getCellType() == CellType.BOOLEAN) {
                 return value.getBooleanValue();
             }
-            String s = value.getStringValue();
-            return s == null || (s = s.trim()).isEmpty() ? null : s;
+            return Strings.trim(value.getStringValue());
         } else if (type == CellType.ERROR) {
             return FormulaError.forInt(cell.getErrorCellValue());
         }
-        String value = cell.getStringCellValue();
-        return value == null || (value = value.trim()).isEmpty() ? null : value;
+        return Strings.trim(cell.getStringCellValue());
     }
 
     /**
@@ -892,7 +946,7 @@ public abstract class Excels {
      * @return 日期对象
      */
     public static Date getDate(Cell cell, String... patterns) {
-        return toDate(getValue(cell), patterns);
+        return Objects.toDate(getValue(cell), patterns);
     }
 
     /**
@@ -1109,14 +1163,35 @@ public abstract class Excels {
     }
 
     /**
+     * 统计Excel数据行数
+     *
+     * @param pkg 文件包
+     * @return 数量
+     */
+    public static int count(OPCPackage pkg) {
+        return count(pkg, 0);
+    }
+
+    /**
+     * 统计Excel数据行数
+     *
+     * @param pkg   文件包
+     * @param index 开始数据行下标（从0开始）
+     * @return 数量
+     */
+    @Nonnull
+    public static int count(OPCPackage pkg, @Min(0) int index) {
+        return new Excel2007Counter(pkg, index).process();
+    }
+
+    /**
      * 通过解析XML的方式读取Excel2007数据
      *
      * @param pkg    文件包
      * @param reader Excel对象实例读取接口
      * @return 读取数量
-     * @throws Exception 操作异常
      */
-    public static int read(OPCPackage pkg, Reader reader) throws Exception {
+    public static int read(OPCPackage pkg, Reader reader) {
         return read(pkg, 0, reader);
     }
 
@@ -1127,10 +1202,14 @@ public abstract class Excels {
      * @param index  开始数据行下标（从0开始）
      * @param reader Excel对象实例读取接口
      * @return 读取数量
-     * @throws Exception 操作异常
      */
-    public static int read(OPCPackage pkg, int index, Reader reader) throws Exception {
-        return new Excel2007Reader(pkg, index, reader).process();
+    public static int read(OPCPackage pkg, int index, Reader reader) {
+        return new AbstractExcel2007Reader(pkg, index) {
+            @Override
+            public void read(Row row, int count) {
+                reader.read(row, count);
+            }
+        }.process();
     }
 
     /**
@@ -1142,22 +1221,7 @@ public abstract class Excels {
      * @return 对象实例
      */
     public static <M> M read(Row row, Class<M> type) {
-        return read(row, type, (t, o) -> o == null ? null :
-                Date.class.isAssignableFrom(t) ? toDate(o) : LocalDate.class.isAssignableFrom(t) ? Dates.adapter(toDate(o)).toLocalDate() :
-                        LocalDateTime.class.isAssignableFrom(t) ? Dates.adapter(toDate(o)) : Objects.toObject(t, o));
-    }
-
-    /**
-     * 根据Excel行获取对象实例
-     *
-     * @param <M>     数据类型
-     * @param row     Excel行对象
-     * @param type    对象类型
-     * @param adapter 对象适配器
-     * @return 对象实例
-     */
-    public static <M> M read(Row row, @Nonnull Class<M> type, @Nonnull Objects.Adapter adapter) {
-        return isEmpty(row) ? null : Objects.initialize(type, getValues(row), adapter);
+        return isEmpty(row) ? null : Objects.initialize(type, getValues(row));
     }
 
     /**

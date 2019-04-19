@@ -178,6 +178,30 @@ public abstract class Asserts {
     }
 
     /**
+     * URL格式验证
+     *
+     * @param object 目标对象
+     * @throws IllegalArgumentException 参数异常
+     */
+    public static void url(Object object) throws IllegalArgumentException {
+        if (!(object instanceof CharSequence && Strings.isUrl((CharSequence) object))) {
+            throw new IllegalArgumentException("Object mismatch url format");
+        }
+    }
+
+    /**
+     * Email格式验证
+     *
+     * @param object 目标对象
+     * @throws IllegalArgumentException 参数异常
+     */
+    public static void email(Object object) throws IllegalArgumentException {
+        if (!(object instanceof CharSequence && Strings.isEmail((CharSequence) object))) {
+            throw new IllegalArgumentException("Object mismatch email format");
+        }
+    }
+
+    /**
      * 对象数字验证
      *
      * @param object 目标对象
