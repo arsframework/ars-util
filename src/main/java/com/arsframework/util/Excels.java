@@ -178,51 +178,57 @@ public abstract class Excels {
 
         @Override
         public void setHeight(short i) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void shiftCellsRight(int i, int i1, int i2) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void shiftCellsLeft(int i, int i1, int i2) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void setZeroHeight(boolean b) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public boolean getZeroHeight() {
-            return false;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void setHeightInPoints(float v) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public short getHeight() {
-            return 0;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public float getHeightInPoints() {
-            return 0;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public boolean isFormatted() {
-            return false;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public CellStyle getRowStyle() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void setRowStyle(CellStyle cellStyle) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -244,12 +250,12 @@ public abstract class Excels {
 
         @Override
         public Sheet getSheet() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public int getOutlineLevel() {
-            return 0;
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -260,18 +266,18 @@ public abstract class Excels {
         @Override
         public String toString() {
             Integer last = -1;
-            List<String> values = new LinkedList<>();
+            List<Cell> cells = new LinkedList<>();
             for (Integer column : this.columns) {
                 int differ = column - last;
                 if (differ > 1) {
                     for (int i = 0, len = differ - 1; i < len; i++) {
-                        values.add(null);
+                        cells.add(null);
                     }
                 }
-                values.add(this.cells.get(column).toString());
+                cells.add(this.cells.get(column));
                 last = column;
             }
-            return values.toString();
+            return cells.toString();
         }
     }
 
@@ -301,7 +307,7 @@ public abstract class Excels {
 
         @Override
         public Sheet getSheet() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -326,12 +332,12 @@ public abstract class Excels {
 
         @Override
         public CellType getCachedFormulaResultType() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public CellType getCachedFormulaResultTypeEnum() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -346,10 +352,12 @@ public abstract class Excels {
 
         @Override
         public void setCellValue(Calendar calendar) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void setCellValue(RichTextString richTextString) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -359,11 +367,12 @@ public abstract class Excels {
 
         @Override
         public void setCellFormula(String s) throws FormulaParseException {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public String getCellFormula() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -378,7 +387,7 @@ public abstract class Excels {
 
         @Override
         public RichTextString getRichStringCellValue() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -393,7 +402,7 @@ public abstract class Excels {
 
         @Override
         public void setCellErrorValue(byte b) {
-            this.value = b;
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -403,61 +412,67 @@ public abstract class Excels {
 
         @Override
         public byte getErrorCellValue() {
-            return 0;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void setCellStyle(CellStyle cellStyle) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public CellStyle getCellStyle() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void setAsActiveCell() {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public CellAddress getAddress() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void setCellComment(Comment comment) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public Comment getCellComment() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void removeCellComment() {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public Hyperlink getHyperlink() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void setHyperlink(Hyperlink hyperlink) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void removeHyperlink() {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public CellRangeAddress getArrayFormulaRange() {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public boolean isPartOfArrayFormulaGroup() {
-            return false;
+            throw new UnsupportedOperationException();
         }
 
         @Override

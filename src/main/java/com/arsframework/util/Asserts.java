@@ -21,11 +21,11 @@ public abstract class Asserts {
      * 对象非Null验证
      *
      * @param object 目标对象
-     * @throws IllegalArgumentException 参数异常
+     * @throws IllegalStateException 数据状态异常
      */
-    public static void nonnull(Object object) throws IllegalArgumentException {
+    public static void nonnull(Object object) throws IllegalStateException {
         if (object == null) {
-            throw new IllegalArgumentException("Object must not be null");
+            throw new IllegalStateException("Object must not be null");
         }
     }
 
@@ -33,11 +33,11 @@ public abstract class Asserts {
      * 对象非空验证
      *
      * @param object 目标对象
-     * @throws IllegalArgumentException 参数异常
+     * @throws IllegalStateException 数据状态异常
      */
-    public static void nonempty(Object object) throws IllegalArgumentException {
+    public static void nonempty(Object object) throws IllegalStateException {
         if (Objects.isEmpty(object)) {
-            throw new IllegalArgumentException("Object must not be empty");
+            throw new IllegalStateException("Object must not be empty");
         }
     }
 
@@ -46,11 +46,11 @@ public abstract class Asserts {
      *
      * @param object 目标对象
      * @param regex  正则表达式
-     * @throws IllegalArgumentException 参数异常
+     * @throws IllegalStateException 数据状态异常
      */
-    public static void format(Object object, @Nonnull String regex) throws IllegalArgumentException {
+    public static void format(Object object, @Nonnull String regex) throws IllegalStateException {
         if (object == null || ((object instanceof Number || object instanceof CharSequence) && !object.toString().matches(regex))) {
-            throw new IllegalArgumentException(String.format("Object must be matched for '%s'", regex));
+            throw new IllegalStateException(String.format("Object must be matched for '%s'", regex));
         }
     }
 
@@ -59,9 +59,9 @@ public abstract class Asserts {
      *
      * @param object 目标对象
      * @param value  最大值
-     * @throws IllegalArgumentException 参数异常
+     * @throws IllegalStateException 数据状态异常
      */
-    public static void min(Object object, long value) throws IllegalArgumentException {
+    public static void min(Object object, long value) throws IllegalStateException {
         if (object == null
                 || (object instanceof Number && ((Number) object).longValue() < value)
                 || (object instanceof Enum && ((Enum) object).ordinal() < value)
@@ -80,7 +80,7 @@ public abstract class Asserts {
                 || (object instanceof long[] && ((long[]) object).length < value)
                 || (object instanceof double[] && ((double[]) object).length < value)
                 || (object instanceof boolean[] && ((boolean[]) object).length < value)) {
-            throw new IllegalArgumentException(String.format("Object size must be greater than or equal to %d", value));
+            throw new IllegalStateException(String.format("Object size must be greater than or equal to %d", value));
         }
     }
 
@@ -89,9 +89,9 @@ public abstract class Asserts {
      *
      * @param object 目标对象
      * @param value  最大值
-     * @throws IllegalArgumentException 参数异常
+     * @throws IllegalStateException 数据状态异常
      */
-    public static void max(Object object, long value) throws IllegalArgumentException {
+    public static void max(Object object, long value) throws IllegalStateException {
         if (object == null
                 || (object instanceof Number && ((Number) object).longValue() > value)
                 || (object instanceof Enum && ((Enum) object).ordinal() > value)
@@ -110,7 +110,7 @@ public abstract class Asserts {
                 || (object instanceof long[] && ((long[]) object).length > value)
                 || (object instanceof double[] && ((double[]) object).length > value)
                 || (object instanceof boolean[] && ((boolean[]) object).length > value)) {
-            throw new IllegalArgumentException(String.format("Object size must be less than or equal to %d", value));
+            throw new IllegalStateException(String.format("Object size must be less than or equal to %d", value));
         }
     }
 
@@ -120,9 +120,9 @@ public abstract class Asserts {
      * @param object 目标对象
      * @param min    最小值
      * @param max    最大值
-     * @throws IllegalArgumentException 参数异常
+     * @throws IllegalStateException 数据状态异常
      */
-    public static void size(Object object, @Le("max") long min, long max) throws IllegalArgumentException {
+    public static void size(Object object, @Le("max") long min, long max) throws IllegalStateException {
         if (object == null
                 || (object instanceof Number && (((Number) object).longValue() < min || ((Number) object).longValue() > max))
                 || (object instanceof Enum && (((Enum) object).ordinal() < min || ((Enum) object).ordinal() > max))
@@ -142,7 +142,7 @@ public abstract class Asserts {
                 || (object instanceof long[] && (((long[]) object).length < min || ((long[]) object).length > max))
                 || (object instanceof double[] && (((double[]) object).length < min || ((double[]) object).length > max))
                 || (object instanceof boolean[] && (((boolean[]) object).length < min || ((boolean[]) object).length > max))) {
-            throw new IllegalArgumentException(String.format("Object size must be in interval [%d, %d]", min, max));
+            throw new IllegalStateException(String.format("Object size must be in interval [%d, %d]", min, max));
         }
     }
 
@@ -151,9 +151,9 @@ public abstract class Asserts {
      *
      * @param object 目标对象
      * @param values 选项数组
-     * @throws IllegalArgumentException 参数异常
+     * @throws IllegalStateException 数据状态异常
      */
-    public static void option(Object object, @Nonnull long... values) throws IllegalArgumentException {
+    public static void option(Object object, @Nonnull long... values) throws IllegalStateException {
         Arrays.sort(values);
         if (object == null
                 || (object instanceof Number && Arrays.binarySearch(values, ((Number) object).longValue()) < 0)
@@ -173,7 +173,7 @@ public abstract class Asserts {
                 || (object instanceof long[] && Arrays.binarySearch(values, ((long[]) object).length) < 0)
                 || (object instanceof double[] && Arrays.binarySearch(values, ((double[]) object).length) < 0)
                 || (object instanceof boolean[] && Arrays.binarySearch(values, ((boolean[]) object).length) < 0)) {
-            throw new IllegalArgumentException(String.format("Object must be in option %s", Arrays.toString(values)));
+            throw new IllegalStateException(String.format("Object must be in option %s", Arrays.toString(values)));
         }
     }
 
@@ -181,11 +181,11 @@ public abstract class Asserts {
      * URL格式验证
      *
      * @param object 目标对象
-     * @throws IllegalArgumentException 参数异常
+     * @throws IllegalStateException 数据状态异常
      */
-    public static void url(Object object) throws IllegalArgumentException {
+    public static void url(Object object) throws IllegalStateException {
         if (!(object instanceof CharSequence && Strings.isUrl((CharSequence) object))) {
-            throw new IllegalArgumentException("Object mismatch url format");
+            throw new IllegalStateException("Object mismatch url format");
         }
     }
 
@@ -193,11 +193,11 @@ public abstract class Asserts {
      * Email格式验证
      *
      * @param object 目标对象
-     * @throws IllegalArgumentException 参数异常
+     * @throws IllegalStateException 数据状态异常
      */
-    public static void email(Object object) throws IllegalArgumentException {
+    public static void email(Object object) throws IllegalStateException {
         if (!(object instanceof CharSequence && Strings.isEmail((CharSequence) object))) {
-            throw new IllegalArgumentException("Object mismatch email format");
+            throw new IllegalStateException("Object mismatch email format");
         }
     }
 
@@ -205,11 +205,11 @@ public abstract class Asserts {
      * 对象数字验证
      *
      * @param object 目标对象
-     * @throws IllegalArgumentException 参数异常
+     * @throws IllegalStateException 数据状态异常
      */
-    public static void number(Object object) throws IllegalArgumentException {
+    public static void number(Object object) throws IllegalStateException {
         if (!(object instanceof Number || (object instanceof CharSequence && Strings.isNumber((CharSequence) object)))) {
-            throw new IllegalArgumentException("Object must be number");
+            throw new IllegalStateException("Object must be number");
         }
     }
 
@@ -217,11 +217,11 @@ public abstract class Asserts {
      * 对象字母验证
      *
      * @param object 目标对象
-     * @throws IllegalArgumentException 参数异常
+     * @throws IllegalStateException 数据状态异常
      */
-    public static void letter(Object object) throws IllegalArgumentException {
+    public static void letter(Object object) throws IllegalStateException {
         if (!(object instanceof CharSequence && Strings.isLetter((CharSequence) object))) {
-            throw new IllegalArgumentException("Object must be letter");
+            throw new IllegalStateException("Object must be letter");
         }
     }
 }

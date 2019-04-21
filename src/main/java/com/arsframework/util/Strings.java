@@ -348,16 +348,16 @@ public abstract class Strings {
      */
     public static String clean(CharSequence source) {
         if (isEmpty(source)) {
-            return source == null ? null : EMPTY_STRING;
+            return null;
         }
-        StringBuilder buffer = new StringBuilder();
+        StringBuilder buffer = new StringBuilder(source.length());
         for (int i = 0, len = source.length(); i < len; i++) {
             char c = source.charAt(i);
             if (!Character.isWhitespace(c)) {
                 buffer.append(c);
             }
         }
-        return buffer.toString();
+        return buffer.length() == 0 ? null : buffer.length() == source.length() ? source.toString() : buffer.toString();
     }
 
     /**
