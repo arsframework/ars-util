@@ -46,7 +46,6 @@ import com.arsframework.annotation.Nonnull;
  * 文档处理工具类
  *
  * @author yongqiang.wu
- * @version 2019-03-22 16:21
  */
 public abstract class Documents {
     /**

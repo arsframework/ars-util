@@ -11,7 +11,6 @@ import com.arsframework.annotation.Nonempty;
  * 文件处理工具类
  *
  * @author yongqiang.wu
- * @version 2019-03-22 09:38
  */
 public abstract class Files {
     /**
@@ -86,6 +85,17 @@ public abstract class Files {
         } else {
             source.renameTo(new File(target, source.getName()));
         }
+    }
+
+    /**
+     * 文件重命名
+     *
+     * @param file 文件对象
+     * @param name 重命名名称
+     */
+    @Nonnull
+    public static void rename(File file, String name) {
+        file.renameTo(new File(file.getParent(), name));
     }
 
     /**

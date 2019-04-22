@@ -21,7 +21,6 @@ import com.arsframework.annotation.Nonnull;
  * Web处理工具类
  *
  * @author yongqiang.wu
- * @version 2019-03-22 09:38
  */
 public abstract class Webs {
     /**

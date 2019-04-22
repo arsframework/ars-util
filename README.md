@@ -1,5 +1,5 @@
 # ars-util
-Arsframework util模块提供了针对日常处理需要的工具方法，如日期、文档、Excel、JSON、字符串等。
+Arsframework util模块提供了针对日常处理需要的工具方法，如日期、文档、Excel、字符串等。
 
 ## 1 环境依赖
 JDK1.8+
@@ -10,7 +10,7 @@ JDK1.8+
 <dependency>
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.4.1</version>
+    <version>1.4.2</version>
 </dependency>
 ```
 
@@ -49,6 +49,12 @@ JDK1.8+
 ### 3.11 com.arsframework.util.Asserts
 该抽象类提供了断言处理的工具方法，如非Null、非空、大小、长度验证等。
 
+### 3.12 com.arsframework.util.Barcodes
+该抽象类提供了针对条形/二维码操作的工具方法，如对条形/二维码的数据编码与解码等。
+
+### 3.13 com.arsframework.util.Opcodes
+该抽象类提供了针对验证码操作的工具方法，如将验证码编码成图片等。
+
 ## 4 版本更新日志
 ### v1.0.4
 1. 内部优化
@@ -82,3 +88,7 @@ JDK1.8+
 ### v1.4.1
 1. 内部优化
 2. 更新```ars-annotation```包依赖
+
+### v1.4.2
+1. 新增```com.arsframework.util.Barcodes```、```com.arsframework.util.Opcodes```工具类
+2. 优化```com.arsframework.util.Excels```、```com.arsframework.util.Files```、```com.arsframework.util.Dates```工具类

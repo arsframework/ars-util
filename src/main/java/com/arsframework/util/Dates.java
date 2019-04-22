@@ -17,7 +17,6 @@ import com.arsframework.annotation.Nonempty;
  * 日期处理工具类
  *
  * @author yongqiang.wu
- * @version 2019-03-22 09:38
  */
 public abstract class Dates {
     /**
@@ -71,7 +70,12 @@ public abstract class Dates {
     /**
      * 当前线程格式模式/日期格式化对象映射表
      */
-    private static final ThreadLocal<Map<String, DateFormat>> formatters = ThreadLocal.withInitial(() -> new HashMap<>());
+    private static final ThreadLocal<Map<String, DateFormat>> dateFormats = ThreadLocal.withInitial(() -> new HashMap<>());
+
+    /**
+     * 格式模式/日期时间格式处理对象映射表
+     */
+    private static final Map<String, DateTimeFormatter> dateTimeFormats = new HashMap<>();
 
     /**
      * 构建日期格式处理器
@@ -80,12 +84,32 @@ public abstract class Dates {
      * @return 日期格式处理对象
      */
     @Nonempty
-    public static DateFormat buildFormatter(String pattern) {
-        Map<String, DateFormat> formats = formatters.get();
+    public static DateFormat buildDateFormat(String pattern) {
+        Map<String, DateFormat> formats = dateFormats.get();
         DateFormat format = formats.get(pattern);
         if (format == null) {
             format = new SimpleDateFormat(pattern);
             formats.put(pattern, format);
+        }
+        return format;
+    }
+
+    /**
+     * 构建日期时间格式处理器
+     *
+     * @param pattern 日期时间格式转换模式字符串
+     * @return 日期时间格式处理器
+     */
+    @Nonempty
+    public static DateTimeFormatter buildDateTimeFormat(String pattern) {
+        DateTimeFormatter format = dateTimeFormats.get(pattern);
+        if (format == null) {
+            synchronized (Dates.class) {
+                if ((format = dateTimeFormats.get(pattern)) == null) {
+                    format = DateTimeFormatter.ofPattern(pattern);
+                    dateTimeFormats.put(pattern, format);
+                }
+            }
         }
         return format;
     }
@@ -113,7 +137,7 @@ public abstract class Dates {
         }
         for (String pattern : patterns) {
             try {
-                return buildFormatter(pattern).parse(source);
+                return buildDateFormat(pattern).parse(source);
             } catch (ParseException e) {
             }
         }
@@ -158,7 +182,7 @@ public abstract class Dates {
      * @return 日期时间字符串形式
      */
     public static String format(Date date) {
-        return format(date, DEFAULT_DATETIME_FORMAT);
+        return format(adapter(date));
     }
 
     /**
@@ -169,7 +193,7 @@ public abstract class Dates {
      * @return 日期时间字符串形式
      */
     public static String format(Date date, @Nonempty String pattern) {
-        return date == null ? null : buildFormatter(pattern).format(date);
+        return date == null ? null : buildDateFormat(pattern).format(date);
     }
 
     /**
@@ -179,7 +203,7 @@ public abstract class Dates {
      * @return 日期时间字符串形式
      */
     public static String format(LocalDate date) {
-        return format(date, DEFAULT_DATETIME_FORMAT);
+        return format(date, DEFAULT_DATE_FORMAT);
     }
 
     /**
@@ -190,7 +214,7 @@ public abstract class Dates {
      * @return 日期时间字符串形式
      */
     public static String format(LocalDate date, @Nonempty String pattern) {
-        return date == null ? null : date.format(DateTimeFormatter.ofPattern(pattern));
+        return date == null ? null : date.format(buildDateTimeFormat(pattern));
     }
 
     /**
@@ -200,7 +224,8 @@ public abstract class Dates {
      * @return 日期时间字符串形式
      */
     public static String format(LocalDateTime date) {
-        return format(date, DEFAULT_DATETIME_FORMAT);
+        return date == null ? null : date.getHour() == 0 && date.getMinute() == 0 && date.getSecond() == 0 ?
+                format(date, DEFAULT_DATE_FORMAT) : format(date, DEFAULT_DATETIME_FORMAT);
     }
 
     /**
@@ -211,7 +236,7 @@ public abstract class Dates {
      * @return 日期时间字符串形式
      */
     public static String format(LocalDateTime date, @Nonempty String pattern) {
-        return date == null ? null : date.format(DateTimeFormatter.ofPattern(pattern));
+        return date == null ? null : date.format(buildDateTimeFormat(pattern));
     }
 
     /**

@@ -4,6 +4,7 @@ import java.io.*;
 import java.util.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Array;
+import java.lang.reflect.Modifier;
 
 import org.xml.sax.XMLReader;
 import org.xml.sax.Attributes;
@@ -31,7 +32,6 @@ import com.arsframework.annotation.Nonnull;
  * Excel处理工具类
  *
  * @author yongqiang.wu
- * @version 2019-03-22 09:38
  */
 public abstract class Excels {
     /**
@@ -97,6 +97,48 @@ public abstract class Excels {
          * @param count  当前记录数（从1开始）
          */
         void write(Row row, T object, int count);
+    }
+
+    /**
+     * Excel读写器实现
+     */
+    public static class ReadWriter implements Reader {
+        private int row; // 当前行下标
+        private Sheet sheet; // 当前Excel表格
+        protected final int index; // 写入数据开始行下标
+        protected final Workbook workbook; // 写入数据Excel工作薄
+        protected final Writer<Row> writer; // 数据行写入接口
+
+        @Nonnull
+        public ReadWriter(Workbook workbook) {
+            this(workbook, 0);
+        }
+
+        @Nonnull
+        public ReadWriter(Workbook workbook, int index) {
+            this(workbook, index, (target, source, count) -> copy(source, target));
+        }
+
+        @Nonnull
+        public ReadWriter(Workbook workbook, Writer<Row> writer) {
+            this(workbook, 0, writer);
+        }
+
+        @Nonnull
+        public ReadWriter(Workbook workbook, @Min(0) int index, Writer<Row> writer) {
+            this.index = index;
+            this.writer = writer;
+            this.workbook = workbook;
+        }
+
+        @Override
+        public void read(Row row, int count) {
+            if (this.sheet == null || (this.row > this.index && this.row % DEFAULT_SHEET_VOLUME == 0)) {
+                this.row = index;
+                this.sheet = this.workbook.createSheet();
+            }
+            this.writer.write(this.sheet.createRow(this.row++), row, count);
+        }
     }
 
     /**
@@ -417,12 +459,11 @@ public abstract class Excels {
 
         @Override
         public void setCellStyle(CellStyle cellStyle) {
-            throw new UnsupportedOperationException();
         }
 
         @Override
         public CellStyle getCellStyle() {
-            throw new UnsupportedOperationException();
+            return null;
         }
 
         @Override
@@ -806,9 +847,53 @@ public abstract class Excels {
     }
 
     /**
+     * 构建默认读写器
+     *
+     * @param workbook Excel工作薄
+     * @return Excel读接口
+     */
+    public static Reader buildReadWriter(Workbook workbook) {
+        return new ReadWriter(workbook);
+    }
+
+    /**
+     * 构建默认读写器
+     *
+     * @param workbook Excel工作薄
+     * @param index    写文件开始行下标
+     * @return Excel读接口
+     */
+    public static Reader buildReadWriter(Workbook workbook, int index) {
+        return new ReadWriter(workbook, index);
+    }
+
+    /**
+     * 构建指定读写器
+     *
+     * @param workbook Excel工作薄
+     * @param writer   Excel写接口
+     * @return Excel读接口
+     */
+    public static Reader buildReadWriter(Workbook workbook, Writer<Row> writer) {
+        return new ReadWriter(workbook, writer);
+    }
+
+    /**
+     * 构建指定读写器
+     *
+     * @param workbook Excel工作薄
+     * @param index    写文件开始行下标
+     * @param writer   Excel写接口
+     * @return Excel读接口
+     */
+    public static Reader buildReadWriter(Workbook workbook, int index, Writer<Row> writer) {
+        return new ReadWriter(workbook, index, writer);
+    }
+
+    /**
      * 保存Excel数据到本地文件
      *
-     * @param workbook Excel文件工作薄
+     * @param workbook Excel工作薄
      * @param file     文件对象
      * @throws IOException IO操作异常
      */
@@ -829,19 +914,7 @@ public abstract class Excels {
      */
     @Nonnull
     public static void copy(Cell source, Cell target) {
-        target.setCellStyle(source.getCellStyle());
-        CellType type = source.getCellType();
-        if (type == CellType.BOOLEAN) {
-            target.setCellValue(source.getBooleanCellValue());
-        } else if (type == CellType.NUMERIC) {
-            if (HSSFDateUtil.isCellDateFormatted(source)) {
-                target.setCellValue(source.getDateCellValue());
-            } else {
-                target.setCellValue(source.getNumericCellValue());
-            }
-        } else {
-            target.setCellValue(source.getStringCellValue());
-        }
+        setValue(target, source.getCellStyle(), getValue(source));
     }
 
     /**
@@ -981,8 +1054,7 @@ public abstract class Excels {
      * @return 数值
      */
     public static Double getNumber(Cell cell) {
-        return cell == null ? null :
-                cell.getCellType() == CellType.NUMERIC ? cell.getNumericCellValue() : Objects.toDouble(getString(cell));
+        return Objects.toDouble(getValue(cell));
     }
 
     /**
@@ -992,8 +1064,7 @@ public abstract class Excels {
      * @return true/false
      */
     public static Boolean getBoolean(Cell cell) {
-        return cell == null ? null :
-                cell.getCellType() == CellType.BOOLEAN ? cell.getBooleanCellValue() : Objects.toBoolean(getValue(cell));
+        return Objects.toBoolean(getValue(cell));
     }
 
     /**
@@ -1049,7 +1120,11 @@ public abstract class Excels {
     public static void setValue(@Nonnull Cell cell, CellStyle style, Object value) {
         if (!Objects.isEmpty(value)) {
             cell.setCellStyle(style);
-            if (value instanceof int[]) {
+            if (value instanceof Number) {
+                cell.setCellValue(((Number) value).doubleValue());
+            } else if (value instanceof Boolean) {
+                cell.setCellValue((Boolean) value);
+            } else if (value instanceof int[]) {
                 cell.setCellValue(Strings.join(Arrays.asList((int[]) value), ","));
             } else if (value instanceof char[]) {
                 cell.setCellValue(Strings.join(Arrays.asList((char[]) value), ","));
@@ -1066,7 +1141,7 @@ public abstract class Excels {
             } else if (value instanceof boolean[]) {
                 cell.setCellValue(Strings.join(Arrays.asList((boolean[]) value), ","));
             } else if (value instanceof Object[]) {
-                cell.setCellValue(Strings.join(Arrays.asList((Object[]) value), ","));
+                cell.setCellValue(Strings.join((Object[]) value, ","));
             } else if (value instanceof Collection) {
                 cell.setCellValue(Strings.join((Collection<?>) value, ","));
             } else {
@@ -1142,7 +1217,7 @@ public abstract class Excels {
     /**
      * 统计Excel数据行数
      *
-     * @param workbook Excel文件工作薄
+     * @param workbook Excel工作薄
      * @return 数量
      */
     public static int count(Workbook workbook) {
@@ -1164,7 +1239,7 @@ public abstract class Excels {
     /**
      * 统计Excel数据行数
      *
-     * @param workbook Excel文件工作薄
+     * @param workbook Excel工作薄
      * @param index    开始数据行下标（从0开始）
      * @return 数量
      */
@@ -1203,7 +1278,7 @@ public abstract class Excels {
      * 通过解析XML的方式读取Excel2007数据
      *
      * @param pkg    文件包
-     * @param reader Excel对象实例读取接口
+     * @param reader Excel读接口
      * @return 读取数量
      */
     public static int read(OPCPackage pkg, Reader reader) {
@@ -1215,7 +1290,7 @@ public abstract class Excels {
      *
      * @param pkg    文件包
      * @param index  开始数据行下标（从0开始）
-     * @param reader Excel对象实例读取接口
+     * @param reader Excel读接口
      * @return 读取数量
      */
     public static int read(OPCPackage pkg, int index, Reader reader) {
@@ -1255,7 +1330,7 @@ public abstract class Excels {
      * 从Excel文件中获取对象实例
      *
      * @param <M>      数据类型
-     * @param workbook Excel文件工作薄
+     * @param workbook Excel工作薄
      * @param type     对象类型
      * @return 对象实例列表
      */
@@ -1267,7 +1342,7 @@ public abstract class Excels {
      * 从Excel文件中获取对象实例
      *
      * @param <M>      数据类型
-     * @param workbook Excel文件工作薄
+     * @param workbook Excel工作薄
      * @param type     对象类型
      * @param index    开始数据行下标（从0开始）
      * @return 对象实例列表
@@ -1320,7 +1395,7 @@ public abstract class Excels {
      * 读Excel文件
      *
      * @param sheet  Excel表格
-     * @param reader Excel对象实例读取接口
+     * @param reader Excel读接口
      * @return 读取数量
      */
     public static int read(Sheet sheet, Reader reader) {
@@ -1330,8 +1405,8 @@ public abstract class Excels {
     /**
      * 读Excel文件
      *
-     * @param workbook Excel文件工作薄
-     * @param reader   Excel对象实例读取接口
+     * @param workbook Excel工作薄
+     * @param reader   Excel读接口
      * @return 读取数量
      */
     public static int read(Workbook workbook, Reader reader) {
@@ -1343,7 +1418,7 @@ public abstract class Excels {
      *
      * @param sheet  Excel表格
      * @param index  开始数据行下标（从0开始）
-     * @param reader Excel对象实例读取接口
+     * @param reader Excel读接口
      * @return 读取数量
      */
     @Nonnull
@@ -1356,9 +1431,9 @@ public abstract class Excels {
     /**
      * 读Excel文件
      *
-     * @param workbook Excel文件工作薄
+     * @param workbook Excel工作薄
      * @param index    开始数据行下标（从0开始）
-     * @param reader   Excel对象实例读取接口
+     * @param reader   Excel读接口
      * @return 读取数量
      */
     @Nonnull
@@ -1376,7 +1451,7 @@ public abstract class Excels {
      * @param sheet  Excel表格
      * @param index  开始数据行下标（从0开始）
      * @param count  当前记录数（从1开始）
-     * @param reader Excel对象实例读取接口
+     * @param reader Excel读接口
      */
     private static void read(Sheet sheet, int index, int[] count, Reader reader) {
         for (int r = index, rows = sheet.getLastRowNum(); r <= rows; r++) {
@@ -1395,28 +1470,21 @@ public abstract class Excels {
      */
     public static void write(@Nonnull Row row, Object object) {
         if (object != null) {
-            write(row, object, Objects.getFields(object.getClass()));
-        }
-    }
-
-    /**
-     * 设置对象实例到Excel行
-     *
-     * @param row    Excel行对象
-     * @param object 对象实例
-     * @param fields 对象字段数组
-     */
-    public static void write(@Nonnull Row row, Object object, @Nonnull Field... fields) {
-        if (object != null) {
-            for (int i = 0; i < fields.length; i++) {
-                Field field = fields[i];
-                field.setAccessible(true);
-                try {
-                    setValue(row.createCell(i), field.get(object));
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
+            int i = 0;
+            Class<?> cls = object.getClass();
+            do {
+                for (Field field : cls.getDeclaredFields()) {
+                    if (!Modifier.isStatic(field.getModifiers())
+                            && !Modifier.isFinal(field.getModifiers()) && !field.getName().startsWith("this$")) {
+                        field.setAccessible(true);
+                        try {
+                            setValue(row.createCell(i++), field.get(object));
+                        } catch (IllegalAccessException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
                 }
-            }
+            } while ((cls = cls.getSuperclass()) != Object.class);
         }
     }
 
@@ -1425,21 +1493,19 @@ public abstract class Excels {
      *
      * @param sheet   Excel表格
      * @param objects 对象实例列表
-     * @return 设置数量
      */
-    public static int write(Sheet sheet, List<?> objects) {
-        return write(sheet, objects, 0);
+    public static void write(Sheet sheet, List<?> objects) {
+        write(sheet, objects, 0);
     }
 
     /**
      * 将对象实例设置到Excel文件中
      *
-     * @param workbook Excel文件工作薄
+     * @param workbook Excel工作薄
      * @param objects  对象实例列表
-     * @return 设置数量
      */
-    public static int write(Workbook workbook, List<?> objects) {
-        return write(workbook, objects, 0);
+    public static void write(Workbook workbook, List<?> objects) {
+        write(workbook, objects, 0);
     }
 
     /**
@@ -1448,50 +1514,22 @@ public abstract class Excels {
      * @param sheet   Excel表格
      * @param objects 对象实例列表
      * @param index   开始数据行下标（从0开始）
-     * @return 设置数量
      */
     @Nonnull
-    public static int write(Sheet sheet, List<?> objects, @Min(0) int index) {
-        if (objects.isEmpty()) {
-            return 0;
-        }
-        int skip = index;
-        Field[] fields = Objects.getFields(objects.get(0).getClass());
-        for (Object object : objects) {
-            if (object != null) {
-                write(sheet.createRow(index++), object, fields);
-            }
-        }
-        return index - skip;
+    public static void write(Sheet sheet, List<?> objects, @Min(0) int index) {
+        write(sheet, objects, index, (row, object, count) -> write(row, object));
     }
 
     /**
      * 将对象实例设置到Excel文件中
      *
-     * @param workbook Excel文件工作薄
+     * @param workbook Excel工作薄
      * @param objects  对象实例列表
      * @param index    开始数据行下标（从0开始）
-     * @return 设置数量
      */
     @Nonnull
-    public static int write(Workbook workbook, List<?> objects, @Min(0) int index) {
-        if (objects.isEmpty()) {
-            return 0;
-        }
-        int c = 0, r = index;
-        Sheet sheet = workbook.createSheet();
-        Field[] fields = Objects.getFields(objects.get(0).getClass());
-        for (Object object : objects) {
-            if (object != null) {
-                if (r > index && r % DEFAULT_SHEET_VOLUME == 0) {
-                    r = index;
-                    sheet = workbook.createSheet();
-                }
-                write(sheet.createRow(r++), object, fields);
-                c++;
-            }
-        }
-        return c;
+    public static void write(Workbook workbook, List<?> objects, @Min(0) int index) {
+        write(workbook, objects, index, (row, object, count) -> write(row, object));
     }
 
     /**
@@ -1501,23 +1539,21 @@ public abstract class Excels {
      * @param sheet   Excel表格
      * @param objects 对象实例列表
      * @param writer  Excel对象实例写入接口
-     * @return 读取数量
      */
-    public static <M> int write(Sheet sheet, List<M> objects, Writer<M> writer) {
-        return write(sheet, objects, 0, writer);
+    public static <M> void write(Sheet sheet, List<M> objects, Writer<M> writer) {
+        write(sheet, objects, 0, writer);
     }
 
     /**
      * 读Excel文件
      *
      * @param <M>      数据类型
-     * @param workbook Excel文件工作薄
+     * @param workbook Excel工作薄
      * @param objects  对象实例列表
      * @param writer   Excel对象实例写入接口
-     * @return 读取数量
      */
-    public static <M> int write(Workbook workbook, List<M> objects, Writer<M> writer) {
-        return write(workbook, objects, 0, writer);
+    public static <M> void write(Workbook workbook, List<M> objects, Writer<M> writer) {
+        write(workbook, objects, 0, writer);
     }
 
     /**
@@ -1528,38 +1564,32 @@ public abstract class Excels {
      * @param objects 对象实例列表
      * @param index   开始数据行下标（从0开始）
      * @param writer  Excel对象实例写入接口
-     * @return 读取数量
      */
     @Nonnull
-    public static <M> int write(Sheet sheet, List<M> objects, @Min(0) int index, Writer<M> writer) {
-        int count = 0;
-        for (M object : objects) {
-            if (object != null) {
-                writer.write(sheet.createRow(index++), object, ++count);
+    public static <M> void write(Sheet sheet, List<M> objects, @Min(0) int index, Writer<M> writer) {
+        if (!objects.isEmpty()) {
+            int c = 0;
+            for (M object : objects) {
+                writer.write(sheet.createRow(index++), object, ++c);
             }
         }
-        return count;
     }
 
     /**
      * 读Excel文件
      *
      * @param <M>      数据类型
-     * @param workbook Excel文件工作薄
+     * @param workbook Excel工作薄
      * @param objects  对象实例列表
      * @param index    开始数据行下标（从0开始）
      * @param writer   Excel对象实例写入接口
-     * @return 读取数量
      */
     @Nonnull
-    public static <M> int write(Workbook workbook, List<M> objects, @Min(0) int index, Writer<M> writer) {
-        if (objects.isEmpty()) {
-            return 0;
-        }
-        int c = 0, r = index;
-        Sheet sheet = workbook.createSheet();
-        for (M object : objects) {
-            if (object != null) {
+    public static <M> void write(Workbook workbook, List<M> objects, @Min(0) int index, Writer<M> writer) {
+        if (!objects.isEmpty()) {
+            int c = 0, r = index;
+            Sheet sheet = workbook.createSheet();
+            for (M object : objects) {
                 if (r > index && r % DEFAULT_SHEET_VOLUME == 0) {
                     r = index;
                     sheet = workbook.createSheet();
@@ -1567,6 +1597,5 @@ public abstract class Excels {
                 writer.write(sheet.createRow(r++), object, ++c);
             }
         }
-        return c;
     }
 }

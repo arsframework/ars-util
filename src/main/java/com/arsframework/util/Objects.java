@@ -22,7 +22,6 @@ import com.arsframework.annotation.Nonnull;
  * 对象处理工具类
  *
  * @author yongqiang.wu
- * @version 2019-03-22 09:38
  */
 public abstract class Objects {
     /**
@@ -586,8 +585,8 @@ public abstract class Objects {
      * @return 转换后对象
      */
     public static <T> T toObject(@Nonnull Class<T> type, Object object) {
-        if (object == null) {
-            return null;
+        if (object == null || type == Object.class) {
+            return (T) object;
         } else if (type == byte.class || type == Byte.class) {
             return (T) toByte(object);
         } else if (type == char.class || type == Character.class) {
@@ -783,4 +782,24 @@ public abstract class Objects {
         }
     }
 
+    /**
+     * 计算对象数组的hash值
+     *
+     * @param objects 对象数组
+     * @return hash值
+     */
+    public static int hash(Object... objects) {
+        return java.util.Objects.hash(objects);
+    }
+
+    /**
+     * 判断两个对象是否相同
+     *
+     * @param object 对象
+     * @param other  对象
+     * @return true/false
+     */
+    public static boolean equal(Object object, Object other) {
+        return object != null && other != null && object.getClass() == other.getClass() && object.equals(other);
+    }
 }

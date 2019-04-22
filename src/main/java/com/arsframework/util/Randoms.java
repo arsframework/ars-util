@@ -16,7 +16,6 @@ import com.arsframework.annotation.Nonnull;
  * 随机数处理工具类
  *
  * @author yongqiang.wu
- * @version 2019-03-22 09:38
  */
 public abstract class Randoms {
     /**
@@ -232,6 +231,15 @@ public abstract class Randoms {
     }
 
     /**
+     * 构建随机数处理对象
+     *
+     * @return 随机数处理对象
+     */
+    public static Random buildRandom() {
+        return random.get();
+    }
+
+    /**
      * 随机生成枚举项
      *
      * @param <T>  枚举类型
@@ -242,7 +250,7 @@ public abstract class Randoms {
     public static <T extends Enum<?>> T randomEnum(Class<T> type) {
         try {
             Object[] values = (Object[]) type.getMethod("values").invoke(type);
-            return values.length == 0 ? null : (T) values[random.get().nextInt(values.length)];
+            return values.length == 0 ? null : (T) values[buildRandom().nextInt(values.length)];
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -269,9 +277,9 @@ public abstract class Randoms {
         long start = min.getTime();
         long time = max.getTime() - start; // 相差毫秒数
         if (time <= 1000) { // 相差1秒内
-            return new Date(start + random.get().nextInt((int) time));
+            return new Date(start + buildRandom().nextInt((int) time));
         }
-        return new Date(start + random.get().nextInt((int) (time / 1000)) * 1000);
+        return new Date(start + buildRandom().nextInt((int) (time / 1000)) * 1000);
     }
 
     /**
@@ -291,7 +299,7 @@ public abstract class Randoms {
      * @return 数字
      */
     public static int randomInteger(@Lt("max") int min, int max) {
-        return min + random.get().nextInt(max - min);
+        return min + buildRandom().nextInt(max - min);
     }
 
     /**
@@ -332,9 +340,10 @@ public abstract class Randoms {
      */
     @Nonnull
     public static String randomString(Character[] chars, @Min(1) int length) {
+        Random random = buildRandom();
         StringBuilder buffer = new StringBuilder();
         for (int i = 0; i < length; i++) {
-            buffer.append(chars[random.get().nextInt(chars.length)]);
+            buffer.append(chars[random.nextInt(chars.length)]);
         }
         return buffer.toString();
     }
@@ -356,7 +365,7 @@ public abstract class Randoms {
      */
     @Nonnull
     public static Character randomCharacter(Character[] chars) {
-        return chars[random.get().nextInt(chars.length)];
+        return chars[buildRandom().nextInt(chars.length)];
     }
 
     /**
@@ -365,7 +374,7 @@ public abstract class Randoms {
      * @return 真假值
      */
     public static boolean randomBoolean() {
-        return random.get().nextBoolean();
+        return buildRandom().nextBoolean();
     }
 
 }
