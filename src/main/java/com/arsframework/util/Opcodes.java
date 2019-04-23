@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 import com.arsframework.annotation.Min;
 import com.arsframework.annotation.Nonnull;
@@ -31,7 +32,7 @@ public abstract class Opcodes {
         if (bc > 255) {
             bc = 255;
         }
-        Random random = Randoms.buildRandom();
+        Random random = ThreadLocalRandom.current();
         int r = fc + random.nextInt(bc - fc);
         int g = fc + random.nextInt(bc - fc);
         int b = fc + random.nextInt(bc - fc);
@@ -39,7 +40,7 @@ public abstract class Opcodes {
     }
 
     private static void drawLine(Graphics graphics, int number, int width, int height) {
-        Random random = Randoms.buildRandom();
+        Random random = ThreadLocalRandom.current();
         for (int i = 0; i < number; i++) {
             int x = random.nextInt(width - 1);
             int y = random.nextInt(height - 1);
@@ -50,7 +51,7 @@ public abstract class Opcodes {
     }
 
     private static void drawYawp(BufferedImage image, float rate, int width, int height) {
-        Random random = Randoms.buildRandom();
+        Random random = ThreadLocalRandom.current();
         int area = (int) (rate * width * height);
         for (int i = 0; i < area; i++) {
             image.setRGB(random.nextInt(width), random.nextInt(height), getRandomIntColor());
@@ -59,7 +60,7 @@ public abstract class Opcodes {
 
     private static int getRandomIntColor() {
         int color = 0;
-        Random random = Randoms.buildRandom();
+        Random random = ThreadLocalRandom.current();
         for (int i = 0; i < 3; i++) {
             color = color << 8;
             color = color | random.nextInt(255);
@@ -68,7 +69,7 @@ public abstract class Opcodes {
     }
 
     private static void shearX(Graphics graphics, Color color, int width, int height) {
-        Random random = Randoms.buildRandom();
+        Random random = ThreadLocalRandom.current();
         int period = random.nextInt(2);
         boolean borderGap = true;
         int frames = 1;
@@ -86,11 +87,11 @@ public abstract class Opcodes {
     }
 
     private static void shearY(Graphics graphics, Color color, int width, int height) {
-        Random random = Randoms.buildRandom();
-        int period = random.nextInt(40) + 10; // 50;
-        boolean borderGap = true;
-        int frames = 20;
         int phase = 7;
+        int frames = 20;
+        boolean borderGap = true;
+        Random random = ThreadLocalRandom.current();
+        int period = random.nextInt(40) + 10; // 50;
         for (int i = 0; i < width; i++) {
             double d = (double) (period >> 1)
                     * Math.sin((double) i / (double) period + (6.2831853071795862D * (double) phase) / (double) frames);
@@ -139,7 +140,7 @@ public abstract class Opcodes {
         graphics.setColor(getRandomColor(100, 160));
         int fontSize = height - 4;
         graphics.setFont(new Font("Algerian", Font.ITALIC, fontSize));
-        Random random = Randoms.buildRandom();
+        Random random = ThreadLocalRandom.current();
         char[] chars = content.toCharArray();
         for (int i = 0; i < chars.length; i++) {
             AffineTransform affine = new AffineTransform();

@@ -10,7 +10,7 @@ JDK1.8+
 <dependency>
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.4.2</version>
+    <version>1.4.3</version>
 </dependency>
 ```
 
@@ -92,3 +92,6 @@ JDK1.8+
 ### v1.4.2
 1. 新增```com.arsframework.util.Barcodes```、```com.arsframework.util.Opcodes```工具类
 2. 优化```com.arsframework.util.Excels```、```com.arsframework.util.Files```、```com.arsframework.util.Dates```工具类
+
+### v1.4.3
+1. 优化```com.arsframework.util.Objects```、```com.arsframework.util.Randoms```工具类

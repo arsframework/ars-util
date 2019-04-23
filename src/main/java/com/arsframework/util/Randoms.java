@@ -1,12 +1,14 @@
 package com.arsframework.util;
 
-import java.util.*;
+import java.util.Date;
+import java.util.Random;
+import java.util.Collection;
+import java.util.concurrent.ThreadLocalRandom;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.lang.reflect.Field;
-import java.lang.reflect.Array;
 
 import com.arsframework.annotation.Lt;
 import com.arsframework.annotation.Min;
@@ -19,204 +21,23 @@ import com.arsframework.annotation.Nonnull;
  */
 public abstract class Randoms {
     /**
-     * 当前线程随机处理对象
+     * 默认随机数下钻深度
      */
-    private static final ThreadLocal<Random> random = ThreadLocal.withInitial(() -> new Random());
+    public static final int DEFAULT_RANDOM_DEPTH = 2;
 
     /**
      * 随机数生成接口
-     *
-     * @param <T> 数据类型
-     * @author yongqiangwu
      */
-    public interface Generator<T> {
+    public interface Generator {
         /**
          * 生成随机数
          *
+         * @param field 字段对象
+         * @param index 字段序数（从0开始）
+         * @param level 当前对象层级（从1开始）
          * @return 随机数
          */
-        T generate();
-
-    }
-
-    /**
-     * 随机生成对象属性排器接口
-     *
-     * @author yongqiangwu
-     */
-    public interface Excluder {
-        /**
-         * 判断是否排除
-         *
-         * @param type  对象类型
-         * @param field 字段对象
-         * @return true/false
-         */
-        boolean excluded(Class<?> type, Field field);
-
-    }
-
-    /**
-     * 对象属性随机数生成接口工厂
-     *
-     * @author yongqiangwu
-     */
-    public interface GeneratorBuilder {
-        /**
-         * 构建随机数生成接口
-         *
-         * @param <T>   数据类型
-         * @param type  对象类型
-         * @param field 字段对象
-         * @return 随机数生成接口
-         */
-        <T> Generator<T> buildGenerator(Class<T> type, Field field);
-
-    }
-
-    /**
-     * 随机对象实例生成工厂
-     *
-     * @param <T> 对象类型
-     * @author yongqiangwu
-     */
-    public static class RandomBeanFactory<T> {
-        protected final Class<T> type; // 对象类型
-        private Excluder excluder;
-        private GeneratorBuilder generatorBuilder;
-        private final LinkedList<Class<?>> executed = new LinkedList<>(); // 已执行对象类型
-
-        @Nonnull
-        public RandomBeanFactory(Class<T> type) {
-            this.type = type;
-        }
-
-        /**
-         * 执行对象实例构建
-         *
-         * @param <M>  对象类型
-         * @param type 对象类型
-         * @return 对象实例
-         */
-        @Nonnull
-        protected <M> M execute(Class<M> type) {
-            if (this.excluder != null && this.excluder.excluded(type, null)) {
-                return null;
-            }
-            Generator<?> generator = this.generatorBuilder == null ? null : this.generatorBuilder.buildGenerator(type, null);
-            if (generator != null) {
-                return (M) generator.generate();
-            }
-            if (Enum.class.isAssignableFrom(type)) {
-                return (M) randomEnum((Class<Enum<?>>) type);
-            } else if (Date.class.isAssignableFrom(type)) {
-                return (M) randomDate();
-            } else if (LocalDate.class.isAssignableFrom(type)) {
-                return (M) Dates.adapter(randomDate()).toLocalDate();
-            } else if (LocalDateTime.class.isAssignableFrom(type)) {
-                return (M) Dates.adapter(randomDate());
-            } else if (type == byte.class || type == Byte.class) {
-                return (M) Byte.valueOf((byte) randomInteger());
-            } else if (type == char.class || type == Character.class) {
-                return (M) randomCharacter();
-            } else if (type == short.class || type == Short.class) {
-                return (M) Short.valueOf((short) randomInteger());
-            } else if (type == float.class || type == Float.class) {
-                return (M) Float.valueOf(randomInteger());
-            } else if (type == double.class || type == Double.class) {
-                return (M) Double.valueOf(randomInteger());
-            } else if (type == int.class || type == Integer.class) {
-                return (M) Integer.valueOf(randomInteger());
-            } else if (type == BigInteger.class) {
-                return (M) new BigInteger(String.valueOf(randomInteger()));
-            } else if (type == BigDecimal.class) {
-                return (M) new BigDecimal(String.valueOf(randomInteger()));
-            } else if (type == long.class || type == Long.class) {
-                return (M) Long.valueOf(randomInteger());
-            } else if (type == boolean.class || type == Boolean.class) {
-                return (M) Boolean.valueOf(randomBoolean());
-            } else if (type == String.class) {
-                return (M) randomString();
-            } else if (type.isArray()) {
-                Class<?> component = type.getComponentType();
-                Object[] array = (Object[]) Array.newInstance(component, 1);
-                array[0] = this.execute(component);
-                return (M) array;
-            }
-            if (this.executed.contains(type)) {
-                return null;
-            }
-            this.executed.add(type);
-            M instance = Objects.initialize(type);
-            for (Field field : Objects.getFields(type)) {
-                if (this.excluder != null && this.excluder.excluded(type, field)) {
-                    continue;
-                }
-                Object value;
-                generator = this.generatorBuilder == null ? null : this.generatorBuilder.buildGenerator(type, field);
-                if (generator != null) {
-                    value = generator.generate();
-                } else if (Map.class.isAssignableFrom(field.getType())) {
-                    Class<?>[] genericTypes = Objects.getGenericTypes(field);
-                    Map<Object, Object> map = new HashMap<>(genericTypes.length == 2 ? 1 : 0);
-                    if (genericTypes.length == 2) {
-                        map.put(this.execute(genericTypes[0]), this.execute(genericTypes[1]));
-                    }
-                    value = map;
-                } else if (Collection.class.isAssignableFrom(field.getType())) {
-                    Class<?>[] genericTypes = Objects.getGenericTypes(field);
-                    Collection<Object> collection = Set.class.isAssignableFrom(field.getType())
-                            ? new HashSet<>(genericTypes.length == 1 ? 1 : 0)
-                            : new ArrayList<>(genericTypes.length == 1 ? 1 : 0);
-                    if (genericTypes.length == 1) {
-                        collection.add(this.execute(genericTypes[0]));
-                    }
-                    value = collection;
-                } else {
-                    value = this.execute(field.getType());
-                }
-                field.setAccessible(true);
-                try {
-                    field.set(instance, value);
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            this.executed.removeLast();
-            return instance;
-        }
-
-        /**
-         * 注册随机生成属性排除器
-         *
-         * @param excluder 随机生成属性排除器
-         * @return 随机对象实例生成工厂
-         */
-        public RandomBeanFactory<T> register(Excluder excluder) {
-            this.excluder = excluder;
-            return this;
-        }
-
-        /**
-         * 注册随机数生成接口工厂
-         *
-         * @param generatorBuilder 随机数生成接口工厂
-         * @return 随机对象实例生成工厂
-         */
-        public RandomBeanFactory<T> register(GeneratorBuilder generatorBuilder) {
-            this.generatorBuilder = generatorBuilder;
-            return this;
-        }
-
-        /**
-         * 构建对象实例
-         *
-         * @return 对象实例
-         */
-        public T build() {
-            return this.execute(this.type);
-        }
-
+        Object generate(Field field, int index, int level);
     }
 
     /**
@@ -224,19 +45,100 @@ public abstract class Randoms {
      *
      * @param <T>  对象类型
      * @param type 对象类型
-     * @return 随机对象实例生成工厂
+     * @return 对象实例
      */
-    public static <T> RandomBeanFactory<T> random(Class<T> type) {
-        return new RandomBeanFactory<T>(type);
+    public static <T> T random(Class<T> type) {
+        return random(type, null);
     }
 
     /**
-     * 构建随机数处理对象
+     * 随机生成对象实例
      *
-     * @return 随机数处理对象
+     * @param <T>   对象类型
+     * @param type  对象类型
+     * @param depth 对象下钻深度
+     * @return 对象实例
      */
-    public static Random buildRandom() {
-        return random.get();
+    public static <T> T random(Class<T> type, int depth) {
+        return random(type, depth, null);
+    }
+
+    /**
+     * 随机生成对象实例
+     *
+     * @param <T>       对象类型
+     * @param type      对象类型
+     * @param generator 随机数生成器
+     * @return 对象实例
+     */
+    public static <T> T random(Class<T> type, Generator generator) {
+        return random(type, DEFAULT_RANDOM_DEPTH, generator);
+    }
+
+    /**
+     * 随机生成对象实例
+     *
+     * @param <T>       对象类型
+     * @param type      对象类型
+     * @param depth     对象下钻深度
+     * @param generator 随机数生成器
+     * @return 对象实例
+     */
+    public static <T> T random(Class<T> type, int depth, Generator generator) {
+        return random(type, depth, 0, generator);
+    }
+
+    /**
+     * 随机生成对象实例
+     *
+     * @param <T>       对象类型
+     * @param type      对象类型
+     * @param depth     对象下钻深度
+     * @param level     当前对象层级
+     * @param generator 随机数生成器
+     * @return 对象实例
+     */
+    private static <T> T random(@Nonnull Class<T> type, @Min(1) int depth, @Min(0) int level, Generator generator) {
+        if (level > depth) {
+            return null;
+        }
+        if (Enum.class.isAssignableFrom(type)) {
+            return (T) randomEnum((Class<Enum<?>>) type);
+        } else if (Date.class.isAssignableFrom(type)) {
+            return (T) randomDate();
+        } else if (LocalDate.class.isAssignableFrom(type)) {
+            return (T) Dates.adapter(randomDate()).toLocalDate();
+        } else if (LocalDateTime.class.isAssignableFrom(type)) {
+            return (T) Dates.adapter(randomDate());
+        } else if (type == byte.class || type == Byte.class) {
+            return (T) Byte.valueOf((byte) randomInteger());
+        } else if (type == char.class || type == Character.class) {
+            return (T) randomCharacter();
+        } else if (type == short.class || type == Short.class) {
+            return (T) Short.valueOf((short) randomInteger());
+        } else if (type == float.class || type == Float.class) {
+            return (T) Float.valueOf(randomInteger());
+        } else if (type == double.class || type == Double.class) {
+            return (T) Double.valueOf(randomInteger());
+        } else if (type == int.class || type == Integer.class) {
+            return (T) Integer.valueOf(randomInteger());
+        } else if (type == BigInteger.class) {
+            return (T) new BigInteger(String.valueOf(randomInteger()));
+        } else if (type == BigDecimal.class) {
+            return (T) new BigDecimal(String.valueOf(randomInteger()));
+        } else if (type == long.class || type == Long.class) {
+            return (T) Long.valueOf(randomInteger());
+        } else if (type == boolean.class || type == Boolean.class) {
+            return (T) Boolean.valueOf(randomBoolean());
+        } else if (type == String.class) {
+            return (T) randomString();
+        } else if (level < depth && !type.isArray() && !Collection.class.isAssignableFrom(type)) {
+            T object = Objects.initialize(type);
+            Objects.foreach(type, (field, i) -> Objects.setValue(object, field, generator == null ?
+                    random(field.getType(), depth, level + 1, null) : generator.generate(field, i, level + 1)));
+            return object;
+        }
+        return null;
     }
 
     /**
@@ -250,7 +152,7 @@ public abstract class Randoms {
     public static <T extends Enum<?>> T randomEnum(Class<T> type) {
         try {
             Object[] values = (Object[]) type.getMethod("values").invoke(type);
-            return values.length == 0 ? null : (T) values[buildRandom().nextInt(values.length)];
+            return values.length == 0 ? null : (T) values[ThreadLocalRandom.current().nextInt(values.length)];
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -277,9 +179,9 @@ public abstract class Randoms {
         long start = min.getTime();
         long time = max.getTime() - start; // 相差毫秒数
         if (time <= 1000) { // 相差1秒内
-            return new Date(start + buildRandom().nextInt((int) time));
+            return new Date(start + ThreadLocalRandom.current().nextInt((int) time));
         }
-        return new Date(start + buildRandom().nextInt((int) (time / 1000)) * 1000);
+        return new Date(start + ThreadLocalRandom.current().nextInt((int) (time / 1000)) * 1000);
     }
 
     /**
@@ -299,7 +201,7 @@ public abstract class Randoms {
      * @return 数字
      */
     public static int randomInteger(@Lt("max") int min, int max) {
-        return min + buildRandom().nextInt(max - min);
+        return min + ThreadLocalRandom.current().nextInt(max - min);
     }
 
     /**
@@ -340,7 +242,7 @@ public abstract class Randoms {
      */
     @Nonnull
     public static String randomString(Character[] chars, @Min(1) int length) {
-        Random random = buildRandom();
+        Random random = ThreadLocalRandom.current();
         StringBuilder buffer = new StringBuilder();
         for (int i = 0; i < length; i++) {
             buffer.append(chars[random.nextInt(chars.length)]);
@@ -365,7 +267,7 @@ public abstract class Randoms {
      */
     @Nonnull
     public static Character randomCharacter(Character[] chars) {
-        return chars[buildRandom().nextInt(chars.length)];
+        return chars[ThreadLocalRandom.current().nextInt(chars.length)];
     }
 
     /**
@@ -374,7 +276,7 @@ public abstract class Randoms {
      * @return 真假值
      */
     public static boolean randomBoolean() {
-        return buildRandom().nextBoolean();
+        return ThreadLocalRandom.current().nextBoolean();
     }
 
 }

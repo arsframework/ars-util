@@ -11,7 +11,14 @@ import java.net.JarURLConnection;
 import java.time.ZoneId;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Map;
+import java.util.List;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Collection;
+import java.util.Enumeration;
 import java.util.jar.JarFile;
 import java.util.jar.JarEntry;
 import java.lang.reflect.*;
@@ -40,30 +47,89 @@ public abstract class Objects {
     public static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
 
     /**
+     * 类字段访问接口
+     */
+    public interface FieldAccessor {
+        /**
+         * 字段访问
+         *
+         * @param field 字段对象
+         * @param index 字段序数
+         */
+        void access(Field field, int index);
+    }
+
+    /**
+     * 类字段访问中断接口
+     */
+    public interface FieldAccessBreaker {
+        /**
+         * 是否已中断字段访问
+         *
+         * @param field 字段对象
+         * @param index 字段序数
+         * @return true/false
+         */
+        boolean isBroken(Field field, int index);
+    }
+
+    /**
+     * 类及父类实例字段遍历
+     *
+     * @param clazz    对象类型
+     * @param accessor 字段访问接口
+     */
+    public static void foreach(Class<?> clazz, FieldAccessor accessor) {
+        foreach(clazz, accessor, null);
+    }
+
+    /**
+     * 类及父类实例字段遍历
+     *
+     * @param clazz    对象类型
+     * @param accessor 字段访问接口
+     * @param breaker  字段访问中断接口
+     */
+    public static void foreach(@Nonnull Class<?> clazz, @Nonnull FieldAccessor accessor, FieldAccessBreaker breaker) {
+        int index = 0;
+        boolean broken = false;
+        do {
+            for (Field field : clazz.getDeclaredFields()) {
+                if (breaker != null && (broken = breaker.isBroken(field, index))) {
+                    break;
+                }
+                if (!Modifier.isStatic(field.getModifiers()) && !field.getName().startsWith("this$")) {
+                    accessor.access(field, index++);
+                }
+            }
+        } while (!broken && (clazz = clazz.getSuperclass()) != Object.class);
+    }
+
+    /**
      * 判断类型是否是基本数据类型
      *
-     * @param cls 数据类型
+     * @param clazz 数据类型
      * @return true/false
      */
-    public static boolean isBasicClass(Class<?> cls) {
+    public static boolean isBasicClass(Class<?> clazz) {
         try {
-            return cls == null ? false : Number.class.isAssignableFrom(cls) ? true :
-                    ((Class<?>) cls.getField("TYPE").get(null)).isPrimitive();
+            return clazz == null ? false : Number.class.isAssignableFrom(clazz) ? true :
+                    ((Class<?>) clazz.getField("TYPE").get(null)).isPrimitive();
         } catch (NoSuchFieldException | IllegalAccessException e) {
-            return cls.isPrimitive() || cls == Byte.class || cls == Character.class || cls == Integer.class || cls == Short.class
-                    || cls == Long.class || cls == Float.class || cls == Double.class || cls == Boolean.class;
+            return clazz.isPrimitive() || clazz == Byte.class || clazz == Character.class || clazz == Integer.class || clazz == Short.class
+                    || clazz == Long.class || clazz == Float.class || clazz == Double.class || clazz == Boolean.class;
         }
     }
 
     /**
      * 判断数据类型是否是数字类型
      *
-     * @param cls 数据类型
+     * @param clazz 数据类型
      * @return true/false
      */
-    public static boolean isNumberClass(Class<?> cls) {
-        return cls != null && (Number.class.isAssignableFrom(cls) || cls == byte.class || cls == char.class
-                || cls == short.class || cls == int.class || cls == double.class || cls == long.class);
+    public static boolean isNumberClass(Class<?> clazz) {
+        return clazz != null && (Number.class.isAssignableFrom(clazz) || clazz == byte.class || clazz == char.class
+                || clazz == short.class || clazz == int.class || clazz == double.class || clazz == long.class);
     }
 
     /**
@@ -106,65 +172,64 @@ public abstract class Objects {
     /**
      * 根据字段名称获取字段对象
      *
-     * @param cls  类对象
-     * @param name 字段名称
+     * @param clazz 类对象
+     * @param name  字段名称
      * @return 字段对象
      */
     @Nonnull
-    public static Field getField(Class<?> cls, String name) {
+    public static Field getField(Class<?> clazz, String name) {
         do {
             try {
-                return cls.getDeclaredField(name);
+                return clazz.getDeclaredField(name);
             } catch (NoSuchFieldException e) {
             }
-        } while ((cls = cls.getSuperclass()) != Object.class);
+        } while ((clazz = clazz.getSuperclass()) != Object.class);
         throw new RuntimeException(String.format("No such field '%s'", name));
     }
 
     /**
-     * 根据字段名称获取字段对象
+     * 获取对象所有实例字段
      *
-     * @param cls   类对象
-     * @param names 字段名称数组
+     * @param clazz 对象类型
      * @return 字段对象数组
      */
     @Nonnull
-    public static Field[] getFields(Class<?> cls, String... names) {
-        if (names.length == 0) {
-            List<Field> fields = new LinkedList<>();
-            do {
-                for (Field field : cls.getDeclaredFields()) {
-                    if (!Modifier.isStatic(field.getModifiers()) && !field.getName().startsWith("this$")) {
-                        fields.add(field);
-                    }
-                }
-            } while ((cls = cls.getSuperclass()) != Object.class);
-            return fields.toArray(EMPTY_FIELD_ARRAY);
-        }
-        Field[] fields = new Field[names.length];
-        for (int i = 0; i < names.length; i++) {
-            fields[i] = getField(cls, names[i]);
-        }
-        return fields;
+    public static Field[] getFields(Class<?> clazz) {
+        List<Field> fields = new LinkedList<>();
+        foreach(clazz, (field, i) -> fields.add(field));
+        return fields.toArray(EMPTY_FIELD_ARRAY);
     }
 
     /**
-     * 获取对象属性名称
+     * 获取对象所有实例属性名称
      *
-     * @param cls 对象类型
+     * @param clazz 对象类型
      * @return 字段名称数组
      */
     @Nonnull
-    public static String[] getProperties(Class<?> cls) {
+    public static String[] getProperties(Class<?> clazz) {
         List<String> properties = new LinkedList<>();
-        do {
-            for (Field field : cls.getDeclaredFields()) {
-                if (!Modifier.isStatic(field.getModifiers())) {
-                    properties.add(field.getName());
-                }
-            }
-        } while ((cls = cls.getSuperclass()) != Object.class);
+        foreach(clazz, (field, i) -> properties.add(field.getName()));
         return properties.toArray(Strings.EMPTY_ARRAY);
+    }
+
+    /**
+     * 获取对象指定字段的值
+     *
+     * @param object 对象实例
+     * @param field  字段对象
+     * @return 字段值
+     */
+    @Nonnull
+    public static Object getValue(Object object, Field field) {
+        if (!field.isAccessible()) {
+            field.setAccessible(true);
+        }
+        try {
+            return field.get(object);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -176,53 +241,43 @@ public abstract class Objects {
      */
     @Nonnull
     public static Object getValue(Object object, String property) {
-        String suffix = null;
-        int index = property.indexOf('.');
-        if (index > 0) {
-            suffix = property.substring(index + 1);
-            property = property.substring(0, index);
+        int division = property.indexOf('.'); // 属性分割符下标
+        if (division <= 0) {
+            return getValue(object, getField(object.getClass(), property));
         }
-        Field field = getField(object.getClass(), property);
-        field.setAccessible(true);
-        try {
-            Object value = field.get(object);
-            return value == null || suffix == null ? value : getValue(value, suffix);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
+        Object value = getValue(object, getField(object.getClass(), property.substring(0, division)));
+        return value == null ? null : getValue(value, property.substring(division + 1));
     }
 
     /**
-     * 获取对象实例指定属性
+     * 获取对象实例属性值
      *
-     * @param object     对象实例
-     * @param properties 属性名称数组（如果为空则获取所有属性值）
+     * @param object 对象实例
      * @return 键/值对象
      */
     @Nonnull
-    public static Map<String, Object> getValues(Object object, String... properties) {
-        if (properties.length == 0) {
-            Class<?> cls = object.getClass();
-            Map<String, Object> values = new HashMap<>();
-            do {
-                for (Field field : cls.getDeclaredFields()) {
-                    if (!Modifier.isStatic(field.getModifiers())) {
-                        field.setAccessible(true);
-                        try {
-                            values.put(field.getName(), field.get(object));
-                        } catch (IllegalAccessException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                }
-            } while ((cls = cls.getSuperclass()) != Object.class);
-            return values;
-        }
-        Map<String, Object> values = new HashMap<>(properties.length);
-        for (String property : properties) {
-            values.put(property, getValue(object, property));
-        }
+    public static Map<String, Object> getValues(Object object) {
+        Map<String, Object> values = new HashMap<>();
+        foreach(object.getClass(), (field, i) -> values.put(field.getName(), getValue(object, field)));
         return values;
+    }
+
+    /**
+     * 设置对象指定属性的值
+     *
+     * @param object 对象实例
+     * @param field  字段对象
+     * @param value  字段值
+     */
+    public static void setValue(@Nonnull Object object, @Nonnull Field field, Object value) {
+        if (!field.isAccessible()) {
+            field.setAccessible(true);
+        }
+        try {
+            field.set(object, toObject(field.getType(), value));
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -233,13 +288,7 @@ public abstract class Objects {
      * @param value    字段值
      */
     public static void setValue(@Nonnull Object object, @Nonnull String property, Object value) {
-        Field field = getField(object.getClass(), property);
-        field.setAccessible(true);
-        try {
-            field.set(object, toObject(field.getType(), value));
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
+        setValue(object, getField(object.getClass(), property), value);
     }
 
     /**
@@ -251,19 +300,11 @@ public abstract class Objects {
     @Nonnull
     public static void setValues(Object object, Map<String, ?> values) {
         if (!values.isEmpty()) {
-            Class<?> cls = object.getClass();
-            do {
-                for (Field field : cls.getDeclaredFields()) {
-                    if (!Modifier.isStatic(field.getModifiers()) && values.containsKey(field.getName())) {
-                        field.setAccessible(true);
-                        try {
-                            field.set(object, toObject(field.getType(), values.get(field.getName())));
-                        } catch (IllegalAccessException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
+            foreach(object.getClass(), (field, i) -> {
+                if (values.containsKey(field.getName())) {
+                    setValue(object, field, values.get(field.getName()));
                 }
-            } while ((cls = cls.getSuperclass()) != Object.class);
+            });
         }
     }
 
@@ -275,23 +316,7 @@ public abstract class Objects {
      */
     public static void setValues(Object object, Object... values) {
         if (values.length > 0) {
-            int i = 0;
-            Class<?> cls = object.getClass();
-            do {
-                for (Field field : cls.getDeclaredFields()) {
-                    if (i >= values.length) {
-                        break;
-                    }
-                    if (!Modifier.isStatic(field.getModifiers())) {
-                        field.setAccessible(true);
-                        try {
-                            field.set(object, toObject(field.getType(), values[i++]));
-                        } catch (IllegalAccessException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                }
-            } while ((cls = cls.getSuperclass()) != Object.class && i < values.length);
+            foreach(object.getClass(), (field, i) -> setValue(object, field, values[i]), (field, i) -> i >= values.length);
         }
     }
 
@@ -334,19 +359,7 @@ public abstract class Objects {
      */
     @Nonnull
     public static <T> void copy(T source, T target) {
-        Class<?> type = source.getClass();
-        do {
-            for (Field field : type.getDeclaredFields()) {
-                if (!Modifier.isStatic(field.getModifiers()) && !Modifier.isFinal(field.getModifiers())) {
-                    field.setAccessible(true);
-                    try {
-                        field.set(target, field.get(source));
-                    } catch (IllegalAccessException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-        } while ((type = type.getSuperclass()) != Object.class);
+        foreach(source.getClass(), (field, i) -> setValue(target, field, getValue(source, field)));
     }
 
     /**
@@ -414,16 +427,16 @@ public abstract class Objects {
     /**
      * 获取类对象的泛型
      *
-     * @param cls 类对象对象
+     * @param clazz 类对象对象
      * @return 泛型类型数组
      */
     @Nonnull
-    public static Class<?>[] getGenericTypes(Class<?> cls) {
-        Type type = cls.getGenericSuperclass();
+    public static Class<?>[] getGenericTypes(Class<?> clazz) {
+        Type type = clazz.getGenericSuperclass();
         if (type instanceof ParameterizedType) {
             return getGenericTypes((ParameterizedType) type);
         }
-        Class<?> parent = cls.getSuperclass();
+        Class<?> parent = clazz.getSuperclass();
         return parent == null ? EMPTY_CLASS_ARRAY : getGenericTypes(parent);
     }
 
@@ -442,26 +455,26 @@ public abstract class Objects {
     /**
      * 获取基本数据包装类型
      *
-     * @param cls 基本数据类型
+     * @param clazz 基本数据类型
      * @return 基本数据包装类型
      */
     @Nonnull
-    public static Class<?> getBasicWrapClass(Class<?> cls) {
-        if (cls == byte.class) {
+    public static Class<?> getBasicWrapClass(Class<?> clazz) {
+        if (clazz == byte.class) {
             return Byte.class;
-        } else if (cls == char.class) {
+        } else if (clazz == char.class) {
             return Character.class;
-        } else if (cls == int.class) {
+        } else if (clazz == int.class) {
             return Integer.class;
-        } else if (cls == short.class) {
+        } else if (clazz == short.class) {
             return Short.class;
-        } else if (cls == long.class) {
+        } else if (clazz == long.class) {
             return Long.class;
-        } else if (cls == float.class) {
+        } else if (clazz == float.class) {
             return Float.class;
-        } else if (cls == double.class) {
+        } else if (clazz == double.class) {
             return Double.class;
-        } else if (cls == boolean.class) {
+        } else if (clazz == boolean.class) {
             return Boolean.class;
         }
         throw new IllegalArgumentException("Class must be basic type");
@@ -585,7 +598,7 @@ public abstract class Objects {
      * @return 转换后对象
      */
     public static <T> T toObject(@Nonnull Class<T> type, Object object) {
-        if (object == null || type == Object.class) {
+        if (object == null || type == Object.class || type.isAssignableFrom(object.getClass())) {
             return (T) object;
         } else if (type == byte.class || type == Byte.class) {
             return (T) toByte(object);
@@ -621,10 +634,8 @@ public abstract class Objects {
             return (T) Strings.toString(object);
         } else if (type == Class.class) {
             return (T) toClass(object);
-        } else if (!type.isAssignableFrom(object.getClass())) {
-            throw new IllegalArgumentException("Cannot convert " + object + " to " + type);
         }
-        return (T) object;
+        throw new IllegalArgumentException("Cannot convert " + object + " to " + type);
     }
 
     /**

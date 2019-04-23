@@ -1,10 +1,17 @@
 package com.arsframework.util;
 
 import java.io.*;
-import java.util.*;
-import java.lang.reflect.Field;
+import java.util.Map;
+import java.util.List;
+import java.util.Date;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.TreeSet;
+import java.util.Iterator;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.lang.reflect.Array;
-import java.lang.reflect.Modifier;
 
 import org.xml.sax.XMLReader;
 import org.xml.sax.Attributes;
@@ -1470,21 +1477,7 @@ public abstract class Excels {
      */
     public static void write(@Nonnull Row row, Object object) {
         if (object != null) {
-            int i = 0;
-            Class<?> cls = object.getClass();
-            do {
-                for (Field field : cls.getDeclaredFields()) {
-                    if (!Modifier.isStatic(field.getModifiers())
-                            && !Modifier.isFinal(field.getModifiers()) && !field.getName().startsWith("this$")) {
-                        field.setAccessible(true);
-                        try {
-                            setValue(row.createCell(i++), field.get(object));
-                        } catch (IllegalAccessException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                }
-            } while ((cls = cls.getSuperclass()) != Object.class);
+            Objects.foreach(object.getClass(), (field, i) -> setValue(row.createCell(i), Objects.getValue(object, field)));
         }
     }
 
