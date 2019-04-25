@@ -14,11 +14,11 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.List;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.LinkedHashMap;
 import java.util.jar.JarFile;
 import java.util.jar.JarEntry;
 import java.lang.reflect.*;
@@ -45,6 +45,19 @@ public abstract class Objects {
      * 空类对象数组
      */
     public static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
+
+    /**
+     * 对象适配接口
+     */
+    public interface Adapter {
+        /**
+         * 对象适配
+         *
+         * @param object 适配源对象
+         * @return 适配目标对象
+         */
+        Object adaption(Object object);
+    }
 
     /**
      * 类字段访问接口
@@ -106,6 +119,22 @@ public abstract class Objects {
     }
 
     /**
+     * 获取对象类型
+     *
+     * @param objects 对象数组
+     * @return 类型数组
+     */
+    @Nonnull
+    public static Class<?>[] getTypes(Object... objects) {
+        Class<?>[] types = new Class<?>[objects.length];
+        for (int i = 0; i < objects.length; i++) {
+            Object object = objects[i];
+            types[i] = object == null ? null : object.getClass();
+        }
+        return types;
+    }
+
+    /**
      * 判断类型是否是基本数据类型
      *
      * @param clazz 数据类型
@@ -130,6 +159,16 @@ public abstract class Objects {
     public static boolean isNumberClass(Class<?> clazz) {
         return clazz != null && (Number.class.isAssignableFrom(clazz) || clazz == byte.class || clazz == char.class
                 || clazz == short.class || clazz == int.class || clazz == double.class || clazz == long.class);
+    }
+
+    /**
+     * 判断对象是否为数字
+     *
+     * @param object 对象
+     * @return true/false
+     */
+    public static boolean isNumber(Object object) {
+        return object != null && isNumberClass(object.getClass());
     }
 
     /**
@@ -257,7 +296,7 @@ public abstract class Objects {
      */
     @Nonnull
     public static Map<String, Object> getValues(Object object) {
-        Map<String, Object> values = new HashMap<>();
+        Map<String, Object> values = new LinkedHashMap<>();
         foreach(object.getClass(), (field, i) -> values.put(field.getName(), getValue(object, field)));
         return values;
     }
@@ -812,5 +851,26 @@ public abstract class Objects {
      */
     public static boolean equal(Object object, Object other) {
         return object != null && other != null && object.getClass() == other.getClass() && object.equals(other);
+    }
+
+    /**
+     * 获取两个对象实例不同属性值
+     *
+     * @param <T>    数据类型
+     * @param object 对象实例
+     * @param other  对象实例
+     * @return 不同属性值
+     */
+    @Nonnull
+    public static <T> Map<String, Object[]> difference(T object, T other) {
+        Map<String, Object[]> difference = new LinkedHashMap<>();
+        foreach(object.getClass(), (field, i) -> {
+            Object value1 = getValue(object, field);
+            Object value2 = getValue(other, field);
+            if (!equal(value1, value2)) {
+                difference.put(field.getName(), new Object[]{value1, value2});
+            }
+        });
+        return difference;
     }
 }

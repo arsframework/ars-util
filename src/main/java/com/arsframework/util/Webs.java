@@ -2,7 +2,11 @@ package com.arsframework.util;
 
 import java.io.*;
 import java.util.Map;
+import java.util.List;
+import java.util.LinkedList;
+import java.util.Enumeration;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -40,6 +44,62 @@ public abstract class Webs {
     private static final ParserDelegator parserDelegator = new ParserDelegator();
 
     /**
+     * Http请求方式
+     */
+    public enum Method {
+        /**
+         * HEAD方式
+         */
+        HEAD,
+
+        /**
+         * GET方式
+         */
+        GET,
+
+        /**
+         * POST方式
+         */
+        POST,
+
+        /**
+         * PUT方式
+         */
+        PUT,
+
+        /**
+         * DELETE方式
+         */
+        DELETE,
+
+        /**
+         * TRACE方式
+         */
+        TRACE,
+
+        /**
+         * CONNECT方式
+         */
+        CONNECT,
+
+        /**
+         * OPTIONS方式
+         */
+        OPTIONS;
+
+        /**
+         * 将Http请求方式名称转换成枚举对象
+         *
+         * @param name 名称
+         * @return 请求方式枚举
+         */
+        @Nonnull
+        public static Method parse(String name) {
+            return Method.valueOf(name.toUpperCase());
+        }
+    }
+
+    /**
      * 获取Cookie
      *
      * @param request Http请求对象
@@ -50,11 +110,11 @@ public abstract class Webs {
     public static String getCookie(HttpServletRequest request, String name) {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
-            for (Cookie cookie : request.getCookies()) {
+            for (Cookie cookie : cookies) {
                 if (cookie.getName().equals(name)) {
+                    String value = cookie.getValue();
                     try {
-                        String value = URLDecoder.decode(cookie.getValue(), Strings.CHARSET_UTF8);
-                        return value == null || value.isEmpty() ? null : value;
+                        return Strings.isEmpty(value) ? null : URLDecoder.decode(value, Strings.CHARSET_UTF8);
                     } catch (UnsupportedEncodingException e) {
                         throw new RuntimeException(e);
                     }
@@ -75,7 +135,7 @@ public abstract class Webs {
     public static void setCookie(@Nonnull HttpServletResponse response, @Nonnull String name, String value, @Min(0) int timeout) {
         try {
             Cookie cookie = new Cookie(name, value == null ? Strings.EMPTY_STRING : URLEncoder.encode(value, Strings.CHARSET_UTF8));
-            cookie.setPath("/");
+            cookie.setPath(Strings.ROOT_URI);
             cookie.setMaxAge(timeout);
             response.addCookie(cookie);
         } catch (UnsupportedEncodingException e) {
@@ -95,10 +155,11 @@ public abstract class Webs {
     public static String removeCookie(HttpServletRequest request, HttpServletResponse response, String name) {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
-            for (Cookie cookie : request.getCookies()) {
+            for (Cookie cookie : cookies) {
                 if (cookie.getName().equals(name)) {
+                    String value = cookie.getValue();
                     try {
-                        return URLDecoder.decode(cookie.getValue(), Strings.CHARSET_UTF8);
+                        return Strings.isEmpty(value) ? null : URLDecoder.decode(value, Strings.CHARSET_UTF8);
                     } catch (UnsupportedEncodingException e) {
                         throw new RuntimeException(e);
                     } finally {
@@ -114,7 +175,7 @@ public abstract class Webs {
     /**
      * 获取请求资源地址（不包含应用上下文地址）
      *
-     * @param request HTTP请求对象
+     * @param request Http请求对象
      * @return 资源地址
      */
     @Nonnull
@@ -127,7 +188,7 @@ public abstract class Webs {
     /**
      * 获取HTTP请求的URL地址（不包含资源地址）
      *
-     * @param request HTTP请求对象
+     * @param request Http请求对象
      * @return URL地址
      */
     @Nonnull
@@ -139,10 +200,98 @@ public abstract class Webs {
     }
 
     /**
+     * 将参数字符串形式转换成键/值映射
+     *
+     * @param str 参数字符串形式
+     * @return 键/值映射
+     */
+    public static Map<String, Object> string2param(String str) {
+        if (Strings.isBlank(str)) {
+            return new LinkedHashMap<>(0);
+        }
+        String[] sections = str.split("&");
+        Map<String, Object> parameters = new LinkedHashMap<>(sections.length);
+        for (String section : sections) {
+            int division = section.indexOf('=');
+            if (division < 1) {
+                continue;
+            }
+            String key = section.substring(0, division).trim();
+            if (key.isEmpty()) {
+                continue;
+            }
+            String value = Strings.trim(section.substring(division + 1));
+            Object exist = parameters.get(key);
+            if (exist == null) {
+                parameters.put(key, value);
+            } else if (!Strings.isEmpty(value)) {
+                if (exist instanceof List) {
+                    ((List<String>) exist).add(value);
+                } else {
+                    List<String> values = new LinkedList<>();
+                    values.add((String) exist);
+                    values.add(value);
+                    parameters.put(key, values);
+                }
+            }
+        }
+        return parameters;
+    }
+
+    /**
+     * 获取数据流请求体
+     *
+     * @param request Http请求对象
+     * @return 请求体字符串
+     * @throws IOException IO操作异常
+     */
+    @Nonnull
+    public static String getBody(HttpServletRequest request) throws IOException {
+        try (InputStream is = request.getInputStream()) {
+            return new String(Streams.getBytes(is));
+        }
+    }
+
+    /**
+     * 获取URL参数
+     *
+     * @param url 资源地址
+     * @return 参数键/值映射
+     */
+    @Nonnull
+    public static Map<String, Object> getParameters(String url) {
+        int division = url.indexOf('?');
+        return division < 0 ? new LinkedHashMap<>(0) : string2param(url.substring(division + 1));
+    }
+
+    /**
+     * 获取普通表单请求参数
+     *
+     * @param request Http请求对象
+     * @return 参数键/值表
+     */
+    @Nonnull
+    public static Map<String, Object> getParameters(HttpServletRequest request) {
+        Map<String, Object> parameters = new LinkedHashMap<>();
+        Enumeration<String> names = request.getParameterNames();
+        while (names.hasMoreElements()) {
+            String name = names.nextElement();
+            LinkedList<String> values = new LinkedList<>();
+            for (String value : request.getParameterValues(name)) {
+                if (!(value = value.trim()).isEmpty()) {
+                    values.add(value);
+                }
+            }
+            parameters.put(name, values.isEmpty() ? null : values.size() == 1 ? values.getFirst() : values);
+        }
+        return parameters;
+    }
+
+    /**
      * 视图渲染
      *
-     * @param request  HTTP请求对象
-     * @param response HTTP响应对象
+     * @param request  Http请求对象
+     * @param response Http响应对象
      * @param template 视图模板名称
      * @throws IOException      IO操作异常
      * @throws ServletException Servlet操作异常
@@ -155,8 +304,8 @@ public abstract class Webs {
     /**
      * 视图渲染
      *
-     * @param request  HTTP请求对象
-     * @param response HTTP响应对象
+     * @param request  Http请求对象
+     * @param response Http响应对象
      * @param template 视图模板名称
      * @param context  渲染上下文数据
      * @throws IOException      IO操作异常
@@ -174,8 +323,8 @@ public abstract class Webs {
     /**
      * 视图渲染
      *
-     * @param request  HTTP请求对象
-     * @param response HTTP响应对象
+     * @param request  Http请求对象
+     * @param response Http响应对象
      * @param template 视图模板名称
      * @param output   数据输出流
      * @throws IOException      IO操作异常
@@ -190,8 +339,8 @@ public abstract class Webs {
     /**
      * 视图渲染
      *
-     * @param request  HTTP请求对象
-     * @param response HTTP响应对象
+     * @param request  Http请求对象
+     * @param response Http响应对象
      * @param template 视图模板名称
      * @param context  渲染上下文数据
      * @param output   数据输出流
@@ -203,7 +352,7 @@ public abstract class Webs {
                               OutputStream output) throws IOException, ServletException {
         template = template.replace("\\", "/").replace("//", "/");
         if (template.charAt(0) != '/') {
-            template = new StringBuilder("/").append(template).toString();
+            template = new StringBuilder(Strings.ROOT_URI).append(template).toString();
         }
         if (!new File(ROOT_PATH, template).exists()) {
             throw new IOException("Template does not exist: " + template);
@@ -227,8 +376,8 @@ public abstract class Webs {
     /**
      * 获取视图内容
      *
-     * @param request  HTTP请求对象
-     * @param response HTTP响应对象
+     * @param request  Http请求对象
+     * @param response Http响应对象
      * @param template 视图模板名称
      * @return 视图内容
      * @throws IOException      IO操作异常
@@ -242,8 +391,8 @@ public abstract class Webs {
     /**
      * 获取视图内容
      *
-     * @param request  HTTP请求对象
-     * @param response HTTP响应对象
+     * @param request  Http请求对象
+     * @param response Http响应对象
      * @param template 视图模板名称
      * @param context  渲染上下文数据
      * @return 视图内容
@@ -259,9 +408,41 @@ public abstract class Webs {
     }
 
     /**
-     * 向Http响应对象中写入文件
+     * 初始化文件响应头
      *
-     * @param response HTTP响应对象
+     * @param response Http响应对象
+     * @param name     文件名称
+     */
+    @Nonnull
+    public static void initializeFileResponseHeader(HttpServletResponse response, String name) {
+        try {
+            name = URLEncoder.encode(name, Strings.CHARSET_UTF8);
+            response.setContentType("application/octet-stream;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment;filename*=utf-8'zh_cn'" + name);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 响应字节数组
+     *
+     * @param response Http响应对象
+     * @param bytes    字节数组
+     * @throws IOException IO操作异常
+     */
+    @Nonnull
+    public static void write(HttpServletResponse response, byte[] bytes) throws IOException {
+        response.setHeader("Content-type", "text/plain;charset=UTF-8");
+        try (OutputStream os = response.getOutputStream()) {
+            os.write(bytes);
+        }
+    }
+
+    /**
+     * 响应文件
+     *
+     * @param response Http响应对象
      * @param file     文件对象
      * @throws IOException IO操作异常
      */
@@ -271,9 +452,9 @@ public abstract class Webs {
     }
 
     /**
-     * 向Http响应对象中写入文件
+     * 响应文件
      *
-     * @param response HTTP响应对象
+     * @param response Http响应对象
      * @param file     文件对象
      * @param name     文件名称
      * @throws IOException IO操作异常
@@ -287,19 +468,70 @@ public abstract class Webs {
     }
 
     /**
-     * 初始化文件响应头
+     * 响应字符串
      *
-     * @param response HTTP响应对象
-     * @param name     文件名称
+     * @param response Http响应对象
+     * @param value    字符串
+     * @throws IOException IO操作异常
      */
     @Nonnull
-    public static void initializeFileResponseHeader(HttpServletResponse response, String name) {
-        try {
-            name = new String(name.getBytes(), Strings.CHARSET_ISO_8859_1);
-            response.setContentType("application/octet-stream");
-            response.setHeader("Content-Disposition", "attachment; filename=" + name);
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
+    public static void write(HttpServletResponse response, String value) throws IOException {
+        response.setHeader("Content-type", "text/plain;charset=UTF-8");
+        try (OutputStream os = response.getOutputStream()) {
+            os.write(value.getBytes(Strings.CHARSET_UTF8));
+        }
+    }
+
+    /**
+     * 响应输入流
+     *
+     * @param response Http响应对象
+     * @param input    输入流
+     * @throws IOException IO操作异常
+     */
+    @Nonnull
+    public static void write(HttpServletResponse response, InputStream input) throws IOException {
+        response.setHeader("Content-type", "text/plain;charset=UTF-8");
+        try (OutputStream os = response.getOutputStream()) {
+            Streams.write(input, os);
+        }
+    }
+
+    /**
+     * 请求转发
+     *
+     * @param request  Http请求对象
+     * @param response Http响应对象
+     * @param path     转发路径
+     * @throws IOException      IO操作异常
+     * @throws ServletException Servlet操作异常
+     */
+    @Nonnull
+    public static void forward(HttpServletRequest request, HttpServletResponse response, String path)
+            throws IOException, ServletException {
+        String context = request.getContextPath();
+        if (context == null) {
+            request.getRequestDispatcher(path).forward(request, response);
+        } else {
+            request.getRequestDispatcher(context + path).forward(request, response);
+        }
+    }
+
+    /**
+     * 请求重定向
+     *
+     * @param request  Http请求对象
+     * @param response Http响应对象
+     * @param path     重定向路径
+     * @throws IOException IO操作异常
+     */
+    @Nonnull
+    public static void redirect(HttpServletRequest request, HttpServletResponse response, String path) throws IOException {
+        String context = request.getContextPath();
+        if (context == null) {
+            response.sendRedirect(path);
+        } else {
+            response.sendRedirect(context + path);
         }
     }
 

@@ -1,7 +1,10 @@
 package com.arsframework.util;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -13,6 +16,7 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.regex.Pattern;
 
 import com.arsframework.annotation.Min;
@@ -56,6 +60,41 @@ public abstract class Strings {
     public static final String HEX_SEQUENCE = "0123456789ABCDEF";
 
     /**
+     * 当前主机
+     */
+    public static final String LOCALHOST = "localhost";
+
+    /**
+     * 当前主机名称
+     */
+    public static final String LOCALHOST_NAME;
+
+    /**
+     * 当前主机地址
+     */
+    public static final String LOCALHOST_ADDRESS;
+
+    /**
+     * 默认当前主机地址
+     */
+    public static final String DEFAULT_LOCALHOST_ADDRESS = "127.0.0.1";
+
+    /**
+     * 根路径
+     */
+    public static final String ROOT_URI = "/";
+
+    /**
+     * 临时文件目录
+     */
+    public static final String TEMP_PATH = System.getProperty("java.io.tmpdir");
+
+    /**
+     * 当前文件目录
+     */
+    public static final String CURRENT_PATH = Strings.class.getResource("/").getPath();
+
+    /**
      * URL正则表达式匹配模式
      */
     public static final Pattern URL_PATTERN = Pattern.compile("http(s)?://([\\w-]+\\.)+[\\w-]+(/[\\w- ./?%&=]*)?");
@@ -81,11 +120,6 @@ public abstract class Strings {
     public static final Pattern NUMBER_PATTERN = Pattern.compile("-?(\\.?[0-9]+|[0-9]+\\.?[0-9]+|[0-9]+\\.?)");
 
     /**
-     * 当前文件目录
-     */
-    public static final String CURRENT_PATH = Strings.class.getResource("/").getPath();
-
-    /**
      * 数字/英文字符数组
      */
     public static final Character[] CHARS = new Character[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a',
@@ -96,6 +130,41 @@ public abstract class Strings {
      * 当前线程数字格式化对象
      */
     public static final ThreadLocal<DecimalFormat> DEFAULT_DECIMAL_FORMAT = ThreadLocal.withInitial(() -> new DecimalFormat("0.##"));
+
+    static {
+        long time = System.currentTimeMillis();
+        InetAddress localhost = null;
+        try {
+            localhost = InetAddress.getLocalHost();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        LOCALHOST_NAME = localhost == null ? null : localhost.getHostName();
+
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            LOCALHOST_ADDRESS = localhost == null ? DEFAULT_LOCALHOST_ADDRESS : localhost.getHostAddress();
+        } else {
+            String ip = null;
+            try {
+                Enumeration<NetworkInterface> enumeration = NetworkInterface.getNetworkInterfaces();
+                outer:
+                while (enumeration.hasMoreElements()) {
+                    NetworkInterface networks = enumeration.nextElement();
+                    Enumeration<InetAddress> addresses = networks.getInetAddresses();
+                    while (addresses.hasMoreElements()) {
+                        InetAddress address = addresses.nextElement();
+                        if (address.isSiteLocalAddress() && !address.isLoopbackAddress()
+                                && (ip = address.getHostAddress()).indexOf(':') == -1) {
+                            break outer;
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            LOCALHOST_ADDRESS = ip == null ? DEFAULT_LOCALHOST_ADDRESS : ip;
+        }
+    }
 
     /**
      * 将字符转换字节

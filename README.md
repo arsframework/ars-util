@@ -10,7 +10,7 @@ JDK1.8+
 <dependency>
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.4.5</version>
+    <version>1.4.6</version>
 </dependency>
 ```
 
@@ -101,4 +101,7 @@ JDK1.8+
 2. 优化```com.arsframework.util.Asserts```工具类
 
 ### v1.4.5
-2. 优化```com.arsframework.util.Strings```工具类
+1. 优化```com.arsframework.util.Strings```工具类
+
+### v1.4.6
+1. 优化```com.arsframework.util.Objects```、```com.arsframework.util.Strings```、```com.arsframework.util.Webs```工具类
