@@ -10,7 +10,7 @@ JDK1.8+
 <dependency>
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.4.4</version>
+    <version>1.4.5</version>
 </dependency>
 ```
 
@@ -99,3 +99,6 @@ JDK1.8+
 ### v1.4.4
 1. 更新```ars-annotation```包依赖
 2. 优化```com.arsframework.util.Asserts```工具类
+
+### v1.4.5
+2. 优化```com.arsframework.util.Strings```工具类

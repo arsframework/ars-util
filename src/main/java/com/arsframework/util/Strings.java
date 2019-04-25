@@ -115,9 +115,8 @@ public abstract class Strings {
      */
     @Nonnull
     public static byte[] hex2byte(String hex) {
-        int length = hex.length() / 2;
-        byte[] bytes = new byte[length];
-        for (int i = 0, pos = 0; i < length; i++, pos = i * 2) {
+        byte[] bytes = new byte[hex.length() / 2];
+        for (int i = 0, pos = 0; i < bytes.length; i++, pos = i * 2) {
             bytes[i] = (byte) (char2byte(hex.charAt(pos)) << 4 | char2byte(hex.charAt(pos + 1)));
         }
         return bytes;
@@ -154,8 +153,7 @@ public abstract class Strings {
         StringBuilder buffer = new StringBuilder();
         for (char c : chars) {
             String s = Integer.toHexString(c);
-            int offset = radix - s.length();
-            for (int i = 0; i < offset; i++) {
+            for (int i = 0, offset = radix - s.length(); i < offset; i++) {
                 buffer.append('0');
             }
             buffer.append(s);
@@ -172,9 +170,8 @@ public abstract class Strings {
      */
     @Nonnull
     public static char[] hex2char(String hex, @Min(1) int radix) {
-        int len = hex.length() / radix;
-        char[] chars = new char[len];
-        for (int i = 0; i < len; i++) {
+        char[] chars = new char[hex.length() / radix];
+        for (int i = 0; i < chars.length; i++) {
             chars[i] = (char) Integer.parseInt(hex.substring(i * radix, (i + 1) * radix), 16);
         }
         return chars;
@@ -224,30 +221,13 @@ public abstract class Strings {
     }
 
     /**
-     * 判断字符串是否为空格
-     *
-     * @param source 字符串
-     * @return true/false
-     */
-    public static boolean isSpace(CharSequence source) {
-        return !isEmpty(source) && isBlank(source);
-    }
-
-    /**
      * 判断字符串是否为空白
      *
      * @param source 字符串
      * @return true/false
      */
     public static boolean isBlank(CharSequence source) {
-        if (!isEmpty(source)) {
-            for (int i = 0, len = source.length(); i < len; i++) {
-                if (!Character.isWhitespace(source.charAt(i))) {
-                    return false;
-                }
-            }
-        }
-        return true;
+        return source == null || source.length() == 0 || source.toString().trim().isEmpty();
     }
 
     /**
