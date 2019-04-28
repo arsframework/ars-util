@@ -52,7 +52,7 @@ public abstract class Excels {
     private static final ThreadLocal<FormulaEvaluator> evaluator = new ThreadLocal<>();
 
     /**
-     * Excel文件格式枚举
+     * Excel格式枚举
      */
     public enum Type {
         /**
@@ -586,20 +586,14 @@ public abstract class Excels {
         }
 
         /**
-         * 根据单元格标签属性解析单元格列下标，解析单元格开始标签时调用
+         * 根据单元格标签属性解析单元格地址，解析单元格开始标签时调用
          *
          * @param attributes 标签属性对象
-         * @return 列下标数字
+         * @return 单元格地址
          */
         @Nonnull
-        protected int analyseCellColumn(Attributes attributes) {
-            StringBuilder column = new StringBuilder();
-            for (char c : attributes.getValue("r").toCharArray()) {
-                if (c >= 'A' && c <= 'Z') {
-                    column.append(c);
-                }
-            }
-            return columnAdapter(column.toString());
+        protected CellAddress analyseCellAddress(Attributes attributes) {
+            return addressAdapter(attributes.getValue("r"));
         }
 
         /**
@@ -693,7 +687,7 @@ public abstract class Excels {
                 this.value = Strings.EMPTY_STRING; // 清空过程数据
                 if ("c".equals(name)) { // 单元格开始标签
                     // 解析单元格所在列下标
-                    this.column = this.analyseCellColumn(attributes);
+                    this.column = this.analyseCellAddress(attributes).getColumn();
                     // 构建单元格并初始化单元格值类型
                     this.initializeCellType(this.buildCell(this.row, this.column), attributes);
                 }
@@ -749,8 +743,11 @@ public abstract class Excels {
      * @param column 列字母字符串
      * @return 列下标
      */
+    @Nonnull
     public static int columnAdapter(String column) {
-        Asserts.letter(column);
+        if (!Strings.isLetter(column)) {
+            throw new IllegalArgumentException("Invalid cell column: " + column);
+        }
         int basic = 1, number = 0;
         for (int i = column.toUpperCase().length() - 1; i >= 0; i--) {
             number += (Character.toUpperCase(column.charAt(i)) - 'A' + 1) * basic;
@@ -776,6 +773,56 @@ public abstract class Excels {
             column = (column - mod) / 26;
         } while (column-- > 0);
         return letter.reverse().toString();
+    }
+
+    /**
+     * 将单元格对象转换成单元格地址字符串形式
+     *
+     * @param cell 单元格对象
+     * @return 单元格地址字符串
+     */
+    @Nonnull
+    public static String addressAdapter(Cell cell) {
+        return addressAdapter(cell.getRowIndex(), cell.getColumnIndex());
+    }
+
+    /**
+     * 将单元格地址对象转换成字符串形式
+     *
+     * @param address 单元格地址对象
+     * @return 单元格地址字符串
+     */
+    @Nonnull
+    public static String addressAdapter(CellAddress address) {
+        return addressAdapter(address.getRow(), address.getColumn());
+    }
+
+    /**
+     * 将单元格地址对象转换成字符串形式
+     *
+     * @param row    单元格行下标
+     * @param column 单元格列下标
+     * @return 单元格地址字符串
+     */
+    public static String addressAdapter(@Min(0) int row, @Min(0) int column) {
+        return columnAdapter(column).concat(String.valueOf(row + 1));
+    }
+
+    /**
+     * 将单元格地址字符串转换成地址对象
+     *
+     * @param address 单元格地址字符串
+     * @return 单元格地址对象
+     */
+    @Nonnull
+    public static CellAddress addressAdapter(String address) {
+        for (int i = 0; i < address.length(); i++) {
+            char c = address.charAt(i);
+            if (c >= '1' && c <= '9') {
+                return new CellAddress(Integer.parseInt(address.substring(i)) - 1, columnAdapter(address.substring(0, i)));
+            }
+        }
+        throw new IllegalArgumentException("Invalid cell address: " + address);
     }
 
     /**
@@ -1176,38 +1223,235 @@ public abstract class Excels {
      * @param values 单元格值数组
      */
     public static void setValues(@Nonnull Row row, CellStyle style, @Nonnull Object... values) {
-        for (int i = 0; i < values.length; i++) {
-            setValue(row.createCell(i), style, values[i]);
+        if (values.length > 0) {
+            for (int i = 0; i < values.length; i++) {
+                setValue(row.createCell(i), style, values[i]);
+            }
         }
     }
 
     /**
-     * 设置Excel文件标题
+     * 设置Excel公式
      *
-     * @param sheet  Excel表格
-     * @param titles 标题数组
+     * @param row      Excel行
+     * @param formulas 公式数组
      */
-    public static void setTitles(Sheet sheet, String... titles) {
-        setTitles(sheet, 0, titles);
+    @Nonnull
+    public static void setFormulas(Row row, String... formulas) {
+        setFormulas(row, null, formulas);
     }
 
     /**
-     * 设置Excel文件标题
+     * 设置Excel公式
      *
-     * @param sheet  Excel表格
-     * @param index  标题行下标（从0开始）
+     * @param row      Excel行
+     * @param style    单元格样式
+     * @param formulas 公式数组
+     */
+    public static void setFormulas(@Nonnull Row row, CellStyle style, @Nonnull String... formulas) {
+        if (formulas.length > 0) {
+            for (int i = 0; i < formulas.length; i++) {
+                String formula = formulas[i];
+                if (!Strings.isBlank(formula)) {
+                    Cell cell = row.createCell(i);
+                    cell.setCellStyle(style);
+                    cell.setCellFormula(formula);
+                }
+            }
+        }
+    }
+
+    /**
+     * 设置Excel过滤器
+     *
+     * @param row Excel行
+     */
+    @Nonnull
+    public static void setFilters(Row row) {
+        row.getSheet().setAutoFilter(
+                new CellRangeAddress(row.getRowNum(), row.getRowNum(), row.getFirstCellNum(), row.getLastCellNum() - 1));
+    }
+
+    /**
+     * 构建标题样式
+     *
+     * @param workbook Excel工作薄
+     * @return 样式对象
+     */
+    @Nonnull
+    public static CellStyle buildTitleStyle(Workbook workbook) {
+        Font font = workbook.createFont();
+        font.setBold(true);
+        CellStyle style = workbook.createCellStyle();
+        style.setFont(font);
+        style.setAlignment(HorizontalAlignment.CENTER);
+        return style;
+    }
+
+    /**
+     * 设置Excel标题
+     *
+     * @param row    Excel行
      * @param titles 标题数组
      */
     @Nonnull
-    public static void setTitles(Sheet sheet, @Min(0) int index, String... titles) {
+    public static void setTitles(Row row, String... titles) {
         if (titles.length > 0) {
-            Workbook workbook = sheet.getWorkbook();
-            Font font = workbook.createFont();
-            font.setBold(true);
-            CellStyle style = workbook.createCellStyle();
-            style.setFont(font);
-            style.setAlignment(HorizontalAlignment.CENTER);
-            setValues(sheet.createRow(index), style, titles);
+            setValues(row, buildTitleStyle(row.getSheet().getWorkbook()), titles);
+        }
+    }
+
+    /**
+     * Excel单元格树
+     */
+    public static class Tree {
+        /**
+         * 单元格数量
+         */
+        public final int count;
+
+        /**
+         * 树宽度
+         */
+        public final int width;
+
+        /**
+         * 树高度
+         */
+        public final int height;
+
+        /**
+         * 行跨度
+         */
+        public final int rowspan;
+
+        /**
+         * 单元格值
+         */
+        public final Object value;
+
+        /**
+         * 单元格样式
+         */
+        public final CellStyle style;
+
+        /**
+         * 单元格子树数组
+         */
+        public final Tree[] children;
+
+        public Tree(Object value, CellStyle style, @Min(1) int rowspan, @Nonnull Tree... children) {
+            this.value = value;
+            this.style = style;
+            this.rowspan = rowspan;
+            this.children = children;
+            this.count = Arrays.stream(children).mapToInt(t -> t.count).sum() + 1;
+            this.width = children.length == 0 ? 1 : Arrays.stream(children).mapToInt(t -> t.width).sum();
+            this.height = children.length == 0 ? 1 : Arrays.stream(children).mapToInt(t -> t.height + 1).max().getAsInt();
+        }
+
+        @Override
+        public String toString() {
+            return this.value == null ? null : this.value.toString();
+        }
+    }
+
+    /**
+     * 构建单元格树
+     *
+     * @param value    单元格值
+     * @param children 单元格子树数组
+     * @return 单元格树对象
+     */
+    public static Tree T(Object value, Tree... children) {
+        return T(value, null, 1, children);
+    }
+
+    /**
+     * 转换标题
+     *
+     * @param value    单元格值
+     * @param rowspan  行跨度
+     * @param children 单元格子树数组
+     * @return 单元格树对象
+     */
+    public static Tree T(Object value, int rowspan, Tree... children) {
+        return T(value, null, rowspan, children);
+    }
+
+    /**
+     * 转换标题
+     *
+     * @param value    单元格值
+     * @param style    单元格样式
+     * @param children 单元格子树数组
+     * @return 单元格树对象
+     */
+    public static Tree T(Object value, CellStyle style, Tree... children) {
+        return T(value, style, 1, children);
+    }
+
+    /**
+     * 转换标题
+     *
+     * @param value    单元格值
+     * @param style    单元格样式
+     * @param rowspan  行跨度
+     * @param children 单元格子树数组
+     * @return 单元格树对象
+     */
+    public static Tree T(Object value, CellStyle style, int rowspan, Tree... children) {
+        return new Tree(value, style, rowspan, children);
+    }
+
+    /**
+     * 设置单元格树
+     *
+     * @param sheet Excel表
+     * @param trees 单元格树数组
+     */
+    public static void setTrees(Sheet sheet, Tree... trees) {
+        setTrees(sheet, 0, trees);
+    }
+
+    /**
+     * 设置单元格树
+     *
+     * @param sheet Excel表
+     * @param index 开始行下标（从0开始）
+     * @param trees 单元格树数组
+     */
+    public static void setTrees(Sheet sheet, int index, Tree... trees) {
+        setTrees(sheet, index, 0, new HashMap<>(), trees);
+    }
+
+    /**
+     * 设置单元格树
+     *
+     * @param sheet  Excel表
+     * @param index  开始行下标（从0开始）
+     * @param column 开始列下标（从0开始）
+     * @param cache  行对象缓存
+     * @param trees  单元格树数组
+     */
+    @Nonnull
+    private static void setTrees(Sheet sheet, @Min(0) int index, @Min(0) int column, Map<Integer, Row> cache, Tree... trees) {
+        if (trees.length > 0) {
+            Row row = cache.get(index);
+            if (row == null) {
+                row = sheet.createRow(index);
+                cache.put(index, row);
+            }
+            for (Tree tree : trees) {
+                setValue(row.createCell(column), tree.style, tree.value); // 设置单元格值
+                if (tree.width > 1 || tree.rowspan > 1) { // 合并单元格
+                    sheet.addMergedRegion(new CellRangeAddress(index, index + tree.rowspan - 1, column, column + tree.width - 1));
+                }
+                if (tree.children.length > 0) { // 遍历单元格子树
+                    setTrees(sheet, index + tree.rowspan, column, cache, tree.children);
+                }
+                column += tree.width;
+            }
         }
     }
 
@@ -1322,7 +1566,7 @@ public abstract class Excels {
     }
 
     /**
-     * 从Excel文件中获取对象实例
+     * 从Excel中获取对象实例
      *
      * @param <M>   数据类型
      * @param sheet Excel表格
@@ -1334,7 +1578,7 @@ public abstract class Excels {
     }
 
     /**
-     * 从Excel文件中获取对象实例
+     * 从Excel中获取对象实例
      *
      * @param <M>      数据类型
      * @param workbook Excel工作薄
@@ -1346,7 +1590,7 @@ public abstract class Excels {
     }
 
     /**
-     * 从Excel文件中获取对象实例
+     * 从Excel中获取对象实例
      *
      * @param <M>      数据类型
      * @param workbook Excel工作薄
@@ -1364,7 +1608,7 @@ public abstract class Excels {
     }
 
     /**
-     * 从Excel文件中获取对象实例
+     * 从Excel中获取对象实例
      *
      * @param <M>   数据类型
      * @param sheet Excel表格
@@ -1380,7 +1624,7 @@ public abstract class Excels {
     }
 
     /**
-     * 从Excel文件中获取对象实例
+     * 从Excel中获取对象实例
      *
      * @param <M>       数据类型
      * @param sheet     Excel表格
@@ -1399,7 +1643,7 @@ public abstract class Excels {
     }
 
     /**
-     * 读Excel文件
+     * 读Excel
      *
      * @param sheet  Excel表格
      * @param reader Excel读接口
@@ -1410,7 +1654,7 @@ public abstract class Excels {
     }
 
     /**
-     * 读Excel文件
+     * 读Excel
      *
      * @param workbook Excel工作薄
      * @param reader   Excel读接口
@@ -1421,7 +1665,7 @@ public abstract class Excels {
     }
 
     /**
-     * 读Excel文件
+     * 读Excel
      *
      * @param sheet  Excel表格
      * @param index  开始数据行下标（从0开始）
@@ -1436,7 +1680,7 @@ public abstract class Excels {
     }
 
     /**
-     * 读Excel文件
+     * 读Excel
      *
      * @param workbook Excel工作薄
      * @param index    开始数据行下标（从0开始）
@@ -1453,7 +1697,7 @@ public abstract class Excels {
     }
 
     /**
-     * 读Excel文件
+     * 读Excel
      *
      * @param sheet  Excel表格
      * @param index  开始数据行下标（从0开始）
@@ -1482,7 +1726,7 @@ public abstract class Excels {
     }
 
     /**
-     * 将对象实例设置到Excel文件中
+     * 将对象实例设置到Excel中
      *
      * @param sheet   Excel表格
      * @param objects 对象实例列表
@@ -1492,7 +1736,7 @@ public abstract class Excels {
     }
 
     /**
-     * 将对象实例设置到Excel文件中
+     * 将对象实例设置到Excel中
      *
      * @param workbook Excel工作薄
      * @param objects  对象实例列表
@@ -1502,7 +1746,7 @@ public abstract class Excels {
     }
 
     /**
-     * 将对象实例设置到Excel文件中
+     * 将对象实例设置到Excel中
      *
      * @param sheet   Excel表格
      * @param objects 对象实例列表
@@ -1514,7 +1758,7 @@ public abstract class Excels {
     }
 
     /**
-     * 将对象实例设置到Excel文件中
+     * 将对象实例设置到Excel中
      *
      * @param workbook Excel工作薄
      * @param objects  对象实例列表
@@ -1526,7 +1770,7 @@ public abstract class Excels {
     }
 
     /**
-     * 读Excel文件
+     * 读Excel
      *
      * @param <M>     数据类型
      * @param sheet   Excel表格
@@ -1538,7 +1782,7 @@ public abstract class Excels {
     }
 
     /**
-     * 读Excel文件
+     * 读Excel
      *
      * @param <M>      数据类型
      * @param workbook Excel工作薄
@@ -1550,7 +1794,7 @@ public abstract class Excels {
     }
 
     /**
-     * 读Excel文件
+     * 读Excel
      *
      * @param <M>     数据类型
      * @param sheet   Excel表格
@@ -1569,7 +1813,7 @@ public abstract class Excels {
     }
 
     /**
-     * 读Excel文件
+     * 读Excel
      *
      * @param <M>      数据类型
      * @param workbook Excel工作薄

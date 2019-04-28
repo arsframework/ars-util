@@ -10,7 +10,7 @@ JDK1.8+
 <dependency>
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.4.6</version>
+    <version>1.4.7</version>
 </dependency>
 ```
 
@@ -105,3 +105,7 @@ JDK1.8+
 
 ### v1.4.6
 1. 优化```com.arsframework.util.Objects```、```com.arsframework.util.Strings```、```com.arsframework.util.Webs```工具类
+
+### v1.4.7
+1. 移除```com.arsframework.util.Objects.Adapter```接口
+2. 完善及优化```com.arsframework.util.Excels```工具类功能

@@ -47,19 +47,6 @@ public abstract class Objects {
     public static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
 
     /**
-     * 对象适配接口
-     */
-    public interface Adapter {
-        /**
-         * 对象适配
-         *
-         * @param object 适配源对象
-         * @return 适配目标对象
-         */
-        Object adaption(Object object);
-    }
-
-    /**
      * 类字段访问接口
      */
     public interface FieldAccessor {
