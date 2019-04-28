@@ -901,6 +901,33 @@ public abstract class Excels {
     }
 
     /**
+     * 构建Excel表
+     *
+     * @param workbook Excel工作薄
+     * @param titles   表格标题数组
+     * @return Excel表对象
+     */
+    public static Sheet buildSheet(Workbook workbook, String... titles) {
+        return buildSheet(workbook, null, titles);
+    }
+
+    /**
+     * 构建Excel表
+     *
+     * @param workbook Excel工作薄
+     * @param name     表名称
+     * @param titles   表标题数组
+     * @return Excel表对象
+     */
+    public static Sheet buildSheet(@Nonnull Workbook workbook, String name, @Nonnull String... titles) {
+        Sheet sheet = Strings.isEmpty(name) ? workbook.createSheet() : workbook.createSheet(name);
+        if (titles.length > 0) {
+            setTitles(sheet.createRow(0), titles);
+        }
+        return sheet;
+    }
+
+    /**
      * 构建默认读写器
      *
      * @param workbook Excel工作薄

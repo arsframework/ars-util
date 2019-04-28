@@ -10,7 +10,7 @@ JDK1.8+
 <dependency>
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.4.7</version>
+    <version>1.4.8</version>
 </dependency>
 ```
 
@@ -109,3 +109,6 @@ JDK1.8+
 ### v1.4.7
 1. 移除```com.arsframework.util.Objects.Adapter```接口
 2. 完善及优化```com.arsframework.util.Excels```工具类功能
+
+### v1.4.8
+1. 在```com.arsframework.util.Excels```工具类中新增```buildSheet```静态方法
