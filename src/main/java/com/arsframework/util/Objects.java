@@ -47,50 +47,50 @@ public abstract class Objects {
     public static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
 
     /**
-     * 类字段访问接口
+     * 字段访问接口
      */
-    public interface FieldAccessor {
+    public interface Accessor {
         /**
          * 字段访问
          *
          * @param field 字段对象
-         * @param index 字段序数
+         * @param index 访问序数
          */
         void access(Field field, int index);
     }
 
     /**
-     * 类字段访问中断接口
+     * 字段访问中断接口
      */
-    public interface FieldAccessBreaker {
+    public interface AccessBreaker {
         /**
-         * 是否已中断字段访问
+         * 判断是否已中断访问
          *
          * @param field 字段对象
-         * @param index 字段序数
+         * @param index 访问序数
          * @return true/false
          */
         boolean isBroken(Field field, int index);
     }
 
     /**
-     * 类及父类实例字段遍历
+     * 类及父类实例字段访问
      *
      * @param clazz    对象类型
-     * @param accessor 字段访问接口
+     * @param accessor 访问接口
      */
-    public static void foreach(Class<?> clazz, FieldAccessor accessor) {
-        foreach(clazz, accessor, null);
+    public static void access(Class<?> clazz, Accessor accessor) {
+        access(clazz, accessor, null);
     }
 
     /**
-     * 类及父类实例字段遍历
+     * 类及父类实例字段访问
      *
      * @param clazz    对象类型
-     * @param accessor 字段访问接口
-     * @param breaker  字段访问中断接口
+     * @param accessor 访问接口
+     * @param breaker  访问中断接口
      */
-    public static void foreach(@Nonnull Class<?> clazz, @Nonnull FieldAccessor accessor, FieldAccessBreaker breaker) {
+    public static void access(@Nonnull Class<?> clazz, @Nonnull Accessor accessor, AccessBreaker breaker) {
         int index = 0;
         boolean broken = false;
         do {
@@ -221,8 +221,8 @@ public abstract class Objects {
      */
     @Nonnull
     public static Field[] getFields(Class<?> clazz) {
-        List<Field> fields = new LinkedList<>();
-        foreach(clazz, (field, i) -> fields.add(field));
+        List<AccessibleObject> fields = new LinkedList<>();
+        access(clazz, (field, i) -> fields.add(field));
         return fields.toArray(EMPTY_FIELD_ARRAY);
     }
 
@@ -235,16 +235,16 @@ public abstract class Objects {
     @Nonnull
     public static String[] getProperties(Class<?> clazz) {
         List<String> properties = new LinkedList<>();
-        foreach(clazz, (field, i) -> properties.add(field.getName()));
+        access(clazz, (field, i) -> properties.add(field.getName()));
         return properties.toArray(Strings.EMPTY_ARRAY);
     }
 
     /**
-     * 获取对象指定字段的值
+     * 获取字段值
      *
      * @param object 对象实例
      * @param field  字段对象
-     * @return 字段值
+     * @return 值对象
      */
     @Nonnull
     public static Object getValue(Object object, Field field) {
@@ -284,7 +284,7 @@ public abstract class Objects {
     @Nonnull
     public static Map<String, Object> getValues(Object object) {
         Map<String, Object> values = new LinkedHashMap<>();
-        foreach(object.getClass(), (field, i) -> values.put(field.getName(), getValue(object, field)));
+        access(object.getClass(), (field, i) -> values.put(field.getName(), getValue(object, field)));
         return values;
     }
 
@@ -326,7 +326,7 @@ public abstract class Objects {
     @Nonnull
     public static void setValues(Object object, Map<String, ?> values) {
         if (!values.isEmpty()) {
-            foreach(object.getClass(), (field, i) -> {
+            access(object.getClass(), (field, i) -> {
                 if (values.containsKey(field.getName())) {
                     setValue(object, field, values.get(field.getName()));
                 }
@@ -342,7 +342,7 @@ public abstract class Objects {
      */
     public static void setValues(Object object, Object... values) {
         if (values.length > 0) {
-            foreach(object.getClass(), (field, i) -> setValue(object, field, values[i]), (field, i) -> i >= values.length);
+            access(object.getClass(), (field, i) -> setValue(object, field, values[i]), (field, i) -> i >= values.length);
         }
     }
 
@@ -385,7 +385,7 @@ public abstract class Objects {
      */
     @Nonnull
     public static <T> void copy(T source, T target) {
-        foreach(source.getClass(), (field, i) -> setValue(target, field, getValue(source, field)));
+        access(source.getClass(), (field, i) -> setValue(target, field, getValue(source, field)));
     }
 
     /**
@@ -851,7 +851,7 @@ public abstract class Objects {
     @Nonnull
     public static <T> Map<String, Object[]> difference(T object, T other) {
         Map<String, Object[]> difference = new LinkedHashMap<>();
-        foreach(object.getClass(), (field, i) -> {
+        access(object.getClass(), (field, i) -> {
             Object value1 = getValue(object, field);
             Object value2 = getValue(other, field);
             if (!equal(value1, value2)) {

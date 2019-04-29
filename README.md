@@ -10,7 +10,7 @@ JDK1.8+
 <dependency>
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.4.8</version>
+    <version>1.4.9</version>
 </dependency>
 ```
 
@@ -112,3 +112,6 @@ JDK1.8+
 
 ### v1.4.8
 1. 在```com.arsframework.util.Excels```工具类中新增```buildSheet```静态方法
+
+### v1.4.9
+1. 完善及优化```com.arsframework.util.Excels```工具类功能

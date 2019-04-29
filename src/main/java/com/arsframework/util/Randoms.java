@@ -134,7 +134,7 @@ public abstract class Randoms {
             return (T) randomString();
         } else if (level < depth && !type.isArray() && !Collection.class.isAssignableFrom(type)) {
             T object = Objects.initialize(type);
-            Objects.foreach(type, (field, i) -> Objects.setValue(object, field, generator == null ?
+            Objects.access(type, (field, i) -> Objects.setValue(object, field, generator == null ?
                     random(field.getType(), depth, level + 1, null) : generator.generate(field, i, level + 1)));
             return object;
         }

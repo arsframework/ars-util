@@ -1006,7 +1006,7 @@ public abstract class Excels {
      */
     @Nonnull
     public static void copy(Row source, Row target) {
-        for (int i = source.getFirstCellNum(); i < source.getLastCellNum(); i++) {
+        for (int i = source.getFirstCellNum(), len = source.getLastCellNum(); i < len; i++) {
             Cell cell = source.getCell(i);
             if (cell != null) {
                 copy(cell, target.createCell(i));
@@ -1038,7 +1038,7 @@ public abstract class Excels {
      */
     public static boolean isEmpty(Row row) {
         if (row != null) {
-            for (int i = row.getFirstCellNum(); i < row.getLastCellNum(); i++) {
+            for (int i = row.getFirstCellNum(), len = row.getLastCellNum(); i < len; i++) {
                 Object value = getValue(row.getCell(i));
                 if (value != null && (!(value instanceof CharSequence) || !Strings.isBlank((CharSequence) value))) {
                     return false;
@@ -1253,6 +1253,70 @@ public abstract class Excels {
         if (values.length > 0) {
             for (int i = 0; i < values.length; i++) {
                 setValue(row.createCell(i), style, values[i]);
+            }
+        }
+    }
+
+    /**
+     * 添加Excel单元格值
+     *
+     * @param row    Excel行对象
+     * @param values 单元格值数组
+     */
+    @Nonnull
+    public static void appendValues(Row row, Object... values) {
+        appendValues(row, null, values);
+    }
+
+    /**
+     * 添加Excel单元格值
+     *
+     * @param row    Excel行对象
+     * @param style  单元格样式
+     * @param values 单元格值数组
+     */
+    public static void appendValues(@Nonnull Row row, CellStyle style, @Nonnull Object... values) {
+        if (values.length > 0) {
+            int i = row.getLastCellNum();
+            for (Object value : values) {
+                setValue(row.createCell(i++), style, value);
+            }
+        }
+    }
+
+    /**
+     * 插入Excel单元格值
+     *
+     * @param row    Excel行对象
+     * @param index  插入下标
+     * @param values 单元格值数组
+     */
+    @Nonnull
+    public static void insertValues(Row row, int index, Object... values) {
+        insertValues(row, index, null, values);
+    }
+
+    /**
+     * 插入Excel单元格值
+     *
+     * @param row    Excel行对象
+     * @param index  插入下标
+     * @param style  单元格样式
+     * @param values 单元格值数组
+     */
+    public static void insertValues(@Nonnull Row row, int index, CellStyle style, @Nonnull Object... values) {
+        if (values.length > 0) {
+            int len = row.getLastCellNum();
+            if (index < 0) {
+                index = (Math.abs(index) > len ? index % len : index) + len;
+            }
+            // 移动单元格
+            for (int i = len - 1; i >= index; i--) {
+                copy(row.getCell(i), row.createCell(i + values.length));
+            }
+            // 设置插入值
+            for (Object value : values) {
+                setValue(row.createCell(index++), style, value);
             }
         }
     }
@@ -1748,7 +1812,7 @@ public abstract class Excels {
      */
     public static void write(@Nonnull Row row, Object object) {
         if (object != null) {
-            Objects.foreach(object.getClass(), (field, i) -> setValue(row.createCell(i), Objects.getValue(object, field)));
+            Objects.access(object.getClass(), (field, i) -> setValue(row.createCell(i), Objects.getValue(object, field)));
         }
     }
 
@@ -1797,7 +1861,7 @@ public abstract class Excels {
     }
 
     /**
-     * 读Excel
+     * 将对象实例写入到Excel中
      *
      * @param <M>     数据类型
      * @param sheet   Excel表格
@@ -1809,7 +1873,7 @@ public abstract class Excels {
     }
 
     /**
-     * 读Excel
+     * 将对象实例写入到Excel中
      *
      * @param <M>      数据类型
      * @param workbook Excel工作薄
@@ -1821,7 +1885,7 @@ public abstract class Excels {
     }
 
     /**
-     * 读Excel
+     * 将对象实例写入到Excel中
      *
      * @param <M>     数据类型
      * @param sheet   Excel表格
@@ -1840,7 +1904,7 @@ public abstract class Excels {
     }
 
     /**
-     * 读Excel
+     * 将对象实例写入到Excel中
      *
      * @param <M>      数据类型
      * @param workbook Excel工作薄
