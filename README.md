@@ -10,7 +10,7 @@ JDK1.8+
 <dependency>
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.4.9</version>
+    <version>1.5.0</version>
 </dependency>
 ```
 
@@ -115,3 +115,7 @@ JDK1.8+
 
 ### v1.4.9
 1. 完善及优化```com.arsframework.util.Excels```工具类功能
+
+### v1.5.0
+1. 修复```Excel```错误类型数据读取问题
+2. 完善```Excel```树型数据写入以及单元格公式的读写支持

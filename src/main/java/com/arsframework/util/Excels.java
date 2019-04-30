@@ -78,6 +78,238 @@ public abstract class Excels {
     }
 
     /**
+     * Excel单元格树
+     */
+    public static class Tree {
+        /**
+         * 单元格数量
+         */
+        public final int count;
+
+        /**
+         * 树宽度
+         */
+        public final int width;
+
+        /**
+         * 树高度
+         */
+        public final int height;
+
+        /**
+         * 行跨度
+         */
+        public final int rowspan;
+
+        /**
+         * 单元格值
+         */
+        public final Object value;
+
+        /**
+         * 单元格样式
+         */
+        public final CellStyle style;
+
+        /**
+         * 单元格子树数组
+         */
+        public final Tree[] children;
+
+        public Tree(Object value, CellStyle style, @Min(1) int rowspan, @Nonnull Tree... children) {
+            this.value = value;
+            this.style = style;
+            this.rowspan = rowspan;
+            this.children = children;
+            this.count = Arrays.stream(children).mapToInt(t -> t.count).sum() + 1;
+            this.width = children.length == 0 ? 1 : Arrays.stream(children).mapToInt(t -> t.width).sum();
+            this.height = children.length == 0 ? 1 : Arrays.stream(children).mapToInt(t -> t.height + 1).max().getAsInt();
+        }
+
+        @Override
+        public String toString() {
+            return this.value == null ? null : this.value.toString();
+        }
+
+        /**
+         * 构建单元格树
+         *
+         * @param value    单元格值
+         * @param children 单元格子树数组
+         * @return 单元格树对象
+         */
+        public static Tree of(Object value, Tree... children) {
+            return of(value, null, 1, children);
+        }
+
+        /**
+         * 构建单元格树
+         *
+         * @param value    单元格值
+         * @param rowspan  行跨度
+         * @param children 单元格子树数组
+         * @return 单元格树对象
+         */
+        public static Tree of(Object value, int rowspan, Tree... children) {
+            return of(value, null, rowspan, children);
+        }
+
+        /**
+         * 构建单元格树
+         *
+         * @param value    单元格值
+         * @param style    单元格样式
+         * @param children 单元格子树数组
+         * @return 单元格树对象
+         */
+        public static Tree of(Object value, CellStyle style, Tree... children) {
+            return of(value, style, 1, children);
+        }
+
+        /**
+         * 构建单元格树
+         *
+         * @param value    单元格值
+         * @param style    单元格样式
+         * @param rowspan  行跨度
+         * @param children 单元格子树数组
+         * @return 单元格树对象
+         */
+        public static Tree of(Object value, CellStyle style, int rowspan, Tree... children) {
+            return new Tree(value, style, rowspan, children);
+        }
+    }
+
+    /**
+     * Excel公式对象
+     */
+    public static class Formula {
+        /**
+         * 求和函数名称
+         */
+        public static final String SUM = "SUM";
+
+        /**
+         * 最大值函数名称
+         */
+        public static final String MAX = "MAX";
+
+        /**
+         * 最小值函数名称
+         */
+        public static final String MIN = "MIN";
+
+        /**
+         * 计数函数名称
+         */
+        public static final String COUNT = "COUNT";
+
+        /**
+         * 求平均值函数名称
+         */
+        public static final String AVERAGE = "AVERAGE";
+
+        /**
+         * 公式值
+         */
+        public final String value;
+
+        @Nonnull
+        public Formula(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(this.value);
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return other != null && other.getClass() == Formula.class && this.value.equals(((Formula) other).value);
+        }
+
+        @Override
+        public String toString() {
+            return this.value;
+        }
+
+        /**
+         * 构建公式对象
+         *
+         * @param value 公式值
+         * @return 公式对象
+         */
+        public static Formula of(String value) {
+            return new Formula(value);
+        }
+
+        /**
+         * 构建公式表达式
+         *
+         * @param function 公式函数名称
+         * @param address  公式计算单元格范围地址
+         * @return 公式对象
+         */
+        @Nonnull
+        public static Formula build(String function, CellRangeAddress address) {
+            String start = addressAdapter(address.getFirstRow(), address.getFirstColumn());
+            String end = addressAdapter(address.getLastRow(), address.getLastColumn());
+            return new Formula(new StringBuilder(function).append('(').append(start).append(':').append(end).append(')').toString());
+        }
+
+        /**
+         * 构建求和公式
+         *
+         * @param address 计算单元格范围地址
+         * @return 公式对象
+         */
+        public static Formula sum(CellRangeAddress address) {
+            return build(SUM, address);
+        }
+
+        /**
+         * 构建求最大值公式
+         *
+         * @param address 计算单元格范围地址
+         * @return 公式对象
+         */
+        public static Formula max(CellRangeAddress address) {
+            return build(MAX, address);
+        }
+
+        /**
+         * 构建求最小值公式
+         *
+         * @param address 计算单元格范围地址
+         * @return 公式对象
+         */
+        public static Formula min(CellRangeAddress address) {
+            return build(MIN, address);
+        }
+
+        /**
+         * 构建求数量公式
+         *
+         * @param address 计算单元格范围地址
+         * @return 公式对象
+         */
+        public static Formula count(CellRangeAddress address) {
+            return build(COUNT, address);
+        }
+
+        /**
+         * 构建求平均值公式
+         *
+         * @param address 计算单元格范围地址
+         * @return 公式对象
+         */
+        public static Formula average(CellRangeAddress address) {
+            return build(AVERAGE, address);
+        }
+    }
+
+    /**
      * Excel读接口
      */
     public interface Reader {
@@ -156,6 +388,11 @@ public abstract class Excels {
          * 行下标（从0开始）
          */
         private int index;
+
+        /**
+         * 样式
+         */
+        private CellStyle style;
 
         /**
          * 单元格列下标列表（从小到大排序）
@@ -272,12 +509,12 @@ public abstract class Excels {
 
         @Override
         public CellStyle getRowStyle() {
-            throw new UnsupportedOperationException();
+            return this.style;
         }
 
         @Override
         public void setRowStyle(CellStyle cellStyle) {
-            throw new UnsupportedOperationException();
+            this.style = cellStyle;
         }
 
         @Override
@@ -338,10 +575,13 @@ public abstract class Excels {
         private int column;
         private Object value;
         private CellType type;
+        private CellStyle style;
+        private CellAddress address;
 
         public XMLCell(@Nonnull Row row, @Min(0) int column) {
             this.row = row;
             this.column = column;
+            this.address = new CellAddress(row.getRowNum(), column);
         }
 
         @Override
@@ -466,11 +706,12 @@ public abstract class Excels {
 
         @Override
         public void setCellStyle(CellStyle cellStyle) {
+            this.style = cellStyle;
         }
 
         @Override
         public CellStyle getCellStyle() {
-            return null;
+            return this.style;
         }
 
         @Override
@@ -480,7 +721,7 @@ public abstract class Excels {
 
         @Override
         public CellAddress getAddress() {
-            throw new UnsupportedOperationException();
+            return this.address;
         }
 
         @Override
@@ -995,7 +1236,12 @@ public abstract class Excels {
      */
     @Nonnull
     public static void copy(Cell source, Cell target) {
-        setValue(target, source.getCellStyle(), getValue(source));
+        if (source.getCellType() == CellType.FORMULA) {
+            target.setCellStyle(source.getCellStyle());
+            target.setCellFormula(source.getCellFormula());
+        } else {
+            setValue(target, source.getCellStyle(), getValue(source));
+        }
     }
 
     /**
@@ -1080,7 +1326,7 @@ public abstract class Excels {
             }
             return Strings.trim(value.getStringValue());
         } else if (type == CellType.ERROR) {
-            return FormulaError.forInt(cell.getErrorCellValue());
+            return FormulaError.forInt(cell.getErrorCellValue()).getString();
         }
         return Strings.trim(cell.getStringCellValue());
     }
@@ -1205,6 +1451,8 @@ public abstract class Excels {
                 cell.setCellValue(((Number) value).doubleValue());
             } else if (value instanceof Boolean) {
                 cell.setCellValue((Boolean) value);
+            } else if (value instanceof Formula) {
+                cell.setCellFormula(((Formula) value).value);
             } else if (value instanceof int[]) {
                 cell.setCellValue(Strings.join(Arrays.asList((int[]) value), ","));
             } else if (value instanceof char[]) {
@@ -1322,32 +1570,52 @@ public abstract class Excels {
     }
 
     /**
-     * 设置Excel公式
+     * 设置单元格树
      *
-     * @param row      Excel行
-     * @param formulas 公式数组
+     * @param sheet Excel表
+     * @param trees 单元格树数组
      */
-    @Nonnull
-    public static void setFormulas(Row row, String... formulas) {
-        setFormulas(row, null, formulas);
+    public static void setValues(Sheet sheet, Tree... trees) {
+        setValues(sheet, 0, trees);
     }
 
     /**
-     * 设置Excel公式
+     * 设置单元格树
      *
-     * @param row      Excel行
-     * @param style    单元格样式
-     * @param formulas 公式数组
+     * @param sheet Excel表
+     * @param index 开始行下标（从0开始）
+     * @param trees 单元格树数组
      */
-    public static void setFormulas(@Nonnull Row row, CellStyle style, @Nonnull String... formulas) {
-        if (formulas.length > 0) {
-            for (int i = 0; i < formulas.length; i++) {
-                String formula = formulas[i];
-                if (!Strings.isBlank(formula)) {
-                    Cell cell = row.createCell(i);
-                    cell.setCellStyle(style);
-                    cell.setCellFormula(formula);
+    public static void setValues(Sheet sheet, int index, Tree... trees) {
+        setValues(sheet, index, 0, new HashMap<>(), trees);
+    }
+
+    /**
+     * 设置单元格树
+     *
+     * @param sheet  Excel表
+     * @param index  开始行下标（从0开始）
+     * @param column 开始列下标（从0开始）
+     * @param cache  行对象缓存
+     * @param trees  单元格树数组
+     */
+    @Nonnull
+    private static void setValues(Sheet sheet, @Min(0) int index, @Min(0) int column, Map<Integer, Row> cache, Tree... trees) {
+        if (trees.length > 0) {
+            Row row = cache.get(index);
+            if (row == null) {
+                row = sheet.createRow(index);
+                cache.put(index, row);
+            }
+            for (Tree tree : trees) {
+                setValue(row.createCell(column), tree.style, tree.value); // 设置单元格值
+                if (tree.width > 1 || tree.rowspan > 1) { // 合并单元格
+                    sheet.addMergedRegion(new CellRangeAddress(index, index + tree.rowspan - 1, column, column + tree.width - 1));
                 }
+                if (tree.children.length > 0) { // 遍历单元格子树
+                    setValues(sheet, index + tree.rowspan, column, cache, tree.children);
+                }
+                column += tree.width;
             }
         }
     }
@@ -1355,12 +1623,15 @@ public abstract class Excels {
     /**
      * 设置Excel过滤器
      *
-     * @param row Excel行
+     * @param sheet Excel表格
+     * @param index 行下标
      */
     @Nonnull
-    public static void setFilters(Row row) {
-        row.getSheet().setAutoFilter(
-                new CellRangeAddress(row.getRowNum(), row.getRowNum(), row.getFirstCellNum(), row.getLastCellNum() - 1));
+    public static void setFilters(Sheet sheet, @Min(0) int index) {
+        Row row = sheet.getRow(index);
+        if (row != null) {
+            sheet.setAutoFilter(new CellRangeAddress(index, index, row.getFirstCellNum(), row.getLastCellNum() - 1));
+        }
     }
 
     /**
@@ -1389,160 +1660,6 @@ public abstract class Excels {
     public static void setTitles(Row row, String... titles) {
         if (titles.length > 0) {
             setValues(row, buildTitleStyle(row.getSheet().getWorkbook()), titles);
-        }
-    }
-
-    /**
-     * Excel单元格树
-     */
-    public static class Tree {
-        /**
-         * 单元格数量
-         */
-        public final int count;
-
-        /**
-         * 树宽度
-         */
-        public final int width;
-
-        /**
-         * 树高度
-         */
-        public final int height;
-
-        /**
-         * 行跨度
-         */
-        public final int rowspan;
-
-        /**
-         * 单元格值
-         */
-        public final Object value;
-
-        /**
-         * 单元格样式
-         */
-        public final CellStyle style;
-
-        /**
-         * 单元格子树数组
-         */
-        public final Tree[] children;
-
-        public Tree(Object value, CellStyle style, @Min(1) int rowspan, @Nonnull Tree... children) {
-            this.value = value;
-            this.style = style;
-            this.rowspan = rowspan;
-            this.children = children;
-            this.count = Arrays.stream(children).mapToInt(t -> t.count).sum() + 1;
-            this.width = children.length == 0 ? 1 : Arrays.stream(children).mapToInt(t -> t.width).sum();
-            this.height = children.length == 0 ? 1 : Arrays.stream(children).mapToInt(t -> t.height + 1).max().getAsInt();
-        }
-
-        @Override
-        public String toString() {
-            return this.value == null ? null : this.value.toString();
-        }
-    }
-
-    /**
-     * 构建单元格树
-     *
-     * @param value    单元格值
-     * @param children 单元格子树数组
-     * @return 单元格树对象
-     */
-    public static Tree T(Object value, Tree... children) {
-        return T(value, null, 1, children);
-    }
-
-    /**
-     * 转换标题
-     *
-     * @param value    单元格值
-     * @param rowspan  行跨度
-     * @param children 单元格子树数组
-     * @return 单元格树对象
-     */
-    public static Tree T(Object value, int rowspan, Tree... children) {
-        return T(value, null, rowspan, children);
-    }
-
-    /**
-     * 转换标题
-     *
-     * @param value    单元格值
-     * @param style    单元格样式
-     * @param children 单元格子树数组
-     * @return 单元格树对象
-     */
-    public static Tree T(Object value, CellStyle style, Tree... children) {
-        return T(value, style, 1, children);
-    }
-
-    /**
-     * 转换标题
-     *
-     * @param value    单元格值
-     * @param style    单元格样式
-     * @param rowspan  行跨度
-     * @param children 单元格子树数组
-     * @return 单元格树对象
-     */
-    public static Tree T(Object value, CellStyle style, int rowspan, Tree... children) {
-        return new Tree(value, style, rowspan, children);
-    }
-
-    /**
-     * 设置单元格树
-     *
-     * @param sheet Excel表
-     * @param trees 单元格树数组
-     */
-    public static void setTrees(Sheet sheet, Tree... trees) {
-        setTrees(sheet, 0, trees);
-    }
-
-    /**
-     * 设置单元格树
-     *
-     * @param sheet Excel表
-     * @param index 开始行下标（从0开始）
-     * @param trees 单元格树数组
-     */
-    public static void setTrees(Sheet sheet, int index, Tree... trees) {
-        setTrees(sheet, index, 0, new HashMap<>(), trees);
-    }
-
-    /**
-     * 设置单元格树
-     *
-     * @param sheet  Excel表
-     * @param index  开始行下标（从0开始）
-     * @param column 开始列下标（从0开始）
-     * @param cache  行对象缓存
-     * @param trees  单元格树数组
-     */
-    @Nonnull
-    private static void setTrees(Sheet sheet, @Min(0) int index, @Min(0) int column, Map<Integer, Row> cache, Tree... trees) {
-        if (trees.length > 0) {
-            Row row = cache.get(index);
-            if (row == null) {
-                row = sheet.createRow(index);
-                cache.put(index, row);
-            }
-            for (Tree tree : trees) {
-                setValue(row.createCell(column), tree.style, tree.value); // 设置单元格值
-                if (tree.width > 1 || tree.rowspan > 1) { // 合并单元格
-                    sheet.addMergedRegion(new CellRangeAddress(index, index + tree.rowspan - 1, column, column + tree.width - 1));
-                }
-                if (tree.children.length > 0) { // 遍历单元格子树
-                    setTrees(sheet, index + tree.rowspan, column, cache, tree.children);
-                }
-                column += tree.width;
-            }
         }
     }
 
