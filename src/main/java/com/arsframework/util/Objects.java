@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.List;
 import java.util.Date;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Collection;
@@ -31,11 +32,6 @@ import com.arsframework.annotation.Nonnull;
  * @author yongqiang.wu
  */
 public abstract class Objects {
-    /**
-     * 空字节数组
-     */
-    public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
-
     /**
      * 空字段数组
      */
@@ -817,6 +813,89 @@ public abstract class Objects {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * 将对象转换成数组
+     *
+     * @param object 被转换对象
+     * @return 数组对象
+     */
+    public static Object[] toArray(Object object) {
+        if (object instanceof int[]) {
+            int[] src = (int[]) object;
+            Integer[] dest = new Integer[src.length];
+            for (int i = 0; i < src.length; i++) {
+                dest[i] = src[i];
+            }
+            return dest;
+        } else if (object instanceof short[]) {
+            short[] src = (short[]) object;
+            Short[] dest = new Short[src.length];
+            for (int i = 0; i < src.length; i++) {
+                dest[i] = src[i];
+            }
+            return dest;
+        } else if (object instanceof float[]) {
+            float[] src = (float[]) object;
+            Float[] dest = new Float[src.length];
+            for (int i = 0; i < src.length; i++) {
+                dest[i] = src[i];
+            }
+            return dest;
+        } else if (object instanceof long[]) {
+            long[] src = (long[]) object;
+            Long[] dest = new Long[src.length];
+            for (int i = 0; i < src.length; i++) {
+                dest[i] = src[i];
+            }
+            return dest;
+        } else if (object instanceof double[]) {
+            double[] src = (double[]) object;
+            Double[] dest = new Double[src.length];
+            for (int i = 0; i < src.length; i++) {
+                dest[i] = src[i];
+            }
+            return dest;
+        } else if (object instanceof char[]) {
+            char[] src = (char[]) object;
+            Character[] dest = new Character[src.length];
+            for (int i = 0; i < src.length; i++) {
+                dest[i] = src[i];
+            }
+            return dest;
+        } else if (object instanceof byte[]) {
+            byte[] src = (byte[]) object;
+            Byte[] dest = new Byte[src.length];
+            for (int i = 0; i < src.length; i++) {
+                dest[i] = src[i];
+            }
+            return dest;
+        } else if (object instanceof boolean[]) {
+            boolean[] src = (boolean[]) object;
+            Boolean[] dest = new Boolean[src.length];
+            for (int i = 0; i < src.length; i++) {
+                dest[i] = src[i];
+            }
+            return dest;
+        } else if (object instanceof Object[]) {
+            return (Object[]) object;
+        } else if (object instanceof Collection) {
+            return ((Collection) object).toArray();
+        }
+        Object[] array = (Object[]) Array.newInstance(object == null ? Object.class : object.getClass(), 1);
+        array[0] = object;
+        return array;
+    }
+
+    /**
+     * 将对象转换成集合
+     *
+     * @param object 被转换对象
+     * @return 集合对象
+     */
+    public static Collection<?> toCollection(Object object) {
+        return object instanceof Collection ? (Collection) object : Arrays.asList(toArray(object));
     }
 
     /**

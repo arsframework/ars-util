@@ -54,16 +54,18 @@ public abstract class Files {
      */
     @Nonnull
     public static void copy(File source, File target) throws IOException {
-        if (source.isDirectory()) {
-            File path = new File(target, source.getName());
-            if (!path.exists()) {
-                path.mkdirs();
+        if (!source.equals(target)) {
+            if (source.isDirectory()) {
+                File path = new File(target, source.getName());
+                if (!path.exists()) {
+                    path.mkdirs();
+                }
+                for (File child : source.listFiles()) {
+                    copy(child, path);
+                }
+            } else {
+                Streams.write(source, new File(target, source.getName()));
             }
-            for (File child : source.listFiles()) {
-                copy(child, path);
-            }
-        } else {
-            Streams.write(source, new File(target, source.getName()));
         }
     }
 
@@ -75,17 +77,19 @@ public abstract class Files {
      */
     @Nonnull
     public static void move(File source, File target) {
-        if (source.isDirectory()) {
-            File path = new File(target, source.getName());
-            if (!path.exists()) {
-                path.mkdirs();
+        if (!source.equals(target)) {
+            if (source.isDirectory()) {
+                File path = new File(target, source.getName());
+                if (!path.exists()) {
+                    path.mkdirs();
+                }
+                for (File child : source.listFiles()) {
+                    move(child, path);
+                }
+                source.delete();
+            } else {
+                source.renameTo(new File(target, source.getName()));
             }
-            for (File child : source.listFiles()) {
-                move(child, path);
-            }
-            source.delete();
-        } else {
-            source.renameTo(new File(target, source.getName()));
         }
     }
 
@@ -106,15 +110,19 @@ public abstract class Files {
      * @param path 文件路径
      * @return 文件名称
      */
+    @Nonnull
     public static String getName(String path) {
-        if (!Strings.isEmpty(path)) {
-            for (int i = path.length() - 1; i > -1; i--) {
-                if (path.charAt(i) == '\\' || path.charAt(i) == '/') {
-                    return path.substring(i + 1);
+        int end = path.length();
+        for (int i = end - 1; i > -1; i--) {
+            if (path.charAt(i) == '\\' || path.charAt(i) == '/') {
+                if (i < end - 1) {
+                    return path.substring(i + 1, end);
                 }
+                end--;
             }
         }
-        return path;
+        String name = end == path.length() ? path : path.substring(0, end);
+        return name.isEmpty() ? null : name;
     }
 
     /**
@@ -123,9 +131,16 @@ public abstract class Files {
      * @param path 文件路径
      * @return 后缀名
      */
+    @Nonnull
     public static String getSuffix(String path) {
-        int index = path == null ? -1 : path.lastIndexOf('.');
-        return index > 0 && index < path.length() - 1 ? path.substring(index + 1) : null;
+        int index = path.lastIndexOf('.');
+        if (index < 0) {
+            return null;
+        }
+        int end = path.length() - 1;
+        for (; end > -1 && (path.charAt(end) == '\\' || path.charAt(end) == '/'); end--) ;
+        String suffix = path.substring(index + 1, end + 1);
+        return suffix.isEmpty() ? null : suffix;
     }
 
     /**

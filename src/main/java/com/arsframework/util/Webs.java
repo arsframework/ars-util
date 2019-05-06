@@ -44,62 +44,6 @@ public abstract class Webs {
     private static final ParserDelegator parserDelegator = new ParserDelegator();
 
     /**
-     * Http请求方式
-     */
-    public enum Method {
-        /**
-         * HEAD方式
-         */
-        HEAD,
-
-        /**
-         * GET方式
-         */
-        GET,
-
-        /**
-         * POST方式
-         */
-        POST,
-
-        /**
-         * PUT方式
-         */
-        PUT,
-
-        /**
-         * DELETE方式
-         */
-        DELETE,
-
-        /**
-         * TRACE方式
-         */
-        TRACE,
-
-        /**
-         * CONNECT方式
-         */
-        CONNECT,
-
-        /**
-         * OPTIONS方式
-         */
-        OPTIONS;
-
-        /**
-         * 将Http请求方式名称转换成枚举对象
-         *
-         * @param name 名称
-         * @return 请求方式枚举
-         */
-        @Nonnull
-        public static Method parse(String name) {
-            return Method.valueOf(name.toUpperCase());
-        }
-    }
-
-    /**
      * 获取Cookie
      *
      * @param request Http请求对象
