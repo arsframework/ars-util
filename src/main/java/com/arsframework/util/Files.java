@@ -1,9 +1,7 @@
 package com.arsframework.util;
 
 import java.io.*;
-import java.util.List;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 
 import com.arsframework.annotation.Min;
 import com.arsframework.annotation.Nonnull;
@@ -15,6 +13,298 @@ import com.arsframework.annotation.Nonempty;
  * @author yongqiang.wu
  */
 public abstract class Files {
+    /**
+     * 文件查询接口
+     */
+    public interface Query extends Iterable<Describe> {
+        /**
+         * 设置是否展开
+         *
+         * @param spread true/false
+         * @return 文件集合
+         */
+        Query spread(boolean spread);
+
+        /**
+         * 等于
+         *
+         * @param property 属性
+         * @param value    属性值
+         * @return 文件集合
+         */
+        Query eq(Property property, Object value);
+
+        /**
+         * 不等于
+         *
+         * @param property 属性名
+         * @param value    属性值
+         * @return 文件集合
+         */
+        Query ne(Property property, Object value);
+
+        /**
+         * 大于
+         *
+         * @param property 属性名
+         * @param value    属性值
+         * @return 文件集合
+         */
+        Query gt(Property property, Object value);
+
+        /**
+         * 大于或等于
+         *
+         * @param property 属性名
+         * @param value    属性值
+         * @return 文件集合
+         */
+        Query ge(Property property, Object value);
+
+        /**
+         * 小于
+         *
+         * @param property 属性名
+         * @param value    属性值
+         * @return 文件集合
+         */
+        Query lt(Property property, Object value);
+
+        /**
+         * 小于或等于
+         *
+         * @param property 属性名
+         * @param value    属性值
+         * @return 文件集合
+         */
+        Query le(Property property, Object value);
+
+        /**
+         * 属性值在两个值之间
+         *
+         * @param property 属性名
+         * @param low      低值
+         * @param high     高值
+         * @return 文件集合
+         */
+        Query between(Property property, Object low, Object high);
+
+        /**
+         * 以指定字符串为开始
+         *
+         * @param property 属性名
+         * @param value    属性值
+         * @return 文件集合
+         */
+        Query start(Property property, String value);
+
+        /**
+         * 以指定字符串为结束
+         *
+         * @param property 属性名
+         * @param value    属性值
+         * @return 文件集合
+         */
+        Query end(Property property, String value);
+
+        /**
+         * 包含指定字符串
+         *
+         * @param property 属性名
+         * @param value    属性值
+         * @return 文件集合
+         */
+        Query like(Property property, String value);
+
+        /**
+         * 多个属性升序排序
+         *
+         * @param properties 属性名数组
+         * @return 文件集合
+         */
+        Query asc(Property... properties);
+
+        /**
+         * 多个属性降序排序
+         *
+         * @param properties 属性名数组
+         * @return 文件集合
+         */
+        Query desc(Property... properties);
+
+        /**
+         * 将文件集合对象转换成List对象
+         *
+         * @return 列表对象
+         */
+        List<Describe> list();
+    }
+
+    /**
+     * 文件查询抽象实现
+     */
+    public static abstract class AbstractQuery implements Query {
+        protected final String path; // 查询操作路径
+
+        private boolean loaded; // 集合是否已加载
+        private boolean spread; // 是否展开
+        private List<Order> orders = new LinkedList<>(); // 排序条件
+        private List<Describe> describes = Collections.emptyList(); // 缓存数据
+        private List<Condition> conditions = new LinkedList<>(); // 查询条件
+
+        @Nonnull
+        public AbstractQuery(String path) {
+            this.path = Strings.toRealPath(path);
+        }
+
+        /**
+         * 执行文件查询
+         *
+         * @param path       文件查询相对路径
+         * @param spread     是否展开
+         * @param conditions 查询条件数组
+         * @return 文件描述列表
+         */
+        protected abstract List<Describe> execute(String path, boolean spread, Condition... conditions);
+
+        @Override
+        public Iterator<Describe> iterator() {
+            return this.list().iterator();
+        }
+
+        @Override
+        public Query spread(boolean spread) {
+            this.spread = spread;
+            return this;
+        }
+
+        @Override
+        public Query eq(Property property, Object value) {
+            this.conditions.add(Files.eq(property, value));
+            return this;
+        }
+
+        @Override
+        public Query ne(Property property, Object value) {
+            this.conditions.add(Files.ne(property, value));
+            return this;
+        }
+
+        @Override
+        public Query gt(Property property, Object value) {
+            this.conditions.add(Files.gt(property, value));
+            return this;
+        }
+
+        @Override
+        public Query ge(Property property, Object value) {
+            this.conditions.add(Files.ge(property, value));
+            return this;
+        }
+
+        @Override
+        public Query lt(Property property, Object value) {
+            this.conditions.add(Files.lt(property, value));
+            return this;
+        }
+
+        @Override
+        public Query le(Property property, Object value) {
+            this.conditions.add(Files.le(property, value));
+            return this;
+        }
+
+        @Override
+        public Query between(Property property, Object low, Object high) {
+            this.conditions.add(Files.between(property, low, high));
+            return this;
+        }
+
+        @Override
+        public Query start(Property property, String value) {
+            this.conditions.add(Files.like(property, value, Files.Like.Position.BEGIN));
+            return this;
+        }
+
+        @Override
+        public Query end(Property property, String value) {
+            this.conditions.add(Files.like(property, value, Files.Like.Position.END));
+            return this;
+        }
+
+        @Override
+        public Query like(Property property, String value) {
+            this.conditions.add(Files.like(property, value, Files.Like.Position.ANY));
+            return this;
+        }
+
+        @Override
+        @Nonnull
+        public Query asc(Property... properties) {
+            if (properties.length > 0) {
+                for (Property property : properties) {
+                    this.orders.add(Files.asc(property));
+                }
+            }
+            return this;
+        }
+
+        @Override
+        @Nonnull
+        public Query desc(Property... properties) {
+            if (properties.length > 0) {
+                for (Property property : properties) {
+                    this.orders.add(Files.desc(property));
+                }
+            }
+            return this;
+        }
+
+        @Override
+        public List<Describe> list() {
+            if (!this.loaded) {
+                this.describes = this.execute(this.path, this.spread, this.conditions.toArray(new Condition[0]));
+                if (!this.orders.isEmpty()) {
+                    Files.sort(this.describes, this.orders.toArray(new Order[0]));
+                }
+                this.loaded = true;
+            }
+            return this.describes;
+        }
+
+        @Override
+        public String toString() {
+            return this.list().toString();
+        }
+    }
+
+    /**
+     * 磁盘文件查询集合实现
+     */
+    public static class DiskQuery extends AbstractQuery {
+
+        public DiskQuery(String path) {
+            super(path);
+        }
+
+        @Override
+        public List<Describe> execute(String path, boolean spread, Condition... conditions) {
+            List<Describe> describes = new LinkedList<>();
+            new File(path).listFiles((file) -> {
+                Describe describe = Describe.parse(file);
+                if (Files.isSatisfy(describe, conditions)) {
+                    describes.add(describe);
+                }
+                if (spread && describe.directory) {
+                    describes.addAll(execute(describe.path, true, conditions));
+                }
+                return false;
+            });
+            return describes;
+        }
+
+    }
+
     /**
      * 创建文件目录
      *
@@ -141,6 +431,16 @@ public abstract class Files {
         for (; end > -1 && (path.charAt(end) == '\\' || path.charAt(end) == '/'); end--) ;
         String suffix = path.substring(index + 1, end + 1);
         return suffix.isEmpty() ? null : suffix;
+    }
+
+    /**
+     * 文件查询
+     *
+     * @param path 文件目录
+     * @return 查询对象
+     */
+    public static Query query(String path) {
+        return new DiskQuery(path);
     }
 
     /**

@@ -124,6 +124,6 @@ JDK1.8+
 2. 完善```Excel```树型数据写入以及单元格公式的读写支持
 
 ### v1.5.1
-1. 优化文件操作工具方法
+1. 完善及优化文件操作工具方法
 2. 新增```com.arsframework.util.Https```工具类
 3. 移除```com.arsframework.util.Webs.Method```枚举
