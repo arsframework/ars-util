@@ -65,6 +65,11 @@ public abstract class Strings {
     public static final String LOCALHOST = "localhost";
 
     /**
+     * 系统名称
+     */
+    public static final String SYSTEM_NAME = System.getProperty("os.name");
+
+    /**
      * 当前主机名称
      */
     public static final String LOCALHOST_NAME;
@@ -132,7 +137,6 @@ public abstract class Strings {
     public static final ThreadLocal<DecimalFormat> DEFAULT_DECIMAL_FORMAT = ThreadLocal.withInitial(() -> new DecimalFormat("0.##"));
 
     static {
-        long time = System.currentTimeMillis();
         InetAddress localhost = null;
         try {
             localhost = InetAddress.getLocalHost();
@@ -141,7 +145,7 @@ public abstract class Strings {
         }
         LOCALHOST_NAME = localhost == null ? null : localhost.getHostName();
 
-        if (System.getProperty("os.name").startsWith("Windows")) {
+        if (SYSTEM_NAME.startsWith("Windows")) {
             LOCALHOST_ADDRESS = localhost == null ? DEFAULT_LOCALHOST_ADDRESS : localhost.getHostAddress();
         } else {
             String ip = null;

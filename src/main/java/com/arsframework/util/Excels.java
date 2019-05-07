@@ -71,9 +71,8 @@ public abstract class Excels {
          * @param name 类型名称
          * @return 类型枚举
          */
-        @Nonnull
         public static Type parse(String name) {
-            return Type.valueOf(name.toUpperCase());
+            return name == null ? null : Type.valueOf(name.toUpperCase());
         }
     }
 

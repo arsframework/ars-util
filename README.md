@@ -10,7 +10,7 @@ JDK1.8+
 <dependency>
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.5.1</version>
+    <version>1.5.2</version>
 </dependency>
 ```
 
@@ -127,3 +127,8 @@ JDK1.8+
 1. 完善及优化文件操作工具方法
 2. 新增```com.arsframework.util.Https```工具类
 3. 移除```com.arsframework.util.Webs.Method```枚举
+
+### v1.5.2
+1. 内部优化
+2. 新增日期时间处理格式
+3. 新增```com.arsframework.util.Webs.Protocol```协议枚举

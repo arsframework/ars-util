@@ -45,17 +45,18 @@ public abstract class Dates {
     /**
      * 日期格式数组
      */
-    public static final String[] DATE_FORMATS = {DEFAULT_DATE_FORMAT, "yyyy/MM/dd", "yyyyMMdd"};
+    public static final String[] DATE_FORMATS = {DEFAULT_DATE_FORMAT, "yyyy/MM/dd", "yyyyMMdd", "yyyy-MM", "yyyyMM"};
 
     /**
      * 时间格式数组
      */
-    public static final String[] TIME_FORMATS = {DEFAULT_TIME_FORMAT, "HHmmss"};
+    public static final String[] TIME_FORMATS = {DEFAULT_TIME_FORMAT, "HHmmss", "HH:mm", "HHmm"};
 
     /**
      * 日期时间格式数组
      */
-    public static final String[] DATETIME_FORMATS = {DEFAULT_DATETIME_FORMAT, "yyyy/MM/dd HH:mm:ss", "yyyyMMddHHmmss"};
+    public static final String[] DATETIME_FORMATS = {DEFAULT_DATETIME_FORMAT,
+            "yyyy/MM/dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy/MM/dd HH:mm", "yyyyMMddHHmmss", "yyyyMMddHHmm"};
 
     /**
      * 所有日期格式数组

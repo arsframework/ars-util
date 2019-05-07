@@ -29,6 +29,31 @@ import com.arsframework.annotation.Nonnull;
  */
 public abstract class Webs {
     /**
+     * 协议枚举
+     */
+    public enum Protocol {
+        /**
+         * HTTP协议
+         */
+        HTTP,
+
+        /**
+         * HTTPS协议
+         */
+        HTTPS;
+
+        /**
+         * 根据协议名称转换协议枚举
+         *
+         * @param name 协议名称
+         * @return 协议枚举
+         */
+        public static Protocol parse(String name) {
+            return name == null ? null : Protocol.valueOf(name.toUpperCase());
+        }
+    }
+
+    /**
      * 应用根路径
      */
     public static final String ROOT_PATH = new File(Strings.CURRENT_PATH).getParentFile().getParentFile().getPath();
