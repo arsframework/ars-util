@@ -153,8 +153,7 @@ public abstract class Strings {
                 Enumeration<NetworkInterface> enumeration = NetworkInterface.getNetworkInterfaces();
                 outer:
                 while (enumeration.hasMoreElements()) {
-                    NetworkInterface networks = enumeration.nextElement();
-                    Enumeration<InetAddress> addresses = networks.getInetAddresses();
+                    Enumeration<InetAddress> addresses = enumeration.nextElement().getInetAddresses();
                     while (addresses.hasMoreElements()) {
                         InetAddress address = addresses.nextElement();
                         if (address.isSiteLocalAddress() && !address.isLoopbackAddress()
@@ -595,7 +594,7 @@ public abstract class Strings {
         if (index > 0 && path.substring(0, index).toLowerCase().equals("classpath")) {
             URL url = String.class.getClassLoader().getResource(path.substring(index + 1));
             if (url == null) {
-                throw new IllegalStateException("URL does not exist: " + url);
+                throw new IllegalStateException("Path does not exist: " + path);
             }
             return url.getFile();
         }
@@ -646,6 +645,39 @@ public abstract class Strings {
     }
 
     /**
+     * 四舍五入数字
+     *
+     * @param number 数字对象
+     * @return 四舍五入结果数字
+     */
+    public static BigDecimal roundNumber(Number number) {
+        return roundNumber(number, 2);
+    }
+
+    /**
+     * 四舍五入数字
+     *
+     * @param number 数字对象
+     * @param scale  保留小数位数
+     * @return 四舍五入结果数字
+     */
+    @Nonnull
+    public static BigDecimal roundNumber(Number number, @Min(0) int scale) {
+        return BigDecimal.valueOf(number.doubleValue()).setScale(scale, BigDecimal.ROUND_HALF_UP);
+    }
+
+    /**
+     * 格式化数字（四舍五入，保留2为小数）
+     *
+     * @param number 数字对象
+     * @return 格式化数字字符串
+     */
+    @Nonnull
+    public static String formatNumber(Number number) {
+        return DEFAULT_DECIMAL_FORMAT.get().format(number);
+    }
+
+    /**
      * 将数据大小转换成带单位的大小表示
      *
      * @param size 数据大小
@@ -656,12 +688,14 @@ public abstract class Strings {
             return "0Byte";
         }
         StringBuilder buffer = new StringBuilder();
-        if (size >= 1073741824) {
-            buffer.append(DEFAULT_DECIMAL_FORMAT.get().format(size / 1073741824d)).append("GB");
+        if (size >= 1099511627776L) {
+            buffer.append(formatNumber(size / 1099511627776d)).append("TB");
+        } else if (size >= 1073741824) {
+            buffer.append(formatNumber(size / 1073741824d)).append("GB");
         } else if (size >= 1048576) {
-            buffer.append(DEFAULT_DECIMAL_FORMAT.get().format(size / 1048576d)).append("MB");
+            buffer.append(formatNumber(size / 1048576d)).append("MB");
         } else if (size >= 1024) {
-            buffer.append(DEFAULT_DECIMAL_FORMAT.get().format(size / 1024d)).append("KB");
+            buffer.append(formatNumber(size / 1024d)).append("KB");
         } else {
             buffer.append(size).append("Byte");
         }
@@ -679,14 +713,16 @@ public abstract class Strings {
             return "0ms";
         }
         StringBuilder buffer = new StringBuilder();
-        if (time >= 86400000) {
-            buffer.append(DEFAULT_DECIMAL_FORMAT.get().format(time / 86400000d)).append('d');
+        if (time >= 31536000000L) {
+            buffer.append(formatNumber(time / 31536000000d)).append('y');
+        } else if (time >= 86400000) {
+            buffer.append(formatNumber(time / 86400000d)).append('d');
         } else if (time >= 3600000) {
-            buffer.append(DEFAULT_DECIMAL_FORMAT.get().format(time / 3600000d)).append('h');
+            buffer.append(formatNumber(time / 3600000d)).append('h');
         } else if (time >= 60000) {
-            buffer.append(DEFAULT_DECIMAL_FORMAT.get().format(time / 60000d)).append('m');
+            buffer.append(formatNumber(time / 60000d)).append('m');
         } else if (time >= 1000) {
-            buffer.append(DEFAULT_DECIMAL_FORMAT.get().format(time / 1000d)).append('s');
+            buffer.append(formatNumber(time / 1000d)).append('s');
         } else {
             buffer.append(time).append("ms");
         }
@@ -933,7 +969,7 @@ public abstract class Strings {
                 int split = section.indexOf("=");
                 String key = split < 1 ? null : section.substring(0, split).trim();
                 if (isEmpty(key)) {
-                    throw new IllegalStateException("Illegal expression: " + expression);
+                    throw new IllegalArgumentException("Invalid expression: " + expression);
                 }
                 String value = section.substring(split + 1).trim();
                 _condition = new Match(key, value.isEmpty() ? null : LIST_PATTERN.matcher(value).matches() ? parseList(value) : value);

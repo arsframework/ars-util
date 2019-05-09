@@ -60,7 +60,7 @@ public abstract class Barcodes {
      */
     @Nonnull
     public static BufferedImage encode(String content, BarcodeFormat format, @Min(1) int width, @Min(1) int height) {
-        Map<EncodeHintType, Object> hints = new HashMap<>(1, 1);
+        Map<EncodeHintType, Object> hints = new HashMap<>(1);
         hints.put(EncodeHintType.CHARACTER_SET, Strings.CHARSET_UTF8);
         try {
             BitMatrix matrix = new MultiFormatWriter().encode(content, format, width, height, hints);
@@ -78,7 +78,7 @@ public abstract class Barcodes {
      */
     @Nonnull
     public static String decode(BufferedImage image) {
-        Map<DecodeHintType, Object> hints = new HashMap<>(1, 1);
+        Map<DecodeHintType, Object> hints = new HashMap<>(1);
         hints.put(DecodeHintType.CHARACTER_SET, Strings.CHARSET_UTF8);
         BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(image)));
         try {

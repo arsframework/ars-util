@@ -145,7 +145,7 @@ public abstract class Dates {
             } catch (ParseException e) {
             }
         }
-        throw new RuntimeException("Unparseable date: " + source);
+        throw new IllegalArgumentException("Invalid date: " + source);
     }
 
     /**

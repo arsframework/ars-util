@@ -11,18 +11,20 @@ import java.net.JarURLConnection;
 import java.time.ZoneId;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.Temporal;
 import java.util.Map;
 import java.util.List;
 import java.util.Date;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
+import java.util.function.Function;
 import java.util.jar.JarFile;
 import java.util.jar.JarEntry;
 import java.lang.reflect.*;
+import java.lang.annotation.Annotation;
 
 import com.arsframework.annotation.Nonnull;
 
@@ -41,6 +43,79 @@ public abstract class Objects {
      * 空类对象数组
      */
     public static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
+
+    /**
+     * 对象迭代器接口
+     */
+    public interface Iterator {
+        /**
+         * 对象迭代
+         *
+         * @param object 当前对象
+         * @param index  当前迭代下标
+         */
+        void iteration(Object object, int index);
+    }
+
+    /**
+     * 遍历对象（字典、数据、集合）
+     *
+     * @param object   遍历目标对象
+     * @param iterator 对象遍历迭代器
+     */
+    public static void foreach(Object object, @Nonnull Iterator iterator) {
+        if (isEmpty(object)) {
+            return;
+        }
+        int i = 0; // 迭代下标
+        if (object instanceof Map) {
+            for (Map.Entry<?, ?> o : ((Map<?, ?>) object).entrySet()) {
+                iterator.iteration(o, i++);
+            }
+        } else if (object instanceof Iterable) {
+            for (Object o : (Iterable<?>) object) {
+                iterator.iteration(o, i++);
+            }
+        } else if (object instanceof int[]) {
+            for (int o : (int[]) object) {
+                iterator.iteration(o, i++);
+            }
+        } else if (object instanceof short[]) {
+            for (short o : (short[]) object) {
+                iterator.iteration(o, i++);
+            }
+        } else if (object instanceof float[]) {
+            for (float o : (float[]) object) {
+                iterator.iteration(o, i++);
+            }
+        } else if (object instanceof long[]) {
+            for (long o : (long[]) object) {
+                iterator.iteration(o, i++);
+            }
+        } else if (object instanceof double[]) {
+            for (double o : (double[]) object) {
+                iterator.iteration(o, i++);
+            }
+        } else if (object instanceof char[]) {
+            for (char o : (char[]) object) {
+                iterator.iteration(o, i++);
+            }
+        } else if (object instanceof byte[]) {
+            for (byte o : (byte[]) object) {
+                iterator.iteration(o, i++);
+            }
+        } else if (object instanceof boolean[]) {
+            for (boolean o : (boolean[]) object) {
+                iterator.iteration(o, i++);
+            }
+        } else if (object instanceof Object[]) {
+            for (Object o : (Object[]) object) {
+                iterator.iteration(o, i++);
+            }
+        } else {
+            iterator.iteration(object, i++);
+        }
+    }
 
     /**
      * 字段访问接口
@@ -134,6 +209,20 @@ public abstract class Objects {
     }
 
     /**
+     * 判断对象类型是否是元对象类型
+     *
+     * @param clazz 对象类型
+     * @return true/false
+     */
+    public static boolean isMetaClass(Class<?> clazz) {
+        return clazz != null && (clazz == Object.class || clazz == Class.class || clazz.isEnum() || clazz.isArray() || clazz.isInterface()
+                || isBasicClass(clazz) || Modifier.isAbstract(clazz.getModifiers()) || CharSequence.class.isAssignableFrom(clazz)
+                || Number.class.isAssignableFrom(clazz) || Date.class.isAssignableFrom(clazz) || Temporal.class.isAssignableFrom(clazz)
+                || Map.class.isAssignableFrom(clazz) || Collection.class.isAssignableFrom(clazz) || Function.class.isAssignableFrom(clazz)
+                || Annotation.class.isAssignableFrom(clazz));
+    }
+
+    /**
      * 判断数据类型是否是数字类型
      *
      * @param clazz 数据类型
@@ -161,34 +250,19 @@ public abstract class Objects {
      * @return true/false
      */
     public static boolean isEmpty(Object object) {
-        if (object == null || (object instanceof CharSequence && ((CharSequence) object).length() == 0)
+        return object == null
+                || (object instanceof byte[] && ((byte[]) object).length == 0)
+                || (object instanceof char[] && ((char[]) object).length == 0)
+                || (object instanceof int[] && ((int[]) object).length == 0)
+                || (object instanceof short[] && ((short[]) object).length == 0)
+                || (object instanceof long[] && ((long[]) object).length == 0)
+                || (object instanceof float[] && ((float[]) object).length == 0)
+                || (object instanceof double[] && ((double[]) object).length == 0)
+                || (object instanceof boolean[] && ((boolean[]) object).length == 0)
+                || (object instanceof Object[] && ((Object[]) object).length == 0)
+                || (object instanceof CharSequence && ((CharSequence) object).length() == 0)
                 || (object instanceof Map && ((Map<?, ?>) object).isEmpty())
-                || (object instanceof Collection && ((Collection<?>) object).isEmpty())) {
-            return true;
-        }
-        Class<?> type = object.getClass();
-        if (type.isArray()) {
-            Class<?> component = type.getComponentType();
-            if (component == byte.class) {
-                return ((byte[]) object).length == 0;
-            } else if (component == char.class) {
-                return ((char[]) object).length == 0;
-            } else if (component == int.class) {
-                return ((int[]) object).length == 0;
-            } else if (component == short.class) {
-                return ((short[]) object).length == 0;
-            } else if (component == long.class) {
-                return ((long[]) object).length == 0;
-            } else if (component == float.class) {
-                return ((float[]) object).length == 0;
-            } else if (component == double.class) {
-                return ((double[]) object).length == 0;
-            } else if (component == boolean.class) {
-                return ((boolean[]) object).length == 0;
-            }
-            return ((Object[]) object).length == 0;
-        }
-        return false;
+                || (object instanceof Collection && ((Collection<?>) object).isEmpty());
     }
 
     /**
@@ -482,24 +556,24 @@ public abstract class Objects {
      */
     @Nonnull
     public static Class<?> getBasicWrapClass(Class<?> clazz) {
-        if (clazz == byte.class) {
+        if (clazz == byte.class || clazz == Byte.class) {
             return Byte.class;
-        } else if (clazz == char.class) {
+        } else if (clazz == char.class || clazz == Character.class) {
             return Character.class;
-        } else if (clazz == int.class) {
+        } else if (clazz == int.class || clazz == Integer.class) {
             return Integer.class;
-        } else if (clazz == short.class) {
+        } else if (clazz == short.class || clazz == Short.class) {
             return Short.class;
-        } else if (clazz == long.class) {
+        } else if (clazz == long.class || clazz == Long.class) {
             return Long.class;
-        } else if (clazz == float.class) {
+        } else if (clazz == float.class || clazz == Float.class) {
             return Float.class;
-        } else if (clazz == double.class) {
+        } else if (clazz == double.class || clazz == Double.class) {
             return Double.class;
-        } else if (clazz == boolean.class) {
+        } else if (clazz == boolean.class || clazz == Boolean.class) {
             return Boolean.class;
         }
-        throw new IllegalArgumentException("Class must be basic type");
+        throw new IllegalArgumentException("Invalid basic type: " + clazz);
     }
 
     /**
@@ -813,89 +887,6 @@ public abstract class Objects {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    /**
-     * 将对象转换成数组
-     *
-     * @param object 被转换对象
-     * @return 数组对象
-     */
-    public static Object[] toArray(Object object) {
-        if (object instanceof int[]) {
-            int[] src = (int[]) object;
-            Integer[] dest = new Integer[src.length];
-            for (int i = 0; i < src.length; i++) {
-                dest[i] = src[i];
-            }
-            return dest;
-        } else if (object instanceof short[]) {
-            short[] src = (short[]) object;
-            Short[] dest = new Short[src.length];
-            for (int i = 0; i < src.length; i++) {
-                dest[i] = src[i];
-            }
-            return dest;
-        } else if (object instanceof float[]) {
-            float[] src = (float[]) object;
-            Float[] dest = new Float[src.length];
-            for (int i = 0; i < src.length; i++) {
-                dest[i] = src[i];
-            }
-            return dest;
-        } else if (object instanceof long[]) {
-            long[] src = (long[]) object;
-            Long[] dest = new Long[src.length];
-            for (int i = 0; i < src.length; i++) {
-                dest[i] = src[i];
-            }
-            return dest;
-        } else if (object instanceof double[]) {
-            double[] src = (double[]) object;
-            Double[] dest = new Double[src.length];
-            for (int i = 0; i < src.length; i++) {
-                dest[i] = src[i];
-            }
-            return dest;
-        } else if (object instanceof char[]) {
-            char[] src = (char[]) object;
-            Character[] dest = new Character[src.length];
-            for (int i = 0; i < src.length; i++) {
-                dest[i] = src[i];
-            }
-            return dest;
-        } else if (object instanceof byte[]) {
-            byte[] src = (byte[]) object;
-            Byte[] dest = new Byte[src.length];
-            for (int i = 0; i < src.length; i++) {
-                dest[i] = src[i];
-            }
-            return dest;
-        } else if (object instanceof boolean[]) {
-            boolean[] src = (boolean[]) object;
-            Boolean[] dest = new Boolean[src.length];
-            for (int i = 0; i < src.length; i++) {
-                dest[i] = src[i];
-            }
-            return dest;
-        } else if (object instanceof Object[]) {
-            return (Object[]) object;
-        } else if (object instanceof Collection) {
-            return ((Collection) object).toArray();
-        }
-        Object[] array = (Object[]) Array.newInstance(object == null ? Object.class : object.getClass(), 1);
-        array[0] = object;
-        return array;
-    }
-
-    /**
-     * 将对象转换成集合
-     *
-     * @param object 被转换对象
-     * @return 集合对象
-     */
-    public static Collection<?> toCollection(Object object) {
-        return object instanceof Collection ? (Collection) object : Arrays.asList(toArray(object));
     }
 
     /**

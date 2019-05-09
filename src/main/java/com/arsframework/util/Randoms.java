@@ -2,7 +2,6 @@ package com.arsframework.util;
 
 import java.util.Date;
 import java.util.Random;
-import java.util.Collection;
 import java.util.concurrent.ThreadLocalRandom;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -41,104 +40,12 @@ public abstract class Randoms {
     }
 
     /**
-     * 随机生成对象实例
+     * 构建随机处理对象
      *
-     * @param <T>  对象类型
-     * @param type 对象类型
-     * @return 对象实例
+     * @return 随机处理对象
      */
-    public static <T> T random(Class<T> type) {
-        return random(type, null);
-    }
-
-    /**
-     * 随机生成对象实例
-     *
-     * @param <T>   对象类型
-     * @param type  对象类型
-     * @param depth 对象下钻深度
-     * @return 对象实例
-     */
-    public static <T> T random(Class<T> type, int depth) {
-        return random(type, depth, null);
-    }
-
-    /**
-     * 随机生成对象实例
-     *
-     * @param <T>       对象类型
-     * @param type      对象类型
-     * @param generator 随机数生成器
-     * @return 对象实例
-     */
-    public static <T> T random(Class<T> type, Generator generator) {
-        return random(type, DEFAULT_RANDOM_DEPTH, generator);
-    }
-
-    /**
-     * 随机生成对象实例
-     *
-     * @param <T>       对象类型
-     * @param type      对象类型
-     * @param depth     对象下钻深度
-     * @param generator 随机数生成器
-     * @return 对象实例
-     */
-    public static <T> T random(Class<T> type, int depth, Generator generator) {
-        return random(type, depth, 0, generator);
-    }
-
-    /**
-     * 随机生成对象实例
-     *
-     * @param <T>       对象类型
-     * @param type      对象类型
-     * @param depth     对象下钻深度
-     * @param level     当前对象层级
-     * @param generator 随机数生成器
-     * @return 对象实例
-     */
-    private static <T> T random(@Nonnull Class<T> type, @Min(1) int depth, @Min(0) int level, Generator generator) {
-        if (level > depth) {
-            return null;
-        }
-        if (Enum.class.isAssignableFrom(type)) {
-            return (T) randomEnum((Class<Enum<?>>) type);
-        } else if (Date.class.isAssignableFrom(type)) {
-            return (T) randomDate();
-        } else if (LocalDate.class.isAssignableFrom(type)) {
-            return (T) Dates.adapter(randomDate()).toLocalDate();
-        } else if (LocalDateTime.class.isAssignableFrom(type)) {
-            return (T) Dates.adapter(randomDate());
-        } else if (type == byte.class || type == Byte.class) {
-            return (T) Byte.valueOf((byte) randomInteger());
-        } else if (type == char.class || type == Character.class) {
-            return (T) randomCharacter();
-        } else if (type == short.class || type == Short.class) {
-            return (T) Short.valueOf((short) randomInteger());
-        } else if (type == float.class || type == Float.class) {
-            return (T) Float.valueOf(randomInteger());
-        } else if (type == double.class || type == Double.class) {
-            return (T) Double.valueOf(randomInteger());
-        } else if (type == int.class || type == Integer.class) {
-            return (T) Integer.valueOf(randomInteger());
-        } else if (type == BigInteger.class) {
-            return (T) new BigInteger(String.valueOf(randomInteger()));
-        } else if (type == BigDecimal.class) {
-            return (T) new BigDecimal(String.valueOf(randomInteger()));
-        } else if (type == long.class || type == Long.class) {
-            return (T) Long.valueOf(randomInteger());
-        } else if (type == boolean.class || type == Boolean.class) {
-            return (T) Boolean.valueOf(randomBoolean());
-        } else if (type == String.class) {
-            return (T) randomString();
-        } else if (level < depth && !type.isArray() && !Collection.class.isAssignableFrom(type)) {
-            T object = Objects.initialize(type);
-            Objects.access(type, (field, i) -> Objects.setValue(object, field, generator == null ?
-                    random(field.getType(), depth, level + 1, null) : generator.generate(field, i, level + 1)));
-            return object;
-        }
-        return null;
+    public static Random buildRandom() {
+        return ThreadLocalRandom.current();
     }
 
     /**
@@ -152,7 +59,7 @@ public abstract class Randoms {
     public static <T extends Enum<?>> T randomEnum(Class<T> type) {
         try {
             Object[] values = (Object[]) type.getMethod("values").invoke(type);
-            return values.length == 0 ? null : (T) values[ThreadLocalRandom.current().nextInt(values.length)];
+            return values.length == 0 ? null : (T) values[buildRandom().nextInt(values.length)];
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -179,9 +86,9 @@ public abstract class Randoms {
         long start = min.getTime();
         long time = max.getTime() - start; // 相差毫秒数
         if (time <= 1000) { // 相差1秒内
-            return new Date(start + ThreadLocalRandom.current().nextInt((int) time));
+            return new Date(start + buildRandom().nextInt((int) time));
         }
-        return new Date(start + ThreadLocalRandom.current().nextInt((int) (time / 1000)) * 1000);
+        return new Date(start + buildRandom().nextInt((int) (time / 1000)) * 1000);
     }
 
     /**
@@ -201,7 +108,7 @@ public abstract class Randoms {
      * @return 数字
      */
     public static int randomInteger(@Lt("max") int min, int max) {
-        return min + ThreadLocalRandom.current().nextInt(max - min);
+        return min + buildRandom().nextInt(max - min);
     }
 
     /**
@@ -242,7 +149,7 @@ public abstract class Randoms {
      */
     @Nonnull
     public static String randomString(Character[] chars, @Min(1) int length) {
-        Random random = ThreadLocalRandom.current();
+        Random random = buildRandom();
         StringBuilder buffer = new StringBuilder();
         for (int i = 0; i < length; i++) {
             buffer.append(chars[random.nextInt(chars.length)]);
@@ -267,7 +174,7 @@ public abstract class Randoms {
      */
     @Nonnull
     public static Character randomCharacter(Character[] chars) {
-        return chars[ThreadLocalRandom.current().nextInt(chars.length)];
+        return chars[buildRandom().nextInt(chars.length)];
     }
 
     /**
@@ -276,7 +183,107 @@ public abstract class Randoms {
      * @return 真假值
      */
     public static boolean randomBoolean() {
-        return ThreadLocalRandom.current().nextBoolean();
+        return buildRandom().nextBoolean();
     }
 
+    /**
+     * 随机生成对象实例
+     *
+     * @param <T>  对象类型
+     * @param type 对象类型
+     * @return 对象实例
+     */
+    public static <T> T randomObject(Class<T> type) {
+        return randomObject(type, null);
+    }
+
+    /**
+     * 随机生成对象实例
+     *
+     * @param <T>   对象类型
+     * @param type  对象类型
+     * @param depth 对象下钻深度
+     * @return 对象实例
+     */
+    public static <T> T randomObject(Class<T> type, int depth) {
+        return randomObject(type, depth, null);
+    }
+
+    /**
+     * 随机生成对象实例
+     *
+     * @param <T>       对象类型
+     * @param type      对象类型
+     * @param generator 随机数生成器
+     * @return 对象实例
+     */
+    public static <T> T randomObject(Class<T> type, Generator generator) {
+        return randomObject(type, DEFAULT_RANDOM_DEPTH, generator);
+    }
+
+    /**
+     * 随机生成对象实例
+     *
+     * @param <T>       对象类型
+     * @param type      对象类型
+     * @param depth     对象下钻深度
+     * @param generator 随机数生成器
+     * @return 对象实例
+     */
+    public static <T> T randomObject(Class<T> type, int depth, Generator generator) {
+        return randomObject(type, depth, 0, generator);
+    }
+
+    /**
+     * 随机生成对象实例
+     *
+     * @param <T>       对象类型
+     * @param type      对象类型
+     * @param depth     对象下钻深度
+     * @param level     当前对象层级
+     * @param generator 随机数生成器
+     * @return 对象实例
+     */
+    private static <T> T randomObject(@Nonnull Class<T> type, @Min(1) int depth, @Min(0) int level, Generator generator) {
+        if (level > depth) {
+            return null;
+        }
+        if (Enum.class.isAssignableFrom(type)) {
+            return (T) randomEnum((Class<Enum<?>>) type);
+        } else if (Date.class.isAssignableFrom(type)) {
+            return (T) randomDate();
+        } else if (LocalDate.class.isAssignableFrom(type)) {
+            return (T) Dates.adapter(randomDate()).toLocalDate();
+        } else if (LocalDateTime.class.isAssignableFrom(type)) {
+            return (T) Dates.adapter(randomDate());
+        } else if (type == byte.class || type == Byte.class) {
+            return (T) Byte.valueOf((byte) randomInteger());
+        } else if (type == char.class || type == Character.class) {
+            return (T) randomCharacter();
+        } else if (type == short.class || type == Short.class) {
+            return (T) Short.valueOf((short) randomInteger());
+        } else if (type == float.class || type == Float.class) {
+            return (T) Float.valueOf(randomInteger());
+        } else if (type == double.class || type == Double.class) {
+            return (T) Double.valueOf(randomInteger());
+        } else if (type == int.class || type == Integer.class) {
+            return (T) Integer.valueOf(randomInteger());
+        } else if (type == BigInteger.class) {
+            return (T) new BigInteger(String.valueOf(randomInteger()));
+        } else if (type == BigDecimal.class) {
+            return (T) new BigDecimal(String.valueOf(randomInteger()));
+        } else if (type == long.class || type == Long.class) {
+            return (T) Long.valueOf(randomInteger());
+        } else if (type == boolean.class || type == Boolean.class) {
+            return (T) Boolean.valueOf(randomBoolean());
+        } else if (type == String.class) {
+            return (T) randomString();
+        } else if (level < depth && !Objects.isMetaClass(type)) {
+            T object = Objects.initialize(type);
+            Objects.access(type, (field, i) -> Objects.setValue(object, field, generator == null ?
+                    randomObject(field.getType(), depth, level + 1, null) : generator.generate(field, i, level + 1)));
+            return object;
+        }
+        return null;
+    }
 }

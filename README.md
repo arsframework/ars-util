@@ -10,7 +10,7 @@ JDK1.8+
 <dependency>
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.5.2</version>
+    <version>1.5.3</version>
 </dependency>
 ```
 
@@ -132,3 +132,9 @@ JDK1.8+
 1. 内部优化
 2. 新增日期时间处理格式
 3. 新增```com.arsframework.util.Webs.Protocol```协议枚举
+
+### v1.5.3
+1. 代码优化
+2. 在```com.arsframework.util.Strings```工具类中新增```roundNumber```、```formatNumber```方法
+3. 移除```com.arsframework.util.Objects```工具类中```toArray```、```toCollection```方法，增加```foreach```、```isMetaClass```方法
+4. 移除```com.arsframework.util.Randoms```工具类中```random```方法，增加```buildRandom```、```randomObject```方法

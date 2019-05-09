@@ -92,9 +92,8 @@ public abstract class Https {
         for (Map.Entry<String, ?> entry : parameters.entrySet()) {
             String key = Strings.trim(entry.getKey());
             if (key != null) {
-                for (Object object : Objects.toCollection(entry.getValue())) {
-                    nameValues.add(new BasicNameValuePair(key, Strings.trim(Strings.toString(object))));
-                }
+                Objects.foreach(entry.getValue(), (object, i) ->
+                        nameValues.add(new BasicNameValuePair(key, Strings.trim(Strings.toString(object)))));
             }
         }
         return new UrlEncodedFormEntity(nameValues, Charset.forName(Strings.CHARSET_UTF8));
