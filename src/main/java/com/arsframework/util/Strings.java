@@ -418,56 +418,35 @@ public abstract class Strings {
     }
 
     /**
-     * 将对象数组链接成字符串
+     * 将数组、可迭代、字典对象链接成字符串
      *
-     * @param objects 对象数组
+     * @param object 遍历源对象
      * @return 字符串
      */
-    public static String join(Object... objects) {
-        return join(objects, EMPTY_STRING);
+    public static String join(Object object) {
+        return join(object, null);
     }
 
     /**
-     * 将对象数组链接成字符串
+     * 将数组、可迭代、字典对象链接成字符串
      *
-     * @param objects 对象数组
-     * @param sign    链接标记
-     * @return 连接后的字符串
-     */
-    @Nonnull
-    public static String join(Object[] objects, CharSequence sign) {
-        return objects.length == 0 ? EMPTY_STRING : join(Arrays.asList(objects), sign);
-    }
-
-    /**
-     * 将对象集合链接成字符串
-     *
-     * @param objects 对象集合
+     * @param object 遍历源对象
+     * @param sign   链接标记
      * @return 字符串
      */
-    public static String join(Collection<?> objects) {
-        return join(objects, EMPTY_STRING);
-    }
-
-    /**
-     * 将对象集合链接成字符串
-     *
-     * @param objects 对象集合
-     * @param sign    链接标记
-     * @return 连接后的字符串
-     */
-    @Nonnull
-    public static String join(Collection<?> objects, CharSequence sign) {
-        if (objects.isEmpty()) {
+    public static String join(Object object, CharSequence sign) {
+        if (object == null) {
+            return null;
+        } else if (Objects.isEmpty(object)) {
             return EMPTY_STRING;
         }
         StringBuilder buffer = new StringBuilder();
-        for (Object object : objects) {
-            if (buffer.length() > 0 && sign.length() > 0) {
+        Objects.foreach(object, (o, i) -> {
+            if (buffer.length() > 0 && !isEmpty(sign)) {
                 buffer.append(sign);
             }
-            buffer.append(object);
-        }
+            buffer.append(toString(o));
+        });
         return buffer.toString();
     }
 

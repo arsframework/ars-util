@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.TreeSet;
 import java.util.Iterator;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.lang.reflect.Array;
 
@@ -1452,26 +1451,8 @@ public abstract class Excels {
                 cell.setCellValue((Boolean) value);
             } else if (value instanceof Formula) {
                 cell.setCellFormula(((Formula) value).value);
-            } else if (value instanceof int[]) {
-                cell.setCellValue(Strings.join(Arrays.asList((int[]) value), ","));
-            } else if (value instanceof char[]) {
-                cell.setCellValue(Strings.join(Arrays.asList((char[]) value), ","));
-            } else if (value instanceof byte[]) {
-                cell.setCellValue(Strings.join(Arrays.asList((byte[]) value), ","));
-            } else if (value instanceof short[]) {
-                cell.setCellValue(Strings.join(Arrays.asList((short[]) value), ","));
-            } else if (value instanceof long[]) {
-                cell.setCellValue(Strings.join(Arrays.asList((long[]) value), ","));
-            } else if (value instanceof float[]) {
-                cell.setCellValue(Strings.join(Arrays.asList((float[]) value), ","));
-            } else if (value instanceof double[]) {
-                cell.setCellValue(Strings.join(Arrays.asList((double[]) value), ","));
-            } else if (value instanceof boolean[]) {
-                cell.setCellValue(Strings.join(Arrays.asList((boolean[]) value), ","));
-            } else if (value instanceof Object[]) {
-                cell.setCellValue(Strings.join((Object[]) value, ","));
-            } else if (value instanceof Collection) {
-                cell.setCellValue(Strings.join((Collection<?>) value, ","));
+            } else if (value instanceof Iterable || value.getClass().isArray()) {
+                cell.setCellValue(Strings.join(value, ","));
             } else {
                 cell.setCellValue(Strings.toString(value));
             }

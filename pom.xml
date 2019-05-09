@@ -6,7 +6,7 @@
 
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.5.3</version>
+    <version>1.5.4</version>
     <packaging>jar</packaging>
 
     <name>ars-util</name>
@@ -93,7 +93,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.2.2</version>
+            <version>4.5.3</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

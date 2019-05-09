@@ -17,15 +17,18 @@ import javax.net.ssl.X509TrustManager;
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.message.BasicNameValuePair;
 
 import com.arsframework.annotation.Nonnull;
 
@@ -36,27 +39,11 @@ import com.arsframework.annotation.Nonnull;
  */
 public abstract class Https {
     /**
-     * 默认SSL端口
-     */
-    public static final int DEFAULT_SSL_PORT = 443;
-
-    /**
-     * 绑定SSL,默认使用443端口
+     * 构建SSL注册对象
      *
-     * @param registry Http方案登记对象
+     * @return 注册对象
      */
-    public static void ssl(SchemeRegistry registry) {
-        ssl(registry, DEFAULT_SSL_PORT);
-    }
-
-    /**
-     * 绑定SSL
-     *
-     * @param registry Http方案登记对象
-     * @param port     端口号
-     */
-    @Nonnull
-    public static void ssl(SchemeRegistry registry, int port) {
+    public static Registry<ConnectionSocketFactory> buildSSLRegistry() {
         X509TrustManager trustManager = new X509TrustManager() {
             public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
             }
@@ -71,8 +58,9 @@ public abstract class Https {
         try {
             SSLContext context = SSLContext.getInstance("TLS");
             context.init(null, new TrustManager[]{trustManager}, null);
-            registry.register(new Scheme(Webs.Protocol.HTTPS.toString(), port,
-                    new SSLSocketFactory(context, SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER)));
+            return RegistryBuilder.<ConnectionSocketFactory>create()
+                    .register(Webs.Protocol.HTTP.name(), PlainConnectionSocketFactory.INSTANCE)
+                    .register(Webs.Protocol.HTTPS.name(), new SSLConnectionSocketFactory(context, NoopHostnameVerifier.INSTANCE)).build();
         } catch (KeyManagementException | NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }

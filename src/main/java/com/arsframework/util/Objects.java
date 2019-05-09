@@ -58,7 +58,7 @@ public abstract class Objects {
     }
 
     /**
-     * 遍历对象（字典、数据、集合）
+     * 遍历对象（字典、数据、可迭代）
      *
      * @param object   遍历目标对象
      * @param iterator 对象遍历迭代器

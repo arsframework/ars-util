@@ -10,7 +10,7 @@ JDK1.8+
 <dependency>
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.5.3</version>
+    <version>1.5.4</version>
 </dependency>
 ```
 
@@ -138,3 +138,9 @@ JDK1.8+
 2. 在```com.arsframework.util.Strings```工具类中新增```roundNumber```、```formatNumber```方法
 3. 移除```com.arsframework.util.Objects```工具类中```toArray```、```toCollection```方法，增加```foreach```、```isMetaClass```方法
 4. 移除```com.arsframework.util.Randoms```工具类中```random```方法，增加```buildRandom```、```randomObject```方法
+
+### v1.5.4
+1. 更新httpclient依赖包版本号为4.5.3
+2. 重构```com.arsframework.util.Strings```工具类中```join```方法
+3. 重构```com.arsframework.util.Excels```工具类中```setValue```方法
+4. 移除```com.arsframework.util.Https```工具类中```ssl```方法，新增```buildSSLRegistry```方法
