@@ -23,13 +23,13 @@ JDK1.8+
 该抽象类提供了针对文档处理的工具方法，如SVG转PDF、HTML转PDF等。
 
 ### 3.3 com.arsframework.util.Excels
-该抽象类提供了针对Excel处理的工具方法，如Excel读写。
+该抽象类提供了针对Excel处理的工具方法，如Excel读写、设置复杂标题、公式等。
 
 ### 3.4 com.arsframework.util.Files
 该抽象类提供了针对文件处理的工具方法，如文件创建、删除、移动、读写、查找塞选等。
 
 ### 3.5 com.arsframework.util.Objects
-该抽象类提供了针对对象处理的工具方法，如对象反射操作、对象比较、对象转换等。
+该抽象类提供了针对对象处理的工具方法，如对象反射操作、对象比较、对象转换、对象迭代、字段访问等。
 
 ### 3.6 com.arsframework.util.Randoms
 该抽象类提供了针对随机数处理的工具方法，如随机生成字符串、数字、日期、对象等。
