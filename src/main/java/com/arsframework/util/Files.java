@@ -18,14 +18,6 @@ public abstract class Files {
      */
     public interface Query extends Iterable<Describe> {
         /**
-         * 设置是否展开
-         *
-         * @param spread true/false
-         * @return 文件集合
-         */
-        Query spread(boolean spread);
-
-        /**
          * 等于
          *
          * @param property 属性
@@ -147,7 +139,6 @@ public abstract class Files {
         protected final String path; // 查询操作路径
 
         private boolean loaded; // 集合是否已加载
-        private boolean spread; // 是否展开
         private List<Order> orders = new LinkedList<>(); // 排序条件
         private List<Describe> describes = Collections.emptyList(); // 缓存数据
         private List<Condition> conditions = new LinkedList<>(); // 查询条件
@@ -161,21 +152,14 @@ public abstract class Files {
          * 执行文件查询
          *
          * @param path       文件查询相对路径
-         * @param spread     是否展开
          * @param conditions 查询条件数组
          * @return 文件描述列表
          */
-        protected abstract List<Describe> execute(String path, boolean spread, Condition... conditions);
+        protected abstract List<Describe> execute(String path, Condition... conditions);
 
         @Override
         public Iterator<Describe> iterator() {
             return this.list().iterator();
-        }
-
-        @Override
-        public Query spread(boolean spread) {
-            this.spread = spread;
-            return this;
         }
 
         @Override
@@ -263,7 +247,7 @@ public abstract class Files {
         @Override
         public List<Describe> list() {
             if (!this.loaded) {
-                this.describes = this.execute(this.path, this.spread, this.conditions.toArray(new Condition[0]));
+                this.describes = this.execute(this.path, this.conditions.toArray(new Condition[0]));
                 if (!this.orders.isEmpty()) {
                     Files.sort(this.describes, this.orders.toArray(new Order[0]));
                 }
@@ -288,15 +272,12 @@ public abstract class Files {
         }
 
         @Override
-        public List<Describe> execute(String path, boolean spread, Condition... conditions) {
+        protected List<Describe> execute(String path, Condition... conditions) {
             List<Describe> describes = new LinkedList<>();
             new File(path).listFiles((file) -> {
                 Describe describe = Describe.parse(file);
                 if (Files.isSatisfy(describe, conditions)) {
                     describes.add(describe);
-                }
-                if (spread && describe.directory) {
-                    describes.addAll(execute(describe.path, true, conditions));
                 }
                 return false;
             });
@@ -306,17 +287,59 @@ public abstract class Files {
     }
 
     /**
+     * 构建文件路径
+     *
+     * @param sections 路径分段数组
+     * @return 完整文件路径
+     */
+    @Nonnull
+    public static String path(String... sections) {
+        if (sections.length < 2) {
+            return sections.length == 0 || Strings.isEmpty(sections[0]) ? null : sections[0].replace("\\", "/").replace("//", "/");
+        }
+        StringBuilder buffer = new StringBuilder();
+        for (String section : sections) {
+            if (Strings.isEmpty(section)) {
+                continue;
+            }
+            if (buffer.length() > 0) {
+                buffer.append('/');
+            }
+            buffer.append(section);
+        }
+        return buffer.length() == 0 ? null : buffer.toString().replace("\\", "/").replace("//", "/");
+    }
+
+    /**
+     * 判断路径是否存在
+     *
+     * @param path 文件路径
+     * @return true/false
+     */
+    public static boolean exists(String path) {
+        return path != null && new File(path).exists();
+    }
+
+    /**
      * 创建文件目录
      *
-     * @param file 文件对象
-     * @return 文件目录对象
+     * @param path 目录路径
      */
-    public static File mkdirs(File file) {
-        File path = file == null ? null : file.getParentFile();
-        if (path != null && !path.exists()) {
-            path.mkdirs();
+    public static void mkdirs(String path) {
+        if (!Strings.isEmpty(path)) {
+            new File(path(path)).mkdirs();
         }
-        return path;
+    }
+
+    /**
+     * 删除文件/文件目录
+     *
+     * @param path 文件/文件目录
+     */
+    public static void delete(String path) {
+        if (path != null) {
+            delete(new File(path));
+        }
     }
 
     /**
@@ -325,7 +348,7 @@ public abstract class Files {
      * @param file 源文件/文件目录
      */
     public static void delete(File file) {
-        if (file != null && file.exists()) {
+        if (file != null) {
             if (file.isDirectory()) {
                 for (File child : file.listFiles()) {
                     delete(child);
@@ -342,19 +365,30 @@ public abstract class Files {
      * @param target 目标文件目录
      * @throws IOException IO操作异常
      */
-    @Nonnull
+    public static void copy(String source, String target) throws IOException {
+        if (source != null && target != null) {
+            copy(new File(source), new File(target));
+        }
+    }
+
+    /**
+     * 递归拷贝文件/文件目录
+     *
+     * @param source 源文件/文件目录
+     * @param target 目标文件目录
+     * @throws IOException IO操作异常
+     */
     public static void copy(File source, File target) throws IOException {
-        if (!source.equals(target)) {
+        if (source != null && target != null && !source.equals(target)) {
+            File path = new File(target, source.getName());
             if (source.isDirectory()) {
-                File path = new File(target, source.getName());
-                if (!path.exists()) {
-                    path.mkdirs();
-                }
+                mkdirs(path.getPath());
                 for (File child : source.listFiles()) {
                     copy(child, path);
                 }
             } else {
-                Streams.write(source, new File(target, source.getName()));
+                mkdirs(target.getPath());
+                Streams.write(source, path);
             }
         }
     }
@@ -365,33 +399,31 @@ public abstract class Files {
      * @param source 源文件/文件目录
      * @param target 目标文件目录
      */
-    @Nonnull
+    public static void move(String source, String target) {
+        if (source != null && target != null) {
+            move(new File(source), new File(target));
+        }
+    }
+
+    /**
+     * 递归移动文件/文件目录
+     *
+     * @param source 源文件/文件目录
+     * @param target 目标文件目录
+     */
     public static void move(File source, File target) {
-        if (!source.equals(target)) {
+        if (source != null && target != null && !source.equals(target)) {
+            File path = new File(target, source.getName());
             if (source.isDirectory()) {
-                File path = new File(target, source.getName());
-                if (!path.exists()) {
-                    path.mkdirs();
-                }
+                mkdirs(path.getPath());
                 for (File child : source.listFiles()) {
                     move(child, path);
                 }
                 source.delete();
             } else {
-                source.renameTo(new File(target, source.getName()));
+                source.renameTo(path);
             }
         }
-    }
-
-    /**
-     * 文件重命名
-     *
-     * @param file 文件对象
-     * @param name 重命名名称
-     */
-    @Nonnull
-    public static void rename(File file, String name) {
-        file.renameTo(new File(file.getParent(), name));
     }
 
     /**
@@ -404,7 +436,7 @@ public abstract class Files {
     public static String getName(String path) {
         int end = path.length();
         for (int i = end - 1; i > -1; i--) {
-            if (path.charAt(i) == '\\' || path.charAt(i) == '/') {
+            if (path.charAt(i) == '/' || path.charAt(i) == '\\') {
                 if (i < end - 1) {
                     return path.substring(i + 1, end);
                 }
@@ -428,9 +460,29 @@ public abstract class Files {
             return null;
         }
         int end = path.length() - 1;
-        for (; end > -1 && (path.charAt(end) == '\\' || path.charAt(end) == '/'); end--) ;
+        for (; end > -1 && (path.charAt(end) == '/' || path.charAt(end) == '\\'); end--) ;
         String suffix = path.substring(index + 1, end + 1);
         return suffix.isEmpty() ? null : suffix;
+    }
+
+    /**
+     * 获取文件目录
+     *
+     * @param path 文件路径
+     * @return 文件目录
+     */
+    @Nonnull
+    public static String getDirectory(String path) {
+        for (int i = path.length() - 1; i > -1; i--) {
+            if (path.charAt(i) == '/' || path.charAt(i) == '\\') {
+                if (i < path.length() - 1) {
+                    for (--i; i > -1 && (path.charAt(i) == '/' || path.charAt(i) == '\\'); i--) ;
+                    String directory = path.substring(0, i + 1);
+                    return directory.isEmpty() ? null : directory;
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -570,8 +622,7 @@ public abstract class Files {
          */
         @Nonnull
         public static Describe parse(File file) {
-            return new Describe(file.getPath().replace("\\", "/"),
-                    file.getName(), file.length(), file.lastModified(), file.isDirectory());
+            return new Describe(path(file.getPath()), file.getName(), file.length(), file.lastModified(), file.isDirectory());
         }
     }
 

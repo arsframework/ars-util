@@ -164,7 +164,7 @@ public abstract class Streams {
      */
     @Nonnull
     public static void write(byte[] source, File target, boolean append) throws IOException {
-        Files.mkdirs(target);
+        Files.mkdirs(target.getParent());
         try (FileOutputStream os = new FileOutputStream(target, append)) {
             os.write(source);
         }
@@ -192,7 +192,7 @@ public abstract class Streams {
     @Nonnull
     public static void write(File source, File target, boolean append) throws IOException {
         if (source.exists()) {
-            Files.mkdirs(target);
+            Files.mkdirs(target.getParent());
             try (FileInputStream fis = new FileInputStream(source); FileOutputStream fos = new FileOutputStream(target, append)) {
                 FileChannel in = fis.getChannel();
                 in.transferTo(0, in.size(), fos.getChannel());
@@ -261,7 +261,7 @@ public abstract class Streams {
      */
     @Nonnull
     public static void write(InputStream source, File target, boolean append) throws IOException {
-        Files.mkdirs(target);
+        Files.mkdirs(target.getParent());
         try (OutputStream os = new FileOutputStream(target, append)) {
             write(source, os);
         }
@@ -319,7 +319,7 @@ public abstract class Streams {
      */
     @Nonnull
     public static void write(ReadableByteChannel source, File target, boolean append) throws IOException {
-        Files.mkdirs(target);
+        Files.mkdirs(target.getParent());
         try (OutputStream os = new FileOutputStream(target, append)) {
             write(source, os);
         }

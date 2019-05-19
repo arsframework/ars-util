@@ -1,13 +1,10 @@
 package com.arsframework.util;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.math.BigInteger;
+import java.io.*;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.JarURLConnection;
+import java.nio.channels.Channel;
 import java.time.ZoneId;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,6 +20,8 @@ import java.util.LinkedHashMap;
 import java.util.function.Function;
 import java.util.jar.JarFile;
 import java.util.jar.JarEntry;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.lang.reflect.*;
 import java.lang.annotation.Annotation;
 
@@ -219,7 +218,9 @@ public abstract class Objects {
                 || isBasicClass(clazz) || Modifier.isAbstract(clazz.getModifiers()) || CharSequence.class.isAssignableFrom(clazz)
                 || Number.class.isAssignableFrom(clazz) || Date.class.isAssignableFrom(clazz) || Temporal.class.isAssignableFrom(clazz)
                 || Map.class.isAssignableFrom(clazz) || Collection.class.isAssignableFrom(clazz) || Function.class.isAssignableFrom(clazz)
-                || Annotation.class.isAssignableFrom(clazz));
+                || Annotation.class.isAssignableFrom(clazz) || File.class.isAssignableFrom(clazz) || Channel.class.isAssignableFrom(clazz)
+                || InputStream.class.isAssignableFrom(clazz) || OutputStream.class.isAssignableFrom(clazz)
+                || Reader.class.isAssignableFrom(clazz) || Writer.class.isAssignableFrom(clazz));
     }
 
     /**

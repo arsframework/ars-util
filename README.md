@@ -10,7 +10,7 @@ JDK1.8+
 <dependency>
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.5.4</version>
+    <version>1.5.5</version>
 </dependency>
 ```
 
@@ -57,6 +57,9 @@ JDK1.8+
 
 ### 3.14 com.arsframework.util.Https
 该抽象类提供了针对Http请求的工具方法，如GET、POST请求等。
+
+### 3.15 com.arsframework.util.Ftps
+该抽象类提供了针对FTP请求的工具方法，如文件拷贝、移动、删除等。
 
 ## 4 版本更新日志
 ### v1.0.4
@@ -144,3 +147,7 @@ JDK1.8+
 2. 重构```com.arsframework.util.Strings```工具类中```join```方法
 3. 重构```com.arsframework.util.Excels```工具类中```setValue```方法
 4. 移除```com.arsframework.util.Https```工具类中```ssl```方法，新增```buildSSLRegistry```方法
+
+### v1.5.5
+1. 优化```com.arsframework.util.Files```工具类
+2. 新增```com.arsframework.util.Ftps```工具类
