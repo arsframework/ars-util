@@ -29,6 +29,21 @@ public abstract class Barcodes {
     public static final int DEFAULT_HEIGHT = 200;
 
     /**
+     * 加密提示映射表
+     */
+    private static final Map<EncodeHintType, Object> ENCODE_HINTS = new HashMap<>(1);
+
+    /**
+     * 解密提示映射表
+     */
+    private static final Map<DecodeHintType, Object> DECODE_HINTS = new HashMap<>(1);
+
+    static {
+        ENCODE_HINTS.put(EncodeHintType.CHARACTER_SET, Strings.CHARSET_UTF8);
+        DECODE_HINTS.put(DecodeHintType.CHARACTER_SET, Strings.CHARSET_UTF8);
+    }
+
+    /**
      * 将内容编码
      *
      * @param content 图片内容
@@ -60,10 +75,8 @@ public abstract class Barcodes {
      */
     @Nonnull
     public static BufferedImage encode(String content, BarcodeFormat format, @Min(1) int width, @Min(1) int height) {
-        Map<EncodeHintType, Object> hints = new HashMap<>(1);
-        hints.put(EncodeHintType.CHARACTER_SET, Strings.CHARSET_UTF8);
         try {
-            BitMatrix matrix = new MultiFormatWriter().encode(content, format, width, height, hints);
+            BitMatrix matrix = new MultiFormatWriter().encode(content, format, width, height, ENCODE_HINTS);
             return MatrixToImageWriter.toBufferedImage(matrix);
         } catch (WriterException e) {
             throw new RuntimeException(e);
@@ -78,11 +91,9 @@ public abstract class Barcodes {
      */
     @Nonnull
     public static String decode(BufferedImage image) {
-        Map<DecodeHintType, Object> hints = new HashMap<>(1);
-        hints.put(DecodeHintType.CHARACTER_SET, Strings.CHARSET_UTF8);
         BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(image)));
         try {
-            return new MultiFormatReader().decode(bitmap, hints).getText();
+            return new MultiFormatReader().decode(bitmap, DECODE_HINTS).getText();
         } catch (ReaderException e) {
             throw new RuntimeException(e);
         }

@@ -3,7 +3,7 @@ package com.arsframework.util;
 import java.io.*;
 import java.awt.*;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.awt.print.Paper;
 import java.awt.print.PageFormat;
 
@@ -14,7 +14,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Document;
 import org.apache.fop.svg.PDFTranscoder;
-import org.apache.batik.transcoder.Transcoder;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.TranscoderException;
@@ -52,7 +51,7 @@ public abstract class Documents {
      * 连接替换元素工厂对象
      */
     private static class ChainingReplacedElementFactory implements ReplacedElementFactory {
-        private List<ReplacedElementFactory> replacedElementFactories = new ArrayList<>();
+        private List<ReplacedElementFactory> replacedElementFactories = new LinkedList<>();
 
         public void addReplacedElementFactory(ReplacedElementFactory replacedElementFactory) {
             this.replacedElementFactories.add(0, replacedElementFactory);
@@ -240,8 +239,7 @@ public abstract class Documents {
      */
     @Nonnull
     public static void svg2pdf(Reader reader, Writer writer) throws TranscoderException {
-        Transcoder transcoder = new PDFTranscoder();
-        transcoder.transcode(new TranscoderInput(reader), new TranscoderOutput(writer));
+        new PDFTranscoder().transcode(new TranscoderInput(reader), new TranscoderOutput(writer));
     }
 
     /**
@@ -265,8 +263,7 @@ public abstract class Documents {
      */
     @Nonnull
     public static void svg2png(Reader reader, Writer writer) throws TranscoderException {
-        Transcoder transcoder = new PNGTranscoder();
-        transcoder.transcode(new TranscoderInput(reader), new TranscoderOutput(writer));
+        new PNGTranscoder().transcode(new TranscoderInput(reader), new TranscoderOutput(writer));
     }
 
     /**
@@ -290,8 +287,7 @@ public abstract class Documents {
      */
     @Nonnull
     public static void svg2jpeg(Reader reader, Writer writer) throws TranscoderException {
-        Transcoder transcoder = new JPEGTranscoder();
-        transcoder.transcode(new TranscoderInput(reader), new TranscoderOutput(writer));
+        new JPEGTranscoder().transcode(new TranscoderInput(reader), new TranscoderOutput(writer));
     }
 
     /**

@@ -108,7 +108,7 @@ public abstract class Dates {
     public static DateTimeFormatter buildDateTimeFormat(String pattern) {
         DateTimeFormatter format = dateTimeFormats.get(pattern);
         if (format == null) {
-            synchronized (Dates.class) {
+            synchronized (pattern.intern()) {
                 if ((format = dateTimeFormats.get(pattern)) == null) {
                     format = DateTimeFormatter.ofPattern(pattern);
                     dateTimeFormats.put(pattern, format);

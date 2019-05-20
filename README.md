@@ -10,7 +10,7 @@ JDK1.8+
 <dependency>
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.5.5</version>
+    <version>1.5.6</version>
 </dependency>
 ```
 
@@ -151,3 +151,6 @@ JDK1.8+
 ### v1.5.5
 1. 优化```com.arsframework.util.Files```工具类
 2. 新增```com.arsframework.util.Ftps```工具类
+
+### v1.5.6
+1. 内部性能优化
