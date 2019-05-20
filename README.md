@@ -10,7 +10,7 @@ JDK1.8+
 <dependency>
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.5.6</version>
+    <version>1.5.7</version>
 </dependency>
 ```
 
@@ -60,6 +60,9 @@ JDK1.8+
 
 ### 3.15 com.arsframework.util.Ftps
 该抽象类提供了针对FTP请求的工具方法，如文件拷贝、移动、删除等。
+
+### 3.16 com.arsframework.util.Mails
+该抽象类提供了针对电子邮件操作的工具方法，如邮件发送、接收等。
 
 ## 4 版本更新日志
 ### v1.0.4
@@ -154,3 +157,6 @@ JDK1.8+
 
 ### v1.5.6
 1. 内部性能优化
+
+### v1.5.7
+1. 新增```com.arsframework.util.Mails```工具类

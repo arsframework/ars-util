@@ -6,7 +6,7 @@
 
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.5.6</version>
+    <version>1.5.7</version>
     <packaging>jar</packaging>
 
     <name>ars-util</name>
@@ -102,6 +102,14 @@
             <groupId>commons-net</groupId>
             <artifactId>commons-net</artifactId>
             <version>3.3</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.apache.geronimo.javamail/geronimo-javamail_1.4_mail -->
+        <dependency>
+            <groupId>org.apache.geronimo.javamail</groupId>
+            <artifactId>geronimo-javamail_1.4_mail</artifactId>
+            <version>1.8.4</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
