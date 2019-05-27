@@ -9,14 +9,7 @@ import java.time.ZoneId;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.Temporal;
-import java.util.Map;
-import java.util.List;
-import java.util.Date;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.function.Function;
 import java.util.jar.JarFile;
 import java.util.jar.JarEntry;
@@ -25,6 +18,7 @@ import java.math.BigInteger;
 import java.lang.reflect.*;
 import java.lang.annotation.Annotation;
 
+import com.arsframework.annotation.Min;
 import com.arsframework.annotation.Nonnull;
 
 /**
@@ -199,8 +193,7 @@ public abstract class Objects {
      */
     public static boolean isBasicClass(Class<?> clazz) {
         try {
-            return clazz == null ? false : Number.class.isAssignableFrom(clazz) ? true :
-                    ((Class<?>) clazz.getField("TYPE").get(null)).isPrimitive();
+            return clazz == null ? false : ((Class<?>) clazz.getField("TYPE").get(null)).isPrimitive();
         } catch (NoSuchFieldException | IllegalAccessException e) {
             return clazz.isPrimitive() || clazz == Byte.class || clazz == Character.class || clazz == Integer.class || clazz == Short.class
                     || clazz == Long.class || clazz == Float.class || clazz == Double.class || clazz == Boolean.class;
@@ -215,12 +208,12 @@ public abstract class Objects {
      */
     public static boolean isMetaClass(Class<?> clazz) {
         return clazz != null && (clazz == Object.class || clazz == Class.class || clazz.isEnum() || clazz.isArray() || clazz.isInterface()
-                || isBasicClass(clazz) || Modifier.isAbstract(clazz.getModifiers()) || CharSequence.class.isAssignableFrom(clazz)
-                || Number.class.isAssignableFrom(clazz) || Date.class.isAssignableFrom(clazz) || Temporal.class.isAssignableFrom(clazz)
-                || Map.class.isAssignableFrom(clazz) || Collection.class.isAssignableFrom(clazz) || Function.class.isAssignableFrom(clazz)
-                || Annotation.class.isAssignableFrom(clazz) || File.class.isAssignableFrom(clazz) || Channel.class.isAssignableFrom(clazz)
-                || InputStream.class.isAssignableFrom(clazz) || OutputStream.class.isAssignableFrom(clazz)
-                || Reader.class.isAssignableFrom(clazz) || Writer.class.isAssignableFrom(clazz));
+                || isBasicClass(clazz) || Number.class.isAssignableFrom(clazz) || Modifier.isAbstract(clazz.getModifiers())
+                || CharSequence.class.isAssignableFrom(clazz) || Number.class.isAssignableFrom(clazz) || Date.class.isAssignableFrom(clazz)
+                || Temporal.class.isAssignableFrom(clazz) || Map.class.isAssignableFrom(clazz) || Collection.class.isAssignableFrom(clazz)
+                || Function.class.isAssignableFrom(clazz) || Annotation.class.isAssignableFrom(clazz) || File.class.isAssignableFrom(clazz)
+                || Channel.class.isAssignableFrom(clazz) || InputStream.class.isAssignableFrom(clazz)
+                || OutputStream.class.isAssignableFrom(clazz) || Reader.class.isAssignableFrom(clazz) || Writer.class.isAssignableFrom(clazz));
     }
 
     /**
@@ -575,6 +568,30 @@ public abstract class Objects {
             return Boolean.class;
         }
         throw new IllegalArgumentException("Invalid basic type: " + clazz);
+    }
+
+    /**
+     * 构建对象类型空数组
+     *
+     * @param type 对象类型
+     * @param <T>  数据类型
+     * @return 数组对象
+     */
+    public static <T> T[] buildEmptyArray(Class<T> type) {
+        return buildArray(type, 0);
+    }
+
+    /**
+     * 构建对象类型数组
+     *
+     * @param type   对象类型
+     * @param length 数组长度
+     * @param <T>    数据类型
+     * @return 数组对象
+     */
+    @Nonnull
+    public static <T> T[] buildArray(Class<T> type, @Min(0) int length) {
+        return (T[]) Array.newInstance(isBasicClass(type) ? getBasicWrapClass(type) : type, length);
     }
 
     /**

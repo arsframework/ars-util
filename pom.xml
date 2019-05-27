@@ -6,7 +6,7 @@
 
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.5.7</version>
+    <version>1.5.8</version>
     <packaging>jar</packaging>
 
     <name>ars-util</name>

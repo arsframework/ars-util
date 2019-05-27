@@ -10,7 +10,7 @@ JDK1.8+
 <dependency>
     <groupId>com.arsframework</groupId>
     <artifactId>ars-util</artifactId>
-    <version>1.5.7</version>
+    <version>1.5.8</version>
 </dependency>
 ```
 
@@ -160,3 +160,7 @@ JDK1.8+
 
 ### v1.5.7
 1. 新增```com.arsframework.util.Mails```工具类
+
+### v1.5.8
+1. 修复Bug
+2. 在```com.arsframework.util.Objects```工具类中新增```buildArray```、```buildEmptyArray```方法
